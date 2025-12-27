@@ -30,6 +30,7 @@ public class ParcelRoute {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('planned','in_progress','completed') DEFAULT 'planned'")
+    @Builder.Default
     private ParcelRouteStatus status = ParcelRouteStatus.planned;
 }
 
