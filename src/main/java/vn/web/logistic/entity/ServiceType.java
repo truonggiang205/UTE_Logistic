@@ -3,6 +3,7 @@ package vn.web.logistic.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "SERVICE_TYPES")
@@ -17,7 +18,7 @@ public class ServiceType {
     @Column(name = "service_type_id")
     private Long serviceTypeId;
 
-    @Column(name = "service_code", nullable = false, unique = true, length = 20)
+    @Column(name = "service_code", nullable = false, unique = false, length = 20)
     private String serviceCode;
 
     @Column(name = "service_name", nullable = false, length = 100)
@@ -44,4 +45,20 @@ public class ServiceType {
     private BigDecimal insuranceRate = BigDecimal.ZERO;
 
     private String description;
+
+    /// Các trường mới để khi thay đổi giá dịch vụ ở một thời điểm thì không bị thay
+    /// đổi các giá trị của các đơn trước đó
+    @Builder.Default
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @Builder.Default
+    @Column(name = "version")
+    private Integer version = 1;
+
+    @Column(name = "effective_from")
+    private LocalDateTime effectiveFrom;
+
+    @Column(name = "parent_id")
+    private Long parentId; // Dùng để nhóm các version của cùng một loại dịch vụ
 }

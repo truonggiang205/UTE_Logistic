@@ -15,18 +15,20 @@ public class ServiceTypeRequest {
     private String serviceName;
 
     @NotNull(message = "Phí cơ bản không được null")
-    @Min(value = 0, message = "Phí cơ bản không được âm")
+    @DecimalMin(value = "0.0", message = "Phí cơ bản không được âm")
     private BigDecimal baseFee;
 
-    @Min(value = 0, message = "Phí thêm/kg không được âm")
+    @DecimalMin(value = "0.0", message = "Phí thêm/kg không được âm")
     private BigDecimal extraPricePerKg;
 
     @DecimalMin(value = "0.0", message = "Tỉ lệ COD thấp nhất là 0")
     @DecimalMax(value = "1.0", message = "Tỉ lệ COD cao nhất là 1 (100%)")
     private BigDecimal codRate;
 
+    @DecimalMin(value = "0.0", message = "Phí COD tối thiểu không được âm")
     private BigDecimal codMinFee;
 
+    @DecimalMin(value = "0.0", message = "Tỉ lệ phí bảo hiểm không được âm")
     private BigDecimal insuranceRate;
 
     private String description;

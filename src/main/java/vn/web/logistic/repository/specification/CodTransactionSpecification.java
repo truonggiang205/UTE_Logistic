@@ -1,50 +1,52 @@
 package vn.web.logistic.repository.specification;
 
-import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import vn.web.logistic.entity.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CodTransactionSpecification {
 
     public static Specification<CodTransaction> filterCod(
-            LocalDateTime startDate,
-            LocalDateTime endDate,
-            Long hubId,
-            String shipperName,
-            CodTransaction.CodStatus status) { // Thêm lọc theo trạng thái (vd: chỉ xem tiền đang giữ)
+            LocalDateTime startDate, LocalDateTime endDate, Long hubId, String shipperName,
+            CodTransaction.CodStatus status) {
 
         return (root, query, cb) -> {
-            var predicates = cb.conjunction();
+            List<Predicate> predicates = new ArrayList<>();
 
-            // 1. Filter theo thời gian thu tiền (collectedAt)
-            if (startDate != null && endDate != null) {
-                predicates.getExpressions().add(cb.between(root.get("collectedAt"), startDate, endDate));
+            // 1. Lọc thời gian: Dùng Trực tiếp root.get
+            if (startDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("collectedAt"), startDate));
+            }
+            if (endDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("collectedAt"), endDate));
             }
 
-            // Join bảng Shipper
-            Join<CodTransaction, Shipper> shipperJoin = root.join("shipper");
-
-            // 2. Filter theo Hub (của Shipper)
-            if (hubId != null) {
-                Join<Shipper, Hub> hubJoin = shipperJoin.join("hub");
-                predicates.getExpressions().add(cb.equal(hubJoin.get("hubId"), hubId));
-            }
-
-            // 3. Filter theo tên Shipper (Join tiếp sang bảng User)
-            if (shipperName != null && !shipperName.isEmpty()) {
-                Join<Shipper, User> userJoin = shipperJoin.join("user");
-                predicates.getExpressions().add(
-                        cb.like(cb.lower(userJoin.get("fullName")), "%" + shipperName.toLowerCase() + "%"));
-            }
-
-            // 4. Filter theo trạng thái (Collected: Đang giữ tiền / Settled: Đã nộp)
+            // 2. Lọc Trạng thái: Quan trọng nhất
             if (status != null) {
-                predicates.getExpressions().add(cb.equal(root.get("status"), status));
+                predicates.add(cb.equal(root.get("status"), status));
             }
 
-            return predicates;
+            // 3. Lọc Hub & Shipper Name: DÙNG LEFT JOIN
+            if (hubId != null) {
+                predicates.add(cb.equal(root.join("shipper", JoinType.LEFT)
+                        .join("hub", JoinType.LEFT)
+                        .get("hubId"), hubId));
+            }
+
+            if (shipperName != null && !shipperName.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.join("shipper", JoinType.LEFT)
+                        .join("user", JoinType.LEFT)
+                        .get("fullName")),
+                        "%" + shipperName.toLowerCase() + "%"));
+            }
+
+            // PHẢI CÓ DÒNG NÀY: Nối tất cả bằng AND
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 }

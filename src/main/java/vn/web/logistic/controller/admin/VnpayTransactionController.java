@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/admin/transactions")
+@RequestMapping("/api/admin/transactions")
 @CrossOrigin(origins = "*") // Cho phép Frontend (React/Vue/Angular) gọi API
 @RequiredArgsConstructor
 public class VnpayTransactionController {

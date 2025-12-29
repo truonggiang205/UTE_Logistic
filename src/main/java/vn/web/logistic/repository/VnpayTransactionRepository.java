@@ -3,6 +3,7 @@ package vn.web.logistic.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
+
 import vn.web.logistic.entity.VnpayTransaction;
 
 @Repository
@@ -11,4 +12,6 @@ public interface VnpayTransactionRepository extends
                 JpaSpecificationExecutor<VnpayTransaction> {
         // Cần cái này để filter động
         // JpaSpecificationExecutor: Là cái giúp phân trang khi filter
+        // Lấy tất cả hub và sắp xếp theo tên cho người dùng dễ tìm
+
 }

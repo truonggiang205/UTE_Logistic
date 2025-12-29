@@ -31,8 +31,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,7 +47,15 @@ public class SystemLogServiceImpl implements SystemLogService {
 
         // Cấu hình
         private static final int STUCK_DAYS_THRESHOLD = 3;
-        private static final BigDecimal MAX_DEBT_LIMIT = new BigDecimal("5000000"); // 5 Triệu VNĐ
+        // Mức cảnh báo COD 3 tầng:
+        // 1. Nợ > 10 triệu VÀ quá 2 ngày
+        // 2. HOẶC Nợ > 2 triệu VÀ quá 3 ngày
+        // 3. HOẶC chưa nộp COD quá 7 ngày (bất kể số tiền)
+        private static final BigDecimal HIGH_DEBT_LIMIT = new BigDecimal("10000000"); // 10 Triệu VNĐ
+        private static final BigDecimal MEDIUM_DEBT_LIMIT = new BigDecimal("2000000"); // 2 Triệu VNĐ
+        private static final int HIGH_DEBT_DAYS = 2; // 2 ngày cho mức 10 triệu
+        private static final int MEDIUM_DEBT_DAYS = 3; // 3 ngày cho mức 2 triệu
+        private static final int OVERDUE_DAYS = 7; // 7 ngày chưa nộp COD
         private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         @Override
@@ -105,13 +115,14 @@ public class SystemLogServiceImpl implements SystemLogService {
         @Transactional(readOnly = true)
         public WarningResponse getRiskWarnings() {
                 // 1. Logic tìm đơn treo (Stuck Orders)
-                LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(STUCK_DAYS_THRESHOLD);
+                LocalDateTime stuckThreshold = LocalDateTime.now().minusDays(STUCK_DAYS_THRESHOLD);
                 List<RequestStatus> finishedStatuses = Arrays.asList(
                                 RequestStatus.delivered,
                                 RequestStatus.cancelled,
                                 RequestStatus.failed);
 
-                List<ServiceRequest> stuckRequests = requestRepository.findStuckOrders(finishedStatuses, threeDaysAgo);
+                List<ServiceRequest> stuckRequests = requestRepository.findStuckOrders(finishedStatuses,
+                                stuckThreshold);
 
                 List<WarningResponse.StuckOrderDTO> stuckOrderDTOS = stuckRequests.stream()
                                 .map(req -> WarningResponse.StuckOrderDTO.builder()
@@ -123,9 +134,38 @@ public class SystemLogServiceImpl implements SystemLogService {
                                                 .build())
                                 .toList();
 
-                // 2. Logic tìm Shipper nợ quá hạn mức
-                List<WarningResponse.HighDebtShipperDTO> debtShippers = codRepository
-                                .findHighDebtShippers(MAX_DEBT_LIMIT);
+                // 2. Logic tìm Shipper nợ COD theo 3 mức độ:
+                LocalDateTime twoDaysAgo = LocalDateTime.now().minusDays(HIGH_DEBT_DAYS);
+                LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(MEDIUM_DEBT_DAYS);
+                LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(OVERDUE_DAYS);
+
+                // Query 3 mức và merge kết quả (loại bỏ trùng lặp theo shipperId)
+                Set<Long> seenShipperIds = new HashSet<>();
+                List<WarningResponse.HighDebtShipperDTO> debtShippers = new java.util.ArrayList<>();
+
+                // Mức 1: Nợ > 10 triệu VÀ quá 2 ngày
+                codRepository.findHighDebtOver10M(HIGH_DEBT_LIMIT, twoDaysAgo)
+                                .forEach(dto -> {
+                                        if (seenShipperIds.add(dto.getShipperId())) {
+                                                debtShippers.add(dto);
+                                        }
+                                });
+
+                // Mức 2: Nợ > 2 triệu VÀ quá 3 ngày
+                codRepository.findMediumDebtOver2M(MEDIUM_DEBT_LIMIT, threeDaysAgo)
+                                .forEach(dto -> {
+                                        if (seenShipperIds.add(dto.getShipperId())) {
+                                                debtShippers.add(dto);
+                                        }
+                                });
+
+                // Mức 3: Chưa nộp COD quá 7 ngày (bất kể số tiền)
+                codRepository.findOverdueOver7Days(sevenDaysAgo)
+                                .forEach(dto -> {
+                                        if (seenShipperIds.add(dto.getShipperId())) {
+                                                debtShippers.add(dto);
+                                        }
+                                });
 
                 return WarningResponse.builder()
                                 .stuckOrders(stuckOrderDTOS)

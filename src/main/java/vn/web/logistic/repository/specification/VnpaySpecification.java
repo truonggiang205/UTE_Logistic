@@ -8,6 +8,7 @@ import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.VnpayTransaction;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 public class VnpaySpecification {
     public static Specification<VnpayTransaction> filterTransactions(
@@ -17,32 +18,37 @@ public class VnpaySpecification {
             String customerName) {
 
         return (root, query, cb) -> {
-            var predicates = cb.conjunction();
+            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
 
-            // 1. Filter theo thời gian thanh toán (paidAt)
-            if (startDate != null && endDate != null) {
-                predicates.getExpressions().add(cb.between(root.get("paidAt"), startDate, endDate));
+            // 1. Filter theo startDate (Từ ngày)
+            if (startDate != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("paidAt"), startDate));
             }
 
-            // Join bảng ServiceRequest để lấy thông tin Hub và Customer
-            // (Vì bảng VnpayTransaction chỉ có request_id chứ không có hub_id trực tiếp)
-            Join<VnpayTransaction, ServiceRequest> requestJoin = root.join("request");
-
-            // 2. Filter theo Hub (Hub hiện tại của đơn hàng)
-            if (hubId != null) {
-                Join<ServiceRequest, Hub> hubJoin = requestJoin.join("currentHub");
-                predicates.getExpressions().add(cb.equal(hubJoin.get("hubId"), hubId));
+            // 2. Filter theo endDate (Đến ngày)
+            if (endDate != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("paidAt"), endDate));
             }
 
-            // 3. Filter theo User (Tên khách hàng - tìm gần đúng, không phân biệt hoa
-            // thường)
-            if (customerName != null && !customerName.isEmpty()) {
-                Join<ServiceRequest, Customer> customerJoin = requestJoin.join("customer");
-                predicates.getExpressions().add(
-                        cb.like(cb.lower(customerJoin.get("fullName")), "%" + customerName.toLowerCase() + "%"));
+            // 3. Chỉ JOIN khi cần thiết (Để lọc Hub hoặc Customer)
+            if (hubId != null || (customerName != null && !customerName.isEmpty())) {
+                Join<VnpayTransaction, ServiceRequest> requestJoin = root.join("request");
+
+                // Lọc theo Hub
+                if (hubId != null) {
+                    Join<ServiceRequest, Hub> hubJoin = requestJoin.join("currentHub");
+                    predicates.add(cb.equal(hubJoin.get("hubId"), hubId));
+                }
+
+                // Lọc theo Tên khách hàng
+                if (customerName != null && !customerName.isEmpty()) {
+                    Join<ServiceRequest, Customer> customerJoin = requestJoin.join("customer");
+                    predicates.add(cb.like(cb.lower(customerJoin.get("fullName")),
+                            "%" + customerName.toLowerCase() + "%"));
+                }
             }
 
-            return predicates;
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
     }
 }

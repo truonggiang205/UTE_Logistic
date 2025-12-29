@@ -33,7 +33,7 @@ public class CodTransactionServiceImpl implements CodTransactionService {
         CodTransaction.CodStatus statusEnum = null;
         if (statusStr != null && !statusStr.isEmpty()) {
             try {
-                statusEnum = CodTransaction.CodStatus.valueOf(statusStr);
+                statusEnum = CodTransaction.CodStatus.valueOf(statusStr.toLowerCase());
             } catch (IllegalArgumentException e) {
                 // Ignore invalid status hoặc log warning tùy ý
             }

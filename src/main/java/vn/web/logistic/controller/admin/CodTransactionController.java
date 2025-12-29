@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/admin/cod")
+@RequestMapping("/api/admin/cod")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class CodTransactionController {

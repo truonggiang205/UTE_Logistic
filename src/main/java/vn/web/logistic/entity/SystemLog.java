@@ -2,6 +2,8 @@ package vn.web.logistic.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -35,6 +37,8 @@ public class SystemLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({ "roles", "customer", "staff", "shipper", "actions", "logs", "passwordHash",
+            "hibernateLazyInitializer", "handler" })
     private User user;
 
     @Column(length = 100)
