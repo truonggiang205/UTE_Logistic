@@ -22,19 +22,19 @@ public class ServiceType {
     @Column(name = "service_name", nullable = false, length = 100)
     private String serviceName;
 
-    @Column(name = "base_fee", columnDefinition = "DECIMAL(12,2) DEFAULT 0")
+    @Column(name = "base_fee", columnDefinition = "DECIMAL(12,2)")
     private BigDecimal baseFee = BigDecimal.ZERO;
 
-    @Column(name = "extra_price_per_kg", columnDefinition = "DECIMAL(12,2) DEFAULT 0")
+    @Column(name = "extra_price_per_kg", columnDefinition = "DECIMAL(12,2)")
     private BigDecimal extraPricePerKg = BigDecimal.ZERO;
 
-    @Column(name = "cod_rate", columnDefinition = "DECIMAL(5,4) DEFAULT 0")
+    @Column(name = "cod_rate", columnDefinition = "DECIMAL(5,4)")
     private BigDecimal codRate = BigDecimal.ZERO;
 
-    @Column(name = "cod_min_fee", columnDefinition = "DECIMAL(12,2) DEFAULT 0")
+    @Column(name = "cod_min_fee", columnDefinition = "DECIMAL(12,2)")
     private BigDecimal codMinFee = BigDecimal.ZERO;
 
-    @Column(name = "insurance_rate", columnDefinition = "DECIMAL(5,4) DEFAULT 0")
+    @Column(name = "insurance_rate", columnDefinition = "DECIMAL(5,4)")
     private BigDecimal insuranceRate = BigDecimal.ZERO;
 
     private String description;

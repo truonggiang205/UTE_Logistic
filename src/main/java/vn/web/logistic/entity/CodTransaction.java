@@ -35,7 +35,7 @@ public class CodTransaction {
     private LocalDateTime settledAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('collected','settled','pending') DEFAULT 'pending'")
+    @Column(nullable = false, length = 20)
     private CodStatus status = CodStatus.pending;
 
     @Column(name = "paymentMethod", length = 50)

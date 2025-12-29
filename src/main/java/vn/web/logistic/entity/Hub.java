@@ -33,11 +33,11 @@ public class Hub {
     private String province;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('central','regional','local') DEFAULT 'local'")
+    @Column(nullable = false, length = 20)
     private HubLevel hubLevel = HubLevel.local;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Column(nullable = false, length = 20)
     private HubStatus status = HubStatus.active;
 
     private LocalDateTime createdAt;
@@ -47,12 +47,70 @@ public class Hub {
 
     @Column(length = 100)
     private String email;
-}
 
-enum HubLevel {
-    central, regional, local
-}
+    // Explicit getters/setters to support IDEs/environments
+    // where Lombok annotation processing is not enabled.
+    public String getHubName() {
+        return hubName;
+    }
 
-enum HubStatus {
-    active, inactive
+    public void setHubName(String hubName) {
+        this.hubName = hubName;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getWard() {
+        return ward;
+    }
+
+    public void setWard(String ward) {
+        this.ward = ward;
+    }
+
+    public String getDistrict() {
+        return district;
+    }
+
+    public void setDistrict(String district) {
+        this.district = district;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public void setProvince(String province) {
+        this.province = province;
+    }
+
+    public HubLevel getHubLevel() {
+        return hubLevel;
+    }
+
+    public void setHubLevel(HubLevel hubLevel) {
+        this.hubLevel = hubLevel;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }

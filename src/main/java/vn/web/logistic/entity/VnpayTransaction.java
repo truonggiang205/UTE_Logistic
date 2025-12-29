@@ -39,7 +39,7 @@ public class VnpayTransaction {
     private String vnpOrderInfo;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('pending','success','failed') DEFAULT 'pending'")
+    @Column(nullable = false, length = 20)
     private VnpayPaymentStatus paymentStatus = VnpayPaymentStatus.pending;
 
     private LocalDateTime paidAt;

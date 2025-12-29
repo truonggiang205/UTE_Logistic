@@ -24,11 +24,9 @@ public class Role {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Column(nullable = false, length = 20)
     private RoleStatus status = RoleStatus.active;
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     private Set<User> users = new HashSet<>();
 }
-
-enum RoleStatus { active, inactive }

@@ -21,7 +21,7 @@ pageEncoding="UTF-8"%>
   </head>
   <body>
     <!-- HEADER -->
-    <jsp:include page="/commons/web/header_23110097.jsp" />
+    <jsp:include page="/commons/web/header.jsp" />
     <!-- END HEADER -->
 
     <!-- Main Content -->
@@ -30,7 +30,7 @@ pageEncoding="UTF-8"%>
     </div>
 
     <!-- FOOTER -->
-    <jsp:include page="/commons/web/footer_23110097.jsp" />
+    <jsp:include page="/commons/web/footer.jsp" />
     <!-- END FOOTER -->
 
     <!-- Bootstrap JS -->

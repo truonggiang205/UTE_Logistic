@@ -22,14 +22,14 @@ public class Customer {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('individual','business') DEFAULT 'individual'")
+    @Column(nullable = false, length = 20)
     private CustomerType customerType = CustomerType.individual;
 
     @Column(name = "business_name", length = 150)
     private String businessName;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Column(nullable = false, length = 20)
     private CustomerStatus status = CustomerStatus.active;
 
     private LocalDateTime createdAt;

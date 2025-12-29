@@ -43,7 +43,7 @@ public class ServiceRequest {
     private String imageOrder;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('pending','picked','in_transit','delivered','cancelled','failed') DEFAULT 'pending'")
+    @Column(nullable = false, length = 20)
     private RequestStatus status = RequestStatus.pending;
 
     @Column(columnDefinition = "DECIMAL(10,2)")
@@ -58,7 +58,7 @@ public class ServiceRequest {
     @Column(columnDefinition = "DECIMAL(8,2)")
     private BigDecimal height;
 
-    @Column(name = "cod_amount", columnDefinition = "DECIMAL(12,2) DEFAULT 0")
+    @Column(name = "cod_amount", columnDefinition = "DECIMAL(12,2)")
     private BigDecimal codAmount = BigDecimal.ZERO;
 
     @Column(columnDefinition = "DECIMAL(10,2)")
@@ -80,7 +80,7 @@ public class ServiceRequest {
     private BigDecimal receiverPayAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('unpaid','paid','refunded') DEFAULT 'unpaid'")
+    @Column(nullable = false, length = 20)
     private PaymentStatus paymentStatus = PaymentStatus.unpaid;
 
     @ManyToOne(fetch = FetchType.LAZY)

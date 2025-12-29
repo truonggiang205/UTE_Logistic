@@ -37,7 +37,7 @@ public class CustomerAddress {
     @Column(length = 50)
     private String province;
 
-    @Column(name = "is_default", columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Column(name = "is_default", columnDefinition = "BIT")
     private Boolean isDefault = false;
 
     private String note;

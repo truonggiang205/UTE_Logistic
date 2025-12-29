@@ -35,7 +35,7 @@ public class User {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive','banned') DEFAULT 'active'")
+    @Column(nullable = false, length = 20)
     private UserStatus status = UserStatus.active;
 
     @Column(name = "avatar_url", length = 255)
@@ -63,8 +63,12 @@ public class User {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<SystemLog> logs = new ArrayList<>();
-}
 
-enum UserStatus {
-    active, inactive, banned
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }

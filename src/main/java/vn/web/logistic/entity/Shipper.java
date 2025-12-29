@@ -33,7 +33,7 @@ public class Shipper {
     private String vehicleType;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive','busy') DEFAULT 'active'")
+    @Column(nullable = false, length = 20)
     private ShipperStatus status = ShipperStatus.active;
 
     private LocalDateTime joinedAt;

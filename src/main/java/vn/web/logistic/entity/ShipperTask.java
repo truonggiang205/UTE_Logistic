@@ -35,7 +35,7 @@ public class ShipperTask {
     private LocalDateTime completedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('assigned','in_progress','completed','failed') DEFAULT 'assigned'")
+    @Column(nullable = false, length = 20)
     private TaskStatus taskStatus = TaskStatus.assigned;
 
     private String resultNote;

@@ -28,5 +28,9 @@ public class Route {
 
     private Integer estimatedTime;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private RouteStatus status = RouteStatus.active;
+
     private String description;
 }

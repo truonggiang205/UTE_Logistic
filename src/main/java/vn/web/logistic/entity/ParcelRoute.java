@@ -29,7 +29,7 @@ public class ParcelRoute {
     private Integer routeOrder;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('planned','in_progress','completed') DEFAULT 'planned'")
+    @Column(nullable = false, length = 20)
     private ParcelRouteStatus status = ParcelRouteStatus.planned;
 }
 

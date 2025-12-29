@@ -25,9 +25,9 @@ public class SiteMeshConfig {
                 builder.addExcludedPath("/auth/*"); // Exclude login, register, forgot-password
 
                 // Mapping decorators - SiteMesh sẽ tìm trong /WEB-INF/decorators/
-                builder.addDecoratorPath("/admin", "/admin_23110097.jsp");
-                builder.addDecoratorPath("/admin/*", "/admin_23110097.jsp");
-                builder.addDecoratorPath("/*", "/web_23110097.jsp");
+                builder.addDecoratorPath("/admin", "/admin.jsp");
+                builder.addDecoratorPath("/admin/*", "/admin.jsp");
+                builder.addDecoratorPath("/*", "/web.jsp");
             }
         });
         registration.addUrlPatterns("/*");

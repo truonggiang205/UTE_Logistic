@@ -43,7 +43,7 @@ public class Staff {
     private String staffPosition;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Column(nullable = false, length = 20)
     private StaffStatus status = StaffStatus.active;
 
     private LocalDateTime joinedAt;
