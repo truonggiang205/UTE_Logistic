@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Entity
 @Table(name = "SERVICE_REQUESTS")
@@ -16,8 +15,17 @@ import java.util.*;
 @EqualsAndHashCode(exclude = { "customer", "pickupAddress", "deliveryAddress", "serviceType", "currentHub" })
 public class ServiceRequest {
 
+    public enum RequestStatus {
+        pending, picked, in_transit, delivered, cancelled, failed
+    }
+
+    public enum PaymentStatus {
+        unpaid, paid, refunded
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "request_id")
     private Long requestId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,6 +52,7 @@ public class ServiceRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('pending','picked','in_transit','delivered','cancelled','failed') DEFAULT 'pending'")
+    @Builder.Default
     private RequestStatus status = RequestStatus.pending;
 
     @Column(columnDefinition = "DECIMAL(10,2)")
@@ -59,6 +68,7 @@ public class ServiceRequest {
     private BigDecimal height;
 
     @Column(name = "cod_amount", columnDefinition = "DECIMAL(12,2) DEFAULT 0")
+    @Builder.Default
     private BigDecimal codAmount = BigDecimal.ZERO;
 
     @Column(columnDefinition = "DECIMAL(10,2)")
@@ -81,6 +91,7 @@ public class ServiceRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('unpaid','paid','refunded') DEFAULT 'unpaid'")
+    @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.unpaid;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -88,12 +99,4 @@ public class ServiceRequest {
     private Hub currentHub;
 
     private LocalDateTime createdAt;
-}
-
-enum RequestStatus {
-    pending, picked, in_transit, delivered, cancelled, failed
-}
-
-enum PaymentStatus {
-    unpaid, paid, refunded
 }

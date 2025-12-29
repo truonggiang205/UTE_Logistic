@@ -16,6 +16,7 @@ public class ParcelAction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "action_id")
     private Long actionId;
 
     @ManyToOne(fetch = FetchType.LAZY)

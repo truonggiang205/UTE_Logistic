@@ -15,8 +15,13 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(exclude = { "request", "shipper" })
 public class CodTransaction {
 
+    public enum CodStatus {
+        collected, settled, pending
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "cod_tx_id")
     private Long codTxId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,12 +41,9 @@ public class CodTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('collected','settled','pending') DEFAULT 'pending'")
+    @Builder.Default
     private CodStatus status = CodStatus.pending;
 
     @Column(name = "paymentMethod", length = 50)
     private String paymentMethod;
-}
-
-enum CodStatus {
-    collected, settled, pending
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Entity
 @Table(name = "SHIPPERS")
@@ -13,9 +12,17 @@ import java.util.*;
 @AllArgsConstructor
 @Builder
 public class Shipper {
+    public enum ShipperType {
+        fulltime, parttime
+    }
+
+    public enum ShipperStatus {
+        active, inactive, busy
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "shipper_id")
     private Long shipperId;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -34,17 +41,11 @@ public class Shipper {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active','inactive','busy') DEFAULT 'active'")
+    @Builder.Default
     private ShipperStatus status = ShipperStatus.active;
 
     private LocalDateTime joinedAt;
 
+    @Builder.Default
     private BigDecimal rating = BigDecimal.valueOf(0.00);
-}
-
-enum ShipperType {
-    fulltime, parttime
-}
-
-enum ShipperStatus {
-    active, inactive, busy
 }

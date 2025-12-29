@@ -1,0 +1,76 @@
+package vn.web.logistic.repository;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import vn.web.logistic.entity.ServiceRequest;
+import vn.web.logistic.entity.ServiceRequest.RequestStatus;
+import vn.web.logistic.repository.projection.RevenueChartProjection;
+import vn.web.logistic.repository.projection.TopPerformerProjection;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+
+@Repository
+public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
+
+    /* =========================DASHBOARD=========================== */
+    // Thẻ KPI
+    // 1. Đếm theo Enum (Đếm số lượng đơn mới, hoàn thành)(2 thẻ KPI)
+    long countByStatus(ServiceRequest.RequestStatus status);
+
+    // 2. Đếm theo danh sách Enum(Đếm số đơn hàng đã hủy/ giao thất bại)(1 thẻ KPI)
+    long countByStatusIn(Collection<ServiceRequest.RequestStatus> statuses);
+
+    // 3. Tổng doanh thu (Tính tổng doanh thu từ các đơn)(1 thẻ KPI)
+    @Query("SELECT COALESCE(SUM(s.totalPrice), 0) FROM ServiceRequest s WHERE s.paymentStatus = :paymentStatus")
+    BigDecimal sumTotalRevenue(@Param("paymentStatus") ServiceRequest.PaymentStatus paymentStatus);
+
+    // Biểu đồ
+    // 4. Biểu đồ doanh thu(Tính tổng doanh thu theo ngày trong 7 ngày gần nhất)
+    @Query("""
+                SELECT
+                    function('date', s.createdAt) AS date,
+                    COALESCE(SUM(s.totalPrice), 0) AS revenue
+                FROM ServiceRequest s
+                WHERE s.createdAt >= :startDate
+                  AND s.paymentStatus = :paymentStatus
+                GROUP BY function('date', s.createdAt)
+                ORDER BY function('date', s.createdAt)
+            """)
+    List<RevenueChartProjection> getRevenueLast7Days(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("paymentStatus") ServiceRequest.PaymentStatus paymentStatus);
+
+    // Danh sách top shipper/hub
+    // 5. Top Hubs hiệu quả nhất (theo số đơn giao thành công)
+    @Query("""
+                SELECT
+                    h.id AS id,
+                    h.hubName AS name,
+                    h.address AS extraInfo,
+                    SUM(CASE WHEN s.status IN :successStatuses THEN 1 ELSE 0 END) AS successCount,
+                    SUM(CASE WHEN s.status IN :pendingStatuses THEN 1 ELSE 0 END) AS pendingCount
+
+                FROM ServiceRequest s
+                JOIN s.currentHub h
+                GROUP BY h.id, h.hubName, h.address
+                ORDER BY successCount DESC
+            """)
+    List<TopPerformerProjection> getTopHubs(
+            @Param("successStatuses") Collection<ServiceRequest.RequestStatus> successStatuses,
+            @Param("pendingStatuses") Collection<ServiceRequest.RequestStatus> pendingStatuses,
+            Pageable pageable);
+
+    /* ========================= Giám sát & Báo cáo=========================== */
+    // 6. Tìm đơn hàng có trạng thái KHÔNG PHẢI (delivered, cancelled, failed)
+    // VÀ thời gian tạo nhỏ hơn ngưỡng thời gian (ví dụ: cách đây 3 ngày)
+    @Query("SELECT r FROM ServiceRequest r WHERE r.status NOT IN (:finishedStatuses) AND r.createdAt < :thresholdDate")
+    List<ServiceRequest> findStuckOrders(
+            @Param("finishedStatuses") List<RequestStatus> finishedStatuses,
+            @Param("thresholdDate") LocalDateTime thresholdDate);
+}

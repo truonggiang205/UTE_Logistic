@@ -13,6 +13,7 @@ public class CustomerAddress {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "address_id")
     private Long addressId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,6 +39,7 @@ public class CustomerAddress {
     private String province;
 
     @Column(name = "is_default", columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Builder.Default
     private Boolean isDefault = false;
 
     private String note;

@@ -15,6 +15,7 @@ public class ParcelRoute {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "parcel_route_id")
     private Long parcelRouteId;
 
     @ManyToOne(fetch = FetchType.LAZY)

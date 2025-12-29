@@ -16,6 +16,7 @@ public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "role_id")
     private Long roleId;
 
     @Column(name = "role_name", nullable = false, unique = true, length = 50)
@@ -25,10 +26,14 @@ public class Role {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Builder.Default
     private RoleStatus status = RoleStatus.active;
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @Builder.Default
     private Set<User> users = new HashSet<>();
 }
 
-enum RoleStatus { active, inactive }
+enum RoleStatus {
+    active, inactive
+}

@@ -1,0 +1,42 @@
+package vn.web.logistic.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class WarningResponse {
+
+    private List<StuckOrderDTO> stuckOrders;
+    private List<HighDebtShipperDTO> debtShippers;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StuckOrderDTO {
+        private Long requestId;
+        private String trackingCode;
+        private String currentStatus;
+        private LocalDateTime createdTime;
+        private long daysStuck;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class HighDebtShipperDTO {
+        private Long shipperId;
+        private String shipperName;
+        private String phone;
+        private BigDecimal totalPendingCOD;
+    }
+}

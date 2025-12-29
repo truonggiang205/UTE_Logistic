@@ -30,6 +30,7 @@ public class SystemLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "log_id")
     private Long logId;
 
     @ManyToOne(fetch = FetchType.LAZY)

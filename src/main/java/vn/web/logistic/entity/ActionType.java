@@ -13,6 +13,7 @@ public class ActionType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "action_type_id")
     private Long actionTypeId;
 
     @Column(name = "action_code", nullable = false, unique = true, length = 20)

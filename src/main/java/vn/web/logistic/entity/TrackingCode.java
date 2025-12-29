@@ -14,6 +14,7 @@ public class TrackingCode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "tracking_id")
     private Long trackingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -27,6 +28,7 @@ public class TrackingCode {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Builder.Default
     private TrackingStatus status = TrackingStatus.active;
 }
 

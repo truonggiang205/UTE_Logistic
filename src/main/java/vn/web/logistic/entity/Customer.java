@@ -3,7 +3,6 @@ package vn.web.logistic.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Entity
 @Table(name = "CUSTOMERS")
@@ -15,24 +14,23 @@ public class Customer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "customer_id")
     private Long customerId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = true, unique = true) // Có thể null với khách vãng lai
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('individual','business') DEFAULT 'individual'")
-    private CustomerType customerType = CustomerType.individual;
+    @Column(name = "full_name", length = 150)
+    private String fullName; // Thêm trường fullName để lưu tên khách hàng vãng lai/có userid
 
     @Column(name = "business_name", length = 150)
     private String businessName;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
-    private CustomerStatus status = CustomerStatus.active;
-
-    private LocalDateTime createdAt;
+    @Column(columnDefinition = "ENUM('individual','business') DEFAULT 'individual'")
+    @Builder.Default
+    private CustomerType customerType = CustomerType.individual;
 
     @Column(length = 100)
     private String email;
@@ -42,6 +40,21 @@ public class Customer {
 
     @Column(name = "tax_code", length = 30)
     private String taxCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Builder.Default
+    private CustomerStatus status = CustomerStatus.active;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
 }
 
 enum CustomerType {

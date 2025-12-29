@@ -3,7 +3,6 @@ package vn.web.logistic.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Entity
 @Table(name = "HUBS")
@@ -15,6 +14,7 @@ public class Hub {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "hub_id")
     private Long hubId;
 
     @Column(name = "hub_name", nullable = false, length = 100)
@@ -34,10 +34,12 @@ public class Hub {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('central','regional','local') DEFAULT 'local'")
+    @Builder.Default
     private HubLevel hubLevel = HubLevel.local;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Builder.Default
     private HubStatus status = HubStatus.active;
 
     private LocalDateTime createdAt;

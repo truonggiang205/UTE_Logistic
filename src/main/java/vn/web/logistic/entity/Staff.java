@@ -29,6 +29,7 @@ public class Staff {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "staff_id")
     private Long staffId;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -44,6 +45,7 @@ public class Staff {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Builder.Default
     private StaffStatus status = StaffStatus.active;
 
     private LocalDateTime joinedAt;

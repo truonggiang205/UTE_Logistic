@@ -15,8 +15,15 @@ import java.util.*;
 @EqualsAndHashCode(exclude = { "roles", "customer", "staff", "shipper", "actions", "logs" })
 public class User {
 
+    public enum UserStatus {
+        active,
+        inactive,
+        banned
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
     @Column(nullable = false, unique = true, length = 50)
@@ -36,6 +43,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('active','inactive','banned') DEFAULT 'active'")
+    @Builder.Default
     private UserStatus status = UserStatus.active;
 
     @Column(name = "avatar_url", length = 255)
@@ -47,6 +55,7 @@ public class User {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "USER_ROLES", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -59,12 +68,10 @@ public class User {
     private Shipper shipper;
 
     @OneToMany(mappedBy = "actor", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<ParcelAction> actions = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<SystemLog> logs = new ArrayList<>();
-}
-
-enum UserStatus {
-    active, inactive, banned
 }

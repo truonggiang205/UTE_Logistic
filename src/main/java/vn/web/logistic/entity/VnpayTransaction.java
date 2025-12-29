@@ -15,8 +15,13 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(exclude = "request")
 public class VnpayTransaction {
 
+    public enum VnpayPaymentStatus {
+        pending, success, failed
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "vnpay_tx_id")
     private Long vnpayTxId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,13 +45,10 @@ public class VnpayTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('pending','success','failed') DEFAULT 'pending'")
+    @Builder.Default
     private VnpayPaymentStatus paymentStatus = VnpayPaymentStatus.pending;
 
     private LocalDateTime paidAt;
 
     private LocalDateTime createdAt;
-}
-
-enum VnpayPaymentStatus {
-    pending, success, failed
 }

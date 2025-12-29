@@ -2,7 +2,6 @@ package vn.web.logistic.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.*;
 
 @Entity
 @Table(name = "ROUTES")
@@ -16,6 +15,7 @@ public class Route {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "route_id")
     private Long routeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
