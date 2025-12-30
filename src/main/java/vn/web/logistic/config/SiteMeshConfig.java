@@ -1,5 +1,7 @@
 package vn.web.logistic.config;
 
+import java.util.EnumSet;
+
 import org.sitemesh.builder.SiteMeshFilterBuilder;
 import org.sitemesh.config.ConfigurableSiteMeshFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -7,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import jakarta.servlet.DispatcherType;
-import java.util.EnumSet;
 
 @Configuration
 public class SiteMeshConfig {
@@ -38,7 +39,11 @@ public class SiteMeshConfig {
                 builder.addDecoratorPath("/admin", "admin-layout.jsp");
                 builder.addDecoratorPath("/admin/**", "admin-layout.jsp");
 
-                // 4. Cấu hình Decorator cho phía người dùng (Trang chủ, Tra cứu đơn hàng...)
+                // 4. Cấu hình Decorator cho Shipper
+                builder.addDecoratorPath("/shipper", "shipper-layout.jsp");
+                builder.addDecoratorPath("/shipper/**", "shipper-layout.jsp");
+
+                // 5. Cấu hình Decorator cho phía người dùng (Trang chủ, Tra cứu đơn hàng...)
                 // "/**" sẽ khớp với tất cả các đường dẫn còn lại
                 builder.addDecoratorPath("/**", "admin-layout.jsp");
             }

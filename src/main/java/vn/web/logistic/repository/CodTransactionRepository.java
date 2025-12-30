@@ -1,5 +1,9 @@
 package vn.web.logistic.repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -8,9 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import vn.web.logistic.dto.response.WarningResponse.HighDebtShipperDTO;
 import vn.web.logistic.entity.CodTransaction;
-
-import java.math.BigDecimal;
-import java.util.List;
+import vn.web.logistic.entity.CodTransaction.CodStatus;
 
 @Repository
 public interface CodTransactionRepository extends
@@ -36,4 +38,30 @@ public interface CodTransactionRepository extends
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > :debtLimit")
         List<HighDebtShipperDTO> findHighDebtShippers(@Param("debtLimit") BigDecimal debtLimit);
+
+        // STATICTIS SHIPPER
+        // Tính tổng tiền COD chưa nộp của shipper (status = collected)
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = :status")
+        BigDecimal sumCodByShipperAndStatus(@Param("shipperId") Long shipperId,
+                        @Param("status") CodStatus status);
+
+        // Tính tổng tiền COD đã nộp hôm nay của shipper
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = :status " +
+                        "AND c.settledAt >= :startOfDay AND c.settledAt < :endOfDay")
+        BigDecimal sumCodSettledTodayByShipper(@Param("shipperId") Long shipperId,
+                        @Param("status") CodStatus status,
+                        @Param("startOfDay") LocalDateTime startOfDay,
+                        @Param("endOfDay") LocalDateTime endOfDay);
+
+        // Đếm số đơn COD chưa nộp của shipper
+
+        @Query("SELECT COUNT(c) FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = :status")
+        Long countCodByShipperAndStatus(@Param("shipperId") Long shipperId,
+                        @Param("status") CodStatus status);
 }
