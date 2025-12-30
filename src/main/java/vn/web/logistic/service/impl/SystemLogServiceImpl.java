@@ -8,11 +8,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.request.LogFilterRequest;
-import vn.web.logistic.dto.request.ReportRequest;
-import vn.web.logistic.dto.request.ReportType; // Import Enum
-import vn.web.logistic.dto.response.MonitorStatsResponse;
-import vn.web.logistic.dto.response.WarningResponse;
+
+import vn.web.logistic.dto.request.admin.LogFilterRequest;
+import vn.web.logistic.dto.request.admin.ReportRequest;
+import vn.web.logistic.dto.request.admin.ReportType;
+import vn.web.logistic.dto.response.admin.HighDebtShipperDTO;
+import vn.web.logistic.dto.response.admin.MonitorStatsResponse;
+import vn.web.logistic.dto.response.admin.WarningResponse;
 import vn.web.logistic.entity.CodTransaction;
 import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.ServiceRequest.RequestStatus;
@@ -141,7 +143,7 @@ public class SystemLogServiceImpl implements SystemLogService {
 
                 // Query 3 mức và merge kết quả (loại bỏ trùng lặp theo shipperId)
                 Set<Long> seenShipperIds = new HashSet<>();
-                List<WarningResponse.HighDebtShipperDTO> debtShippers = new java.util.ArrayList<>();
+                List<HighDebtShipperDTO> debtShippers = new java.util.ArrayList<>();
 
                 // Mức 1: Nợ > 10 triệu VÀ quá 2 ngày
                 codRepository.findHighDebtOver10M(HIGH_DEBT_LIMIT, twoDaysAgo)

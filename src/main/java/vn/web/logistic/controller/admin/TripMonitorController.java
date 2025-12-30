@@ -7,9 +7,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.response.ApiResponse;
-import vn.web.logistic.dto.response.PageResponse;
-import vn.web.logistic.dto.response.TripResponse;
+
+import vn.web.logistic.dto.response.admin.ApiResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
+import vn.web.logistic.dto.response.admin.TripResponse;
 import vn.web.logistic.service.TripMonitorService;
 
 import java.time.LocalDate;

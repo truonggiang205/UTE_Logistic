@@ -8,10 +8,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.request.VehicleRequest;
-import vn.web.logistic.dto.response.ApiResponse;
-import vn.web.logistic.dto.response.PageResponse;
-import vn.web.logistic.dto.response.VehicleResponse;
+
+import vn.web.logistic.dto.request.admin.VehicleRequest;
+import vn.web.logistic.dto.response.admin.ApiResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
+import vn.web.logistic.dto.response.admin.VehicleResponse;
 import vn.web.logistic.service.VehicleService;
 
 @RestController

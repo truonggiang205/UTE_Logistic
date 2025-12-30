@@ -7,7 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.response.VnpayReconciliationResponse;
+
+import vn.web.logistic.dto.response.admin.VnpayReconciliationResponse;
 import vn.web.logistic.entity.VnpayTransaction;
 import vn.web.logistic.repository.VnpayTransactionRepository;
 import vn.web.logistic.repository.specification.VnpaySpecification;

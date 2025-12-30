@@ -1,7 +1,8 @@
 package vn.web.logistic.service;
 
-import vn.web.logistic.dto.response.HubFilterResponse;
 import java.util.List;
+
+import vn.web.logistic.dto.response.admin.HubFilterResponse;
 
 public interface HubService {
     List<HubFilterResponse> getHubsForFilter();

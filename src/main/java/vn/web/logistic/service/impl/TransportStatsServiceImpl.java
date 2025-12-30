@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.response.TransportReportResponse;
-import vn.web.logistic.dto.response.TransportStatsResponse;
+
+import vn.web.logistic.dto.response.admin.TransportReportResponse;
+import vn.web.logistic.dto.response.admin.TransportStatsResponse;
 import vn.web.logistic.entity.Driver.DriverStatus;
 import vn.web.logistic.entity.Trip.TripStatus;
 import vn.web.logistic.entity.Vehicle.VehicleStatus;

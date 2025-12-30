@@ -1,9 +1,10 @@
 package vn.web.logistic.service;
 
 import org.springframework.data.domain.Pageable;
-import vn.web.logistic.dto.request.DriverRequest;
-import vn.web.logistic.dto.response.DriverResponse;
-import vn.web.logistic.dto.response.PageResponse;
+
+import vn.web.logistic.dto.request.admin.DriverRequest;
+import vn.web.logistic.dto.response.admin.DriverResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
 
 public interface DriverService {
 

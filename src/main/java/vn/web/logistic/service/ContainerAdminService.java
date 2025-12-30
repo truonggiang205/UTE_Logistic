@@ -1,8 +1,9 @@
 package vn.web.logistic.service;
 
 import org.springframework.data.domain.Pageable;
-import vn.web.logistic.dto.response.ContainerResponse;
-import vn.web.logistic.dto.response.PageResponse;
+
+import vn.web.logistic.dto.response.admin.ContainerResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
 
 public interface ContainerAdminService {
 

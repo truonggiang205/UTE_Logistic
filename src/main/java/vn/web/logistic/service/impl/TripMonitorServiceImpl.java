@@ -6,9 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.response.ContainerSimpleResponse;
-import vn.web.logistic.dto.response.PageResponse;
-import vn.web.logistic.dto.response.TripResponse;
+
+import vn.web.logistic.dto.response.admin.ContainerSimpleResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
+import vn.web.logistic.dto.response.admin.TripResponse;
 import vn.web.logistic.entity.Trip;
 import vn.web.logistic.entity.Trip.TripStatus;
 import vn.web.logistic.entity.TripContainer;

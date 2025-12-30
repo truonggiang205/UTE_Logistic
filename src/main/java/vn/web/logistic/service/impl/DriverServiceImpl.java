@@ -6,9 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.request.DriverRequest;
-import vn.web.logistic.dto.response.DriverResponse;
-import vn.web.logistic.dto.response.PageResponse;
+
+import vn.web.logistic.dto.request.admin.DriverRequest;
+import vn.web.logistic.dto.response.admin.DriverResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
 import vn.web.logistic.entity.Driver;
 import vn.web.logistic.entity.Driver.DriverStatus;
 import vn.web.logistic.exception.BusinessException;

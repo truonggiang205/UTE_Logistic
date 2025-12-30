@@ -10,7 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.response.VnpayReconciliationResponse;
+
+import vn.web.logistic.dto.response.admin.VnpayReconciliationResponse;
 import vn.web.logistic.service.VnpayTransactionService;
 
 import java.io.IOException;

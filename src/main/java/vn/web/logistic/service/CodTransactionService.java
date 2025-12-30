@@ -2,7 +2,9 @@ package vn.web.logistic.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import vn.web.logistic.dto.response.CodTransactionResponse;
+
+import vn.web.logistic.dto.response.admin.CodTransactionResponse;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

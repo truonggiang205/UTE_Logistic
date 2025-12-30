@@ -1,8 +1,9 @@
 package vn.web.logistic.service;
 
 import org.springframework.data.domain.Pageable;
-import vn.web.logistic.dto.response.PageResponse;
-import vn.web.logistic.dto.response.TripResponse;
+
+import vn.web.logistic.dto.response.admin.PageResponse;
+import vn.web.logistic.dto.response.admin.TripResponse;
 
 import java.time.LocalDate;
 

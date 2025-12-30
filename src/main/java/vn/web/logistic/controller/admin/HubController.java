@@ -5,7 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import vn.web.logistic.dto.response.HubFilterResponse;
+
+import vn.web.logistic.dto.response.admin.HubFilterResponse;
 import vn.web.logistic.service.HubService;
 
 import java.util.List;

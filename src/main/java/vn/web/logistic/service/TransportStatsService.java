@@ -1,9 +1,9 @@
 package vn.web.logistic.service;
 
-import vn.web.logistic.dto.response.TransportReportResponse;
-import vn.web.logistic.dto.response.TransportStatsResponse;
-
 import java.time.LocalDate;
+
+import vn.web.logistic.dto.response.admin.TransportReportResponse;
+import vn.web.logistic.dto.response.admin.TransportStatsResponse;
 
 public interface TransportStatsService {
 

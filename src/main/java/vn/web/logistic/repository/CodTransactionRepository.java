@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import vn.web.logistic.dto.response.WarningResponse.HighDebtShipperDTO;
+import vn.web.logistic.dto.response.admin.HighDebtShipperDTO;
 import vn.web.logistic.entity.CodTransaction;
 
 import java.math.BigDecimal;
@@ -31,7 +31,7 @@ public interface CodTransactionRepository extends
         // - HOẶC chưa nộp COD sau 7 ngày (bất kể số tiền)
 
         // Query 1: Nợ > 10 triệu VÀ quá 2 ngày
-        @Query("SELECT new vn.web.logistic.dto.response.WarningResponse$HighDebtShipperDTO(" +
+        @Query("SELECT new vn.web.logistic.dto.response.admin.HighDebtShipperDTO(" +
                         "  t.shipper.shipperId, " +
                         "  t.shipper.user.fullName, " +
                         "  t.shipper.user.phone, " +
@@ -47,7 +47,7 @@ public interface CodTransactionRepository extends
                         @Param("twoDaysAgo") LocalDateTime twoDaysAgo);
 
         // Query 2: Nợ > 2 triệu VÀ quá 3 ngày
-        @Query("SELECT new vn.web.logistic.dto.response.WarningResponse$HighDebtShipperDTO(" +
+        @Query("SELECT new vn.web.logistic.dto.response.admin.HighDebtShipperDTO(" +
                         "  t.shipper.shipperId, " +
                         "  t.shipper.user.fullName, " +
                         "  t.shipper.user.phone, " +
@@ -63,7 +63,7 @@ public interface CodTransactionRepository extends
                         @Param("threeDaysAgo") LocalDateTime threeDaysAgo);
 
         // Query 3: Chưa nộp COD quá 7 ngày (bất kể số tiền)
-        @Query("SELECT new vn.web.logistic.dto.response.WarningResponse$HighDebtShipperDTO(" +
+        @Query("SELECT new vn.web.logistic.dto.response.admin.HighDebtShipperDTO(" +
                         "  t.shipper.shipperId, " +
                         "  t.shipper.user.fullName, " +
                         "  t.shipper.user.phone, " +
@@ -76,4 +76,20 @@ public interface CodTransactionRepository extends
                         "HAVING SUM(t.amount) > 0")
         List<HighDebtShipperDTO> findOverdueOver7Days(
                         @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
+
+        // ==================== MANAGER DASHBOARD ====================
+
+        // Tính tổng tiền COD đang pending theo Hub (Shipper thuộc Hub đó)
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "JOIN c.shipper s " +
+                        "WHERE c.status = vn.web.logistic.entity.CodTransaction.CodStatus.pending " +
+                        "AND s.hub.hubId = :hubId")
+        BigDecimal sumPendingCodByHubId(@Param("hubId") Long hubId);
+
+        // Tính tổng tiền COD đã thu (collected) theo Hub
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "JOIN c.shipper s " +
+                        "WHERE c.status = vn.web.logistic.entity.CodTransaction.CodStatus.collected " +
+                        "AND s.hub.hubId = :hubId")
+        BigDecimal sumCollectedCodByHubId(@Param("hubId") Long hubId);
 }

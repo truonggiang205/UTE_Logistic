@@ -5,8 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.request.ServiceTypeRequest;
-import vn.web.logistic.dto.response.ServiceTypeResponse;
+
+import vn.web.logistic.dto.request.admin.ServiceTypeRequest;
+import vn.web.logistic.dto.response.admin.ServiceTypeResponse;
 import vn.web.logistic.service.ServiceTypeService;
 
 import java.util.List;

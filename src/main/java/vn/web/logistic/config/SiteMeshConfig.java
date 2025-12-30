@@ -19,37 +19,44 @@ public class SiteMeshConfig {
         registration.setFilter(new ConfigurableSiteMeshFilter() {
             @Override
             protected void applyCustomConfiguration(SiteMeshFilterBuilder builder) {
-                // 1. Loại bỏ các đường dẫn API và Tài nguyên tĩnh
-                // Dùng /** để chặn toàn bộ các thư mục con, tránh việc CSS/JS không load được
-                builder.addExcludedPath("/api/**");
+
+                // -------------------------------------------------------------
+                // 1. LOẠI TRỪ (EXCLUDE): Các file không cần giao diện
+                // -------------------------------------------------------------
                 builder.addExcludedPath("/static/**");
+                builder.addExcludedPath("/resources/**");
                 builder.addExcludedPath("/css/**");
                 builder.addExcludedPath("/js/**");
                 builder.addExcludedPath("/images/**");
-                builder.addExcludedPath("/uploads/**");
+                builder.addExcludedPath("/vendor/**");
+                builder.addExcludedPath("/api/**"); // API trả về JSON
+                builder.addExcludedPath("/login**"); // Trang Login riêng
+                builder.addExcludedPath("/register**"); // Trang Register riêng
 
-                // 2. Loại bỏ các trang xác thực (Login/Register thường có giao diện riêng,
-                // không dùng chung decorator)
-                builder.addExcludedPath("/auth/**");
-                builder.addExcludedPath("/login**");
-                builder.addExcludedPath("/register**");
+                // -------------------------------------------------------------
+                // 2. KHU VỰC MANAGER (Trưởng bưu cục)
+                // -------------------------------------------------------------
+                // Hễ URL bắt đầu bằng /manager/ -> dùng manager-layout.jsp
+                builder.addDecoratorPath("/manager/**", "/manager-layout.jsp");
 
-                // 3. Cấu hình Decorator cho Admin (Dashboard, Quản lý,..)
-                builder.addDecoratorPath("/admin", "admin-layout.jsp");
-                builder.addDecoratorPath("/admin/**", "admin-layout.jsp");
+                // -------------------------------------------------------------
+                // 3. KHU VỰC ADMIN (Quản trị hệ thống cấp cao)
+                // -------------------------------------------------------------
+                // Hễ URL bắt đầu bằng /admin/ -> dùng admin-layout.jsp
+                builder.addDecoratorPath("/admin/**", "/admin-layout.jsp");
 
-                // 4. Cấu hình Decorator cho phía người dùng (Trang chủ, Tra cứu đơn hàng...)
-                // "/**" sẽ khớp với tất cả các đường dẫn còn lại
-                builder.addDecoratorPath("/**", "admin-layout.jsp");
+                // -------------------------------------------------------------
+                // 4. KHU VỰC SHIPPER / STAFF
+                // -------------------------------------------------------------
+                // builder.addDecoratorPath("/shipper/**",
+                // "/shipper-layout.jsp");
             }
         });
 
-        // 5. Thiết lập phạm vi hoạt động của Filter
         registration.addUrlPatterns("/*");
         registration.setDispatcherTypes(EnumSet.of(DispatcherType.REQUEST, DispatcherType.FORWARD));
-
         registration.setName("sitemesh3");
-        registration.setOrder(1); // Chạy đầu tiên để bao bọc các filter khác
+        registration.setOrder(1);
 
         return registration;
     }

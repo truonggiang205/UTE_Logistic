@@ -9,10 +9,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.request.LogFilterRequest;
-import vn.web.logistic.dto.request.ReportRequest;
-import vn.web.logistic.dto.response.MonitorStatsResponse;
-import vn.web.logistic.dto.response.WarningResponse;
+
+import vn.web.logistic.dto.request.admin.LogFilterRequest;
+import vn.web.logistic.dto.request.admin.ReportRequest;
+import vn.web.logistic.dto.response.admin.MonitorStatsResponse;
+import vn.web.logistic.dto.response.admin.WarningResponse;
 import vn.web.logistic.entity.SystemLog;
 import vn.web.logistic.service.SystemLogService;
 

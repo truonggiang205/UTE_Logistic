@@ -5,7 +5,8 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
-import vn.web.logistic.dto.request.LogFilterRequest;
+
+import vn.web.logistic.dto.request.admin.LogFilterRequest;
 import vn.web.logistic.entity.SystemLog;
 import vn.web.logistic.entity.User;
 

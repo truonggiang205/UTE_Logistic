@@ -6,9 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.request.VehicleRequest;
-import vn.web.logistic.dto.response.PageResponse;
-import vn.web.logistic.dto.response.VehicleResponse;
+
+import vn.web.logistic.dto.request.admin.VehicleRequest;
+import vn.web.logistic.dto.response.admin.PageResponse;
+import vn.web.logistic.dto.response.admin.VehicleResponse;
 import vn.web.logistic.entity.Hub;
 import vn.web.logistic.entity.Vehicle;
 import vn.web.logistic.entity.Vehicle.VehicleStatus;

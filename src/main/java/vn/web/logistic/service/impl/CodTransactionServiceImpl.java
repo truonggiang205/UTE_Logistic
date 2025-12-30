@@ -5,7 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.response.CodTransactionResponse;
+
+import vn.web.logistic.dto.response.admin.CodTransactionResponse;
 import vn.web.logistic.entity.CodTransaction;
 import vn.web.logistic.repository.CodTransactionRepository;
 import vn.web.logistic.repository.specification.CodTransactionSpecification;

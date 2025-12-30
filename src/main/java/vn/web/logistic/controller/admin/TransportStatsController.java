@@ -7,9 +7,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import vn.web.logistic.dto.response.ApiResponse;
-import vn.web.logistic.dto.response.TransportReportResponse;
-import vn.web.logistic.dto.response.TransportStatsResponse;
+
+import vn.web.logistic.dto.response.admin.ApiResponse;
+import vn.web.logistic.dto.response.admin.TransportReportResponse;
+import vn.web.logistic.dto.response.admin.TransportStatsResponse;
 import vn.web.logistic.service.TransportStatsService;
 
 import java.time.LocalDate;

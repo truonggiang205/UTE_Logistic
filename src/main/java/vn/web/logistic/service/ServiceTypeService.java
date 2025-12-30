@@ -1,7 +1,8 @@
 package vn.web.logistic.service;
 
-import vn.web.logistic.dto.request.ServiceTypeRequest;
-import vn.web.logistic.dto.response.ServiceTypeResponse;
+import vn.web.logistic.dto.request.admin.ServiceTypeRequest;
+import vn.web.logistic.dto.response.admin.ServiceTypeResponse;
+
 import java.util.List;
 
 public interface ServiceTypeService {

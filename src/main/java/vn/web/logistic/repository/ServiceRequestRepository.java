@@ -73,4 +73,40 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     List<ServiceRequest> findStuckOrders(
             @Param("finishedStatuses") List<RequestStatus> finishedStatuses,
             @Param("thresholdDate") LocalDateTime thresholdDate);
+
+    /* ========================= MANAGER DASHBOARD =========================== */
+
+    // Đếm số đơn hàng theo Hub và trạng thái
+    @Query("SELECT COUNT(s) FROM ServiceRequest s WHERE s.currentHub.hubId = :hubId AND s.status = :status")
+    long countByHubIdAndStatus(@Param("hubId") Long hubId, @Param("status") RequestStatus status);
+
+    // Đếm tổng số đơn hàng theo Hub
+    @Query("SELECT COUNT(s) FROM ServiceRequest s WHERE s.currentHub.hubId = :hubId")
+    long countByHubId(@Param("hubId") Long hubId);
+
+    // Tìm đơn hàng theo requestId hoặc senderPhone (pickupAddress.contactPhone)
+    @Query("SELECT s FROM ServiceRequest s " +
+            "LEFT JOIN FETCH s.pickupAddress " +
+            "LEFT JOIN FETCH s.deliveryAddress " +
+            "LEFT JOIN FETCH s.currentHub " +
+            "WHERE s.requestId = :requestId " +
+            "   OR s.pickupAddress.contactPhone = :senderPhone")
+    List<ServiceRequest> findByRequestIdOrSenderPhone(@Param("requestId") Long requestId,
+            @Param("senderPhone") String senderPhone);
+
+    // Tìm đơn hàng theo mã đơn hàng (String search)
+    @Query("SELECT s FROM ServiceRequest s " +
+            "LEFT JOIN FETCH s.pickupAddress " +
+            "LEFT JOIN FETCH s.deliveryAddress " +
+            "LEFT JOIN FETCH s.currentHub " +
+            "WHERE CAST(s.requestId AS string) LIKE %:keyword% " +
+            "   OR s.pickupAddress.contactPhone LIKE %:keyword%")
+    List<ServiceRequest> searchByKeyword(@Param("keyword") String keyword);
+
+    // Đếm số đơn hàng hôm nay theo Hub
+    @Query("SELECT COUNT(s) FROM ServiceRequest s " +
+            "WHERE s.currentHub.hubId = :hubId " +
+            "AND s.createdAt >= :startOfDay")
+    long countTodayOrdersByHubId(@Param("hubId") Long hubId,
+            @Param("startOfDay") LocalDateTime startOfDay);
 }

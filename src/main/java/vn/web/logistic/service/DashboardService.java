@@ -1,7 +1,7 @@
 package vn.web.logistic.service;
 
-import vn.web.logistic.dto.response.ChartResponse;
-import vn.web.logistic.dto.response.DashboardKpiResponse;
+import vn.web.logistic.dto.response.admin.ChartResponse;
+import vn.web.logistic.dto.response.admin.DashboardKpiResponse;
 import vn.web.logistic.repository.projection.TopPerformerProjection;
 
 import java.util.List;

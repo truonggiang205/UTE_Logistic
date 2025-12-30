@@ -1,9 +1,10 @@
 package vn.web.logistic.service;
 
 import org.springframework.data.domain.Pageable;
-import vn.web.logistic.dto.request.VehicleRequest;
-import vn.web.logistic.dto.response.PageResponse;
-import vn.web.logistic.dto.response.VehicleResponse;
+
+import vn.web.logistic.dto.request.admin.VehicleRequest;
+import vn.web.logistic.dto.response.admin.PageResponse;
+import vn.web.logistic.dto.response.admin.VehicleResponse;
 
 public interface VehicleService {
 

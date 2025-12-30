@@ -8,10 +8,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.request.DriverRequest;
-import vn.web.logistic.dto.response.ApiResponse;
-import vn.web.logistic.dto.response.DriverResponse;
-import vn.web.logistic.dto.response.PageResponse;
+
+import vn.web.logistic.dto.request.admin.DriverRequest;
+import vn.web.logistic.dto.response.admin.ApiResponse;
+import vn.web.logistic.dto.response.admin.DriverResponse;
+import vn.web.logistic.dto.response.admin.PageResponse;
 import vn.web.logistic.service.DriverService;
 
 import java.util.Map;

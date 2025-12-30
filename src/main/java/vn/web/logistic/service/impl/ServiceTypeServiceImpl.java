@@ -3,8 +3,9 @@ package vn.web.logistic.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.dto.request.ServiceTypeRequest;
-import vn.web.logistic.dto.response.ServiceTypeResponse;
+
+import vn.web.logistic.dto.request.admin.ServiceTypeRequest;
+import vn.web.logistic.dto.response.admin.ServiceTypeResponse;
 import vn.web.logistic.entity.ServiceType;
 import vn.web.logistic.repository.ServiceTypeRepository;
 import vn.web.logistic.service.ServiceTypeService;

@@ -2,7 +2,8 @@ package vn.web.logistic.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import vn.web.logistic.dto.response.HubFilterResponse;
+
+import vn.web.logistic.dto.response.admin.HubFilterResponse;
 import vn.web.logistic.repository.HubRepository;
 import vn.web.logistic.service.HubService;
 
