@@ -64,4 +64,19 @@ public interface CodTransactionRepository extends
                         "AND c.status = :status")
         Long countCodByShipperAndStatus(@Param("shipperId") Long shipperId,
                         @Param("status") CodStatus status);
+
+        // Lấy danh sách COD transactions chưa nộp (collected) của shipper
+        @Query("SELECT c FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = :status " +
+                        "ORDER BY c.collectedAt DESC")
+        List<CodTransaction> findByShipperIdAndStatus(@Param("shipperId") Long shipperId,
+                        @Param("status") CodStatus status);
+
+        // Lấy danh sách COD đã xác nhận (settled)
+        @Query("SELECT c FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = 'settled' " +
+                        "ORDER BY c.settledAt DESC")
+        List<CodTransaction> findSettledByShipperId(@Param("shipperId") Long shipperId);
 }

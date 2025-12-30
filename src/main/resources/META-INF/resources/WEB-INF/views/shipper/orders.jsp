@@ -87,35 +87,61 @@
   <div class="card shadow mb-4">
     <div class="card-header py-3 bg-light">
       <h6 class="m-0 font-weight-bold text-primary">
-        <i class="fas fa-filter"></i> Bộ lọc
+        <i class="fas fa-filter"></i> Bộ lọc & Tìm kiếm
       </h6>
     </div>
     <div class="card-body">
-      <form method="GET" action="${pageContext.request.contextPath}/shipper/orders" class="form-inline">
-        <div class="form-group mr-3 mb-2">
-          <label for="taskType" class="mr-2 font-weight-bold">Loại đơn:</label>
-          <select name="taskType" id="taskType" class="form-control">
-            <option value="all" ${selectedTaskType == 'all' ? 'selected' : ''}>Tất cả</option>
-            <option value="pickup" ${selectedTaskType == 'pickup' ? 'selected' : ''}>Lấy hàng</option>
-            <option value="delivery" ${selectedTaskType == 'delivery' ? 'selected' : ''}>Giao hàng</option>
-          </select>
+      <form method="GET" action="${pageContext.request.contextPath}/shipper/orders" id="filterForm">
+        <div class="row">
+          <!-- Tìm kiếm -->
+          <div class="col-md-4 mb-3">
+            <label for="search" class="font-weight-bold small">Tìm kiếm:</label>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+              </div>
+              <input type="text" name="search" id="search" class="form-control" 
+                     placeholder="Mã đơn, SĐT, tên khách..." value="${search}">
+            </div>
+          </div>
+          <!-- Loại đơn -->
+          <div class="col-md-3 mb-3">
+            <label for="taskType" class="font-weight-bold small">Loại đơn:</label>
+            <select name="taskType" id="taskType" class="form-control">
+              <option value="all" ${selectedTaskType == 'all' ? 'selected' : ''}>Tất cả</option>
+              <option value="pickup" ${selectedTaskType == 'pickup' ? 'selected' : ''}>Lấy hàng</option>
+              <option value="delivery" ${selectedTaskType == 'delivery' ? 'selected' : ''}>Giao hàng</option>
+            </select>
+          </div>
+          <!-- Trạng thái -->
+          <div class="col-md-3 mb-3">
+            <label for="status" class="font-weight-bold small">Trạng thái:</label>
+            <select name="status" id="status" class="form-control">
+              <option value="all" ${selectedStatus == 'all' ? 'selected' : ''}>Tất cả</option>
+              <option value="assigned" ${selectedStatus == 'assigned' ? 'selected' : ''}>Chờ xử lý</option>
+              <option value="in_progress" ${selectedStatus == 'in_progress' ? 'selected' : ''}>Đang xử lý</option>
+              <option value="completed" ${selectedStatus == 'completed' ? 'selected' : ''}>Hoàn thành</option>
+              <option value="failed" ${selectedStatus == 'failed' ? 'selected' : ''}>Thất bại</option>
+            </select>
+          </div>
+          <!-- Buttons -->
+          <div class="col-md-2 mb-3">
+            <label class="d-block small">&nbsp;</label>
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fas fa-search"></i> Tìm
+            </button>
+          </div>
         </div>
-        <div class="form-group mr-3 mb-2">
-          <label for="status" class="mr-2 font-weight-bold">Trạng thái:</label>
-          <select name="status" id="status" class="form-control">
-            <option value="all" ${selectedStatus == 'all' ? 'selected' : ''}>Tất cả</option>
-            <option value="assigned" ${selectedStatus == 'assigned' ? 'selected' : ''}>Chờ xử lý</option>
-            <option value="in_progress" ${selectedStatus == 'in_progress' ? 'selected' : ''}>Đang xử lý</option>
-            <option value="completed" ${selectedStatus == 'completed' ? 'selected' : ''}>Hoàn thành</option>
-            <option value="failed" ${selectedStatus == 'failed' ? 'selected' : ''}>Thất bại</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary mb-2">
-          <i class="fas fa-search"></i> Lọc
-        </button>
-        <a href="${pageContext.request.contextPath}/shipper/orders" class="btn btn-secondary mb-2 ml-2">
-          <i class="fas fa-redo"></i> Reset
-        </a>
+        <c:if test="${not empty search || selectedTaskType != 'all' || selectedStatus != 'all'}">
+          <div class="mt-2">
+            <a href="${pageContext.request.contextPath}/shipper/orders" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-times"></i> Xóa bộ lọc
+            </a>
+            <span class="text-muted ml-2 small">
+              Tìm thấy <strong>${totalOrders}</strong> kết quả
+            </span>
+          </div>
+        </c:if>
       </form>
     </div>
   </div>
@@ -197,7 +223,9 @@
                     <td class="text-center">
                       <div class="btn-group" role="group">
                         <button type="button" class="btn btn-sm btn-info btn-view-detail"
+                                data-task-id="${order.taskId}"
                                 data-tracking="${order.trackingNumber}"
+                                data-item-name="${order.itemName}"
                                 data-contact-name="${order.contactName}"
                                 data-contact-phone="${order.contactPhone}"
                                 data-contact-address="${order.contactAddress}"
@@ -206,6 +234,7 @@
                                 data-status-text="${order.statusText}"
                                 data-status-badge="${order.statusBadge}"
                                 data-task-type="${order.taskType}"
+                                data-task-type-text="${order.taskTypeText}"
                                 title="Xem chi tiết">
                           <i class="fas fa-eye"></i>
                         </button>
@@ -228,6 +257,62 @@
           </tbody>
         </table>
       </div>
+      
+      <!-- Pagination -->
+      <c:if test="${totalPages > 1}">
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <div class="text-muted small">
+            Hiển thị ${pageNumber * pageSize + 1} - ${pageNumber * pageSize + orders.size()} / ${totalOrders} đơn
+          </div>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              <!-- First Page -->
+              <li class="page-item ${pageNumber == 0 ? 'disabled' : ''}">
+                <a class="page-link" href="${pageContext.request.contextPath}/shipper/orders?page=0&taskType=${selectedTaskType}&status=${selectedStatus}&search=${search}">
+                  <i class="fas fa-angle-double-left"></i>
+                </a>
+              </li>
+              <!-- Previous Page -->
+              <li class="page-item ${pageNumber == 0 ? 'disabled' : ''}">
+                <a class="page-link" href="${pageContext.request.contextPath}/shipper/orders?page=${pageNumber - 1}&taskType=${selectedTaskType}&status=${selectedStatus}&search=${search}">
+                  <i class="fas fa-angle-left"></i>
+                </a>
+              </li>
+              
+              <!-- Page Numbers -->
+              <c:forEach begin="0" end="${totalPages - 1}" var="i">
+                <c:if test="${i == pageNumber || i == pageNumber - 1 || i == pageNumber + 1 || i == 0 || i == totalPages - 1}">
+                  <c:if test="${i == pageNumber - 1 && pageNumber > 2}">
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  </c:if>
+                  <li class="page-item ${pageNumber == i ? 'active' : ''}">
+                    <a class="page-link" href="${pageContext.request.contextPath}/shipper/orders?page=${i}&taskType=${selectedTaskType}&status=${selectedStatus}&search=${search}">
+                      ${i + 1}
+                    </a>
+                  </li>
+                  <c:if test="${i == pageNumber + 1 && pageNumber < totalPages - 3}">
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  </c:if>
+                </c:if>
+              </c:forEach>
+              
+              <!-- Next Page -->
+              <li class="page-item ${pageNumber == totalPages - 1 ? 'disabled' : ''}">
+                <a class="page-link" href="${pageContext.request.contextPath}/shipper/orders?page=${pageNumber + 1}&taskType=${selectedTaskType}&status=${selectedStatus}&search=${search}">
+                  <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+              <!-- Last Page -->
+              <li class="page-item ${pageNumber == totalPages - 1 ? 'disabled' : ''}">
+                <a class="page-link" href="${pageContext.request.contextPath}/shipper/orders?page=${totalPages - 1}&taskType=${selectedTaskType}&status=${selectedStatus}&search=${search}">
+                  <i class="fas fa-angle-double-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </c:if>
+      
     </div>
   </div>
 </div>

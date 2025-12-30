@@ -133,12 +133,6 @@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
         </a>
         <a
           class="dropdown-item"
-          href="${pageContext.request.contextPath}/shipper/vehicle">
-          <i class="fas fa-motorcycle fa-sm fa-fw mr-2 text-gray-400"></i>
-          Phương tiện
-        </a>
-        <a
-          class="dropdown-item"
           href="${pageContext.request.contextPath}/shipper/earnings">
           <i class="fas fa-wallet fa-sm fa-fw mr-2 text-gray-400"></i>
           Thu nhập

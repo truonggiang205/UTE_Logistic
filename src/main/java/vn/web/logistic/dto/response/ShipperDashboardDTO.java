@@ -100,5 +100,6 @@ public class ShipperDashboardDTO {
         private String statusBadge;
         private String taskType; // "pickup" hoặc "delivery"
         private String taskTypeText; // "Lấy hàng" hoặc "Giao hàng"
+        private String itemName; // Tên hàng hóa
     }
 }

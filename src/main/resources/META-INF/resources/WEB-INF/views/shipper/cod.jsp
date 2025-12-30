@@ -3,10 +3,24 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
 <div class="container-fluid">
+    <!-- Flash Messages -->
+    <c:if test="${not empty success}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> ${success}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty error}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> ${error}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    </c:if>
+
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-money-bill-wave text-info"></i> Quản lý tiền thu hộ (COD)
+            <i class="fas fa-money-bill-wave text-info"></i> Quản lý tiền thu hộ (COD + Cước)
         </h1>
     </div>
 
@@ -17,7 +31,7 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-uppercase mb-1 font-weight-bold">Tổng COD chưa nộp</div>
+                            <div class="text-uppercase mb-1 font-weight-bold">Tổng tiền cần nộp (COD+Cước)</div>
                             <div class="h3 mb-0 font-weight-bold">
                                 <fmt:formatNumber value="${totalUnpaidCod != null ? totalUnpaidCod : 0}" type="currency" currencySymbol="" maxFractionDigits="0"/>đ
                             </div>
@@ -103,12 +117,12 @@
                                     <tr>
                                         <td><input type="checkbox" name="codOrderId" value="${order.id}" data-amount="${order.codAmount}"></td>
                                         <td><strong>${order.trackingNumber}</strong></td>
-                                        <td>${order.receiverName}</td>
+                                        <td>${order.contactName}</td>
                                         <td class="text-right text-danger font-weight-bold">
                                             <fmt:formatNumber value="${order.codAmount}" type="currency" currencySymbol="" maxFractionDigits="0"/>đ
                                         </td>
                                         <td>
-                                            <fmt:formatDate value="${order.deliveredAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                            ${order.statusText}
                                         </td>
                                         <td><span class="badge badge-warning">Chờ nộp</span></td>
                                     </tr>
@@ -168,10 +182,19 @@
                                         </td>
                                         <td class="text-center">${transaction.orderCount}</td>
                                         <td>
-                                            <fmt:formatDate value="${transaction.submittedAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                            ${transaction.submittedAt}
                                         </td>
                                         <td>${transaction.receiverName}</td>
-                                        <td><span class="badge badge-success">Đã xác nhận</span></td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${transaction.status == 'collected'}">
+                                                    <span class="badge badge-warning">Chờ duyệt</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge badge-success">Đã xác nhận</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
                                     </tr>
                                 </c:forEach>
                             </c:otherwise>

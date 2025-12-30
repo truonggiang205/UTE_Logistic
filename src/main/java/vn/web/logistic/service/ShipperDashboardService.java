@@ -6,30 +6,56 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import vn.web.logistic.dto.response.CodHistoryDTO;
+import vn.web.logistic.dto.response.OrderDetailDTO;
 import vn.web.logistic.dto.response.ShipperDashboardDTO;
 import vn.web.logistic.dto.response.ShipperDashboardDTO.TodayOrderDTO;
+import vn.web.logistic.dto.response.ShipperEarningsDTO;
+import vn.web.logistic.dto.response.ShipperProfileDTO;
 
+/**
+ * Service interface cho Shipper Dashboard
+ */
 public interface ShipperDashboardService {
 
-    // Lấy dữ liệu dashboard cho shipper dựa trên email đăng nhập
+    // DASHBOARD
+
     ShipperDashboardDTO getDashboardData(String email);
 
-    // Lấy dữ liệu dashboard cho shipper dựa trên shipper ID
     ShipperDashboardDTO getDashboardDataByShipperId(Long shipperId);
 
-    // Shipper update pickup status
+    // TASK MANAGEMENT
+
     void updatePickupStatus(Long taskId, String status, String note, String shipperEmail);
 
-    // Shipper update delivery status
     void updateDeliveryStatus(Long taskId, String status, String note, String shipperEmail);
 
-    // Lấy tất cả đơn hàng của shipper với filter
+    // ORDER MANAGEMENT
+
     List<TodayOrderDTO> getAllOrdersByShipper(String shipperEmail, String taskType, String status);
 
-    // Lấy các đơn đang xử lý (in_progress) - cho trang "Đang giao hàng"
     List<TodayOrderDTO> getInProgressTasks(String shipperEmail);
 
-    // Lấy lịch sử đơn hàng (completed/failed) với filter theo ngày và phân trang
     Page<TodayOrderDTO> getOrderHistory(String shipperEmail, LocalDate fromDate, LocalDate toDate,
             String status, Pageable pageable);
+
+    OrderDetailDTO getOrderDetail(Long taskId, String shipperEmail);
+
+    // COD MANAGEMENT
+
+    List<TodayOrderDTO> getUnpaidCodOrders(String shipperEmail);
+
+    java.math.BigDecimal getTotalUnpaidCod(String shipperEmail);
+
+    void submitCod(String shipperEmail, java.util.List<Long> codTxIds, String paymentMethod, String note);
+
+    List<CodHistoryDTO> getCodHistory(String shipperEmail);
+
+    // EARNINGS MANAGEMENT
+
+    ShipperEarningsDTO getEarningsData(String shipperEmail);
+
+    // PROFILE MANAGEMENT
+
+    ShipperProfileDTO getProfile(String shipperEmail);
 }

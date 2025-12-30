@@ -97,16 +97,6 @@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
     </a>
   </li>
 
-  <!-- Nav Item - Phương tiện -->
-  <li class="nav-item ${currentPage == 'vehicle' ? 'active' : ''}">
-    <a
-      class="nav-link"
-      href="${pageContext.request.contextPath}/shipper/vehicle">
-      <i class="fas fa-fw fa-motorcycle"></i>
-      <span>Phương tiện</span>
-    </a>
-  </li>
-
   <hr class="sidebar-divider d-none d-md-block" />
 
   <!-- Sidebar Toggler -->

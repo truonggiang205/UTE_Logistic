@@ -5,19 +5,29 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.web.logistic.dto.response.CodHistoryDTO;
+import vn.web.logistic.dto.response.EarningHistoryDTO;
+import vn.web.logistic.dto.response.OrderDetailDTO;
 import vn.web.logistic.dto.response.ShipperDashboardDTO;
 import vn.web.logistic.dto.response.ShipperDashboardDTO.TodayOrderDTO;
+import vn.web.logistic.dto.response.ShipperEarningsDTO;
+import vn.web.logistic.dto.response.ShipperProfileDTO;
 import vn.web.logistic.entity.ActionType;
+import vn.web.logistic.entity.CodTransaction;
 import vn.web.logistic.entity.CodTransaction.CodStatus;
+import vn.web.logistic.entity.Hub;
 import vn.web.logistic.entity.ParcelAction;
 import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.ServiceRequest.RequestStatus;
@@ -115,12 +125,12 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         Long deliveryCompletedCount = shipperTaskRepository.countCompletedTodayByShipperAndType(
                 shipperId, TaskType.delivery, TaskStatus.completed, startOfDay, endOfDay);
 
-        // === Shipper Info ===
+        // Shipper Info
         Shipper shipper = shipperRepository.findById(shipperId).orElse(null);
         BigDecimal shipperRating = shipper != null ? shipper.getRating() : BigDecimal.valueOf(0);
         Long totalRatings = 0L;
 
-        // === Monthly Stats ===
+        // Monthly Stats
         Long monthlyOrders = shipperTaskRepository.countCompletedMonthlyByShipper(
                 shipperId, TaskStatus.completed, startOfMonth, endOfMonth);
 
@@ -139,7 +149,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                     .intValue();
         }
 
-        // === Today's Orders ===
+        // Today's Orders
 
         // Pickup orders hôm nay
         List<ShipperTask> pickupTasks = shipperTaskRepository.findTodayTasksByShipperAndType(
@@ -306,7 +316,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 .build();
     }
 
-    // ==================== UPDATE PICKUP STATUS ====================
+    // UPDATE PICKUP STATUS
 
     @Override
     @Transactional
@@ -377,7 +387,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         }
     }
 
-    // ==================== UPDATE DELIVERY STATUS ====================
+    // UPDATE DELIVERY STATUS
 
     @Override
     @Transactional
@@ -434,12 +444,16 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     // Cập nhật trạng thái ServiceRequest sau khi delivery
     private void updateServiceRequestStatusAfterDelivery(ShipperTask task, TaskStatus taskStatus) {
         var request = task.getRequest();
+        var shipper = task.getShipper();
 
         if (taskStatus == TaskStatus.completed) {
             // Delivery hoàn thành → Đơn hàng chuyển sang "delivered" (đã giao hàng)
             request.setStatus(RequestStatus.delivered);
             serviceRequestRepository.save(request);
             log.info("Request {} chuyển sang DELIVERED", request.getRequestId());
+
+            // Tạo COD Transaction nếu có tiền thu hộ
+            createCodTransactionIfNeeded(request, shipper);
         } else if (taskStatus == TaskStatus.failed) {
             // Delivery thất bại → Đơn hàng chuyển sang "failed"
             request.setStatus(RequestStatus.failed);
@@ -448,7 +462,57 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         }
     }
 
-    // ==================== PARCEL ACTION HISTORY ====================
+    /**
+     * Tạo COD Transaction khi giao hàng thành công
+     * Shipper cần thu và nộp: receiverPayAmount = COD + Cước vận chuyển
+     * Status = pending (shipper đang giữ tiền, chờ nộp)
+     */
+    private void createCodTransactionIfNeeded(ServiceRequest request, Shipper shipper) {
+        // Tính tổng tiền shipper cần thu = receiverPayAmount (COD + Cước nếu người nhận
+        // trả)
+        BigDecimal totalCollect = request.getReceiverPayAmount();
+
+        // Nếu receiverPayAmount null, tính = codAmount + totalPrice
+        if (totalCollect == null || totalCollect.compareTo(BigDecimal.ZERO) <= 0) {
+            BigDecimal cod = request.getCodAmount() != null ? request.getCodAmount() : BigDecimal.ZERO;
+            BigDecimal shipping = request.getTotalPrice() != null ? request.getTotalPrice() : BigDecimal.ZERO;
+            totalCollect = cod.add(shipping);
+        }
+
+        // Bỏ qua nếu không có tiền cần thu
+        if (totalCollect == null || totalCollect.compareTo(BigDecimal.ZERO) <= 0) {
+            log.info("Request {} không có tiền cần thu (COD=0, Cước=0), bỏ qua COD Transaction",
+                    request.getRequestId());
+            return;
+        }
+
+        // Kiểm tra xem đã có COD Transaction cho đơn này chưa
+        var existingCod = codTransactionRepository
+                .findAll()
+                .stream()
+                .filter(c -> c.getRequest() != null &&
+                        c.getRequest().getRequestId().equals(request.getRequestId()))
+                .findFirst();
+
+        if (existingCod.isPresent()) {
+            log.info("Request {} đã có COD Transaction, bỏ qua", request.getRequestId());
+            return;
+        }
+
+        // Tạo COD Transaction mới với status = pending (shipper đang giữ tiền, chờ nộp)
+        CodTransaction codTx = CodTransaction.builder()
+                .request(request)
+                .shipper(shipper)
+                .amount(totalCollect) // COD + Cước
+                .status(CodStatus.pending) // Chờ shipper nộp
+                .build();
+
+        codTransactionRepository.save(codTx);
+        log.info("Đã tạo COD Transaction cho request {}: {}đ (COD+Cước), status=pending (chờ shipper nộp)",
+                request.getRequestId(), totalCollect);
+    }
+
+    // PARCEL ACTION HISTORY
 
     /**
      * Ghi nhận lịch sử hành động vào bảng PARCEL_ACTIONS
@@ -506,7 +570,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         };
     }
 
-    // ==================== GET ALL ORDERS ====================
+    // GET ALL ORDERS
 
     @Override
     public List<TodayOrderDTO> getAllOrdersByShipper(String shipperEmail, String taskType, String status) {
@@ -591,6 +655,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 .statusBadge(getStatusBadge(task.getTaskStatus()))
                 .taskType(task.getTaskType().name())
                 .taskTypeText(isPickup ? "Lấy hàng" : "Giao hàng")
+                .itemName(request.getItemName() != null ? request.getItemName() : "Hàng hóa")
                 .build();
     }
 
@@ -618,7 +683,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         return sb.toString();
     }
 
-    // ==================== GET IN PROGRESS TASKS ====================
+    // GET IN PROGRESS TASKS
 
     @Override
     public List<TodayOrderDTO> getInProgressTasks(String shipperEmail) {
@@ -643,12 +708,12 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 .collect(Collectors.toList());
     }
 
-    // ==================== GET ORDER HISTORY ====================
+    // GET ORDER HISTORY
 
     @Override
-    public org.springframework.data.domain.Page<TodayOrderDTO> getOrderHistory(
+    public Page<TodayOrderDTO> getOrderHistory(
             String shipperEmail, LocalDate fromDate, LocalDate toDate,
-            String status, org.springframework.data.domain.Pageable pageable) {
+            String status, Pageable pageable) {
 
         log.info("Lấy lịch sử đơn hàng của shipper: {}, từ {} đến {}, status: {}",
                 shipperEmail, fromDate, toDate, status);
@@ -685,11 +750,516 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 : LocalDate.now().atTime(LocalTime.MAX);
 
         // 4. Lấy tasks từ repository với phân trang
-        org.springframework.data.domain.Page<ShipperTask> taskPage = shipperTaskRepository
+        Page<ShipperTask> taskPage = shipperTaskRepository
                 .findHistoryByShipperAndStatusAndDateRange(
                         shipperId, statusList, startDateTime, endDateTime, pageable);
 
         // 5. Convert to DTO
         return taskPage.map(this::convertToOrderDTO);
+    }
+
+    // GET ORDER DETAIL
+
+    @Override
+    public OrderDetailDTO getOrderDetail(Long taskId, String shipperEmail) {
+        log.info("Lấy chi tiết đơn hàng taskId={} cho shipper: {}", taskId, shipperEmail);
+
+        // 1. Tìm shipper
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            log.warn("Không tìm thấy shipper với email: {}", shipperEmail);
+            return null;
+        }
+
+        // 2. Tìm task
+        ShipperTask task = shipperTaskRepository.findById(taskId).orElse(null);
+        if (task == null) {
+            log.warn("Không tìm thấy task với id: {}", taskId);
+            return null;
+        }
+
+        // 3. Kiểm tra task có thuộc về shipper không
+        if (!task.getShipper().getShipperId().equals(shipper.getShipperId())) {
+            log.warn("Task {} không thuộc về shipper {}", taskId, shipperEmail);
+            return null;
+        }
+
+        ServiceRequest request = task.getRequest();
+        if (request == null) {
+            return null;
+        }
+
+        // 4. Build DTO
+        var builder = OrderDetailDTO.builder()
+                // Thông tin đơn hàng
+                .requestId(request.getRequestId())
+                .trackingNumber("VN" + String.format("%08d", request.getRequestId()))
+                .itemName(request.getItemName() != null ? request.getItemName() : "Hàng hóa")
+                .status(request.getStatus().name())
+                .statusText(getRequestStatusText(request.getStatus()))
+                .statusBadge(getRequestStatusBadge(request.getStatus()))
+                // Task info
+                .taskId(task.getTaskId())
+                .taskType(task.getTaskType().name())
+                .taskTypeText(task.getTaskType() == TaskType.pickup ? "Lấy hàng" : "Giao hàng")
+                .taskStatus(task.getTaskStatus().name())
+                .taskStatusText(getStatusText(task.getTaskStatus(), task.getTaskType()))
+                .assignedAt(task.getAssignedAt())
+                .completedAt(task.getCompletedAt())
+                .resultNote(task.getResultNote())
+                // Kích thước & Trọng lượng
+                .weight(request.getWeight())
+                .length(request.getLength())
+                .width(request.getWidth())
+                .height(request.getHeight())
+                .chargeableWeight(request.getChargeableWeight())
+                // Chi phí
+                .codAmount(request.getCodAmount())
+                .shippingFee(request.getShippingFee())
+                .codFee(request.getCodFee())
+                .insuranceFee(request.getInsuranceFee())
+                .totalPrice(request.getTotalPrice())
+                .receiverPayAmount(request.getReceiverPayAmount())
+                .paymentStatus(request.getPaymentStatus() != null ? request.getPaymentStatus().name() : "unpaid")
+                .paymentStatusText(getPaymentStatusText(request.getPaymentStatus()))
+                // Thông tin khác
+                .note(request.getNote())
+                .imageOrder(request.getImageOrder())
+                .expectedPickupTime(request.getExpectedPickupTime())
+                .createdAt(request.getCreatedAt());
+
+        // Thông tin người gửi (pickup address)
+        if (request.getPickupAddress() != null) {
+            var addr = request.getPickupAddress();
+            builder.senderName(addr.getContactName())
+                    .senderPhone(addr.getContactPhone())
+                    .senderAddress(formatAddress(addr));
+        }
+
+        // Thông tin người nhận (delivery address)
+        if (request.getDeliveryAddress() != null) {
+            var addr = request.getDeliveryAddress();
+            builder.receiverName(addr.getContactName())
+                    .receiverPhone(addr.getContactPhone())
+                    .receiverAddress(formatAddress(addr));
+        }
+
+        // Service type
+        if (request.getServiceType() != null) {
+            builder.serviceTypeName(request.getServiceType().getServiceName());
+        }
+
+        // Customer info
+        if (request.getCustomer() != null) {
+            builder.customerName(request.getCustomer().getFullName())
+                    .customerPhone(request.getCustomer().getPhone())
+                    .customerEmail(request.getCustomer().getEmail());
+        }
+
+        return builder.build();
+    }
+
+    private String getRequestStatusText(RequestStatus status) {
+        if (status == null)
+            return "Không xác định";
+        return switch (status) {
+            case pending -> "Chờ lấy hàng";
+            case picked -> "Đã lấy hàng";
+            case in_transit -> "Đang vận chuyển";
+            case delivered -> "Đã giao";
+            case cancelled -> "Đã hủy";
+            case failed -> "Thất bại";
+        };
+    }
+
+    private String getRequestStatusBadge(RequestStatus status) {
+        if (status == null)
+            return "secondary";
+        return switch (status) {
+            case pending -> "warning";
+            case picked -> "info";
+            case in_transit -> "primary";
+            case delivered -> "success";
+            case cancelled -> "dark";
+            case failed -> "danger";
+        };
+    }
+
+    private String getPaymentStatusText(ServiceRequest.PaymentStatus status) {
+        if (status == null)
+            return "Chưa thanh toán";
+        return switch (status) {
+            case unpaid -> "Chưa thanh toán";
+            case paid -> "Đã thanh toán";
+            case refunded -> "Đã hoàn tiền";
+        };
+    }
+
+    // COD MANAGEMENT IMPLEMENTATION
+
+    @Override
+    public List<TodayOrderDTO> getUnpaidCodOrders(String shipperEmail) {
+        log.info("Lấy danh sách COD chưa nộp của shipper: {}", shipperEmail);
+
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            return List.of();
+        }
+
+        // Lấy các COD transactions có status = pending (shipper đang giữ tiền, chờ nộp)
+        List<CodTransaction> codList = codTransactionRepository
+                .findByShipperIdAndStatus(shipper.getShipperId(),
+                        CodTransaction.CodStatus.pending);
+
+        return codList.stream()
+                .filter(cod -> cod.getRequest() != null)
+                .map(cod -> {
+                    ServiceRequest req = cod.getRequest();
+                    var addr = req.getDeliveryAddress();
+                    return TodayOrderDTO.builder()
+                            .id(cod.getCodTxId())
+                            .taskId(cod.getCodTxId())
+                            .trackingNumber("VN" + String.format("%08d", req.getRequestId()))
+                            .contactName(addr != null ? addr.getContactName() : "")
+                            .contactPhone(addr != null ? addr.getContactPhone() : "")
+                            .contactAddress(addr != null ? formatAddress(addr) : "")
+                            .codAmount(cod.getAmount())
+                            .status("pending")
+                            .statusText("Chờ nộp")
+                            .itemName(req.getItemName() != null ? req.getItemName() : "Hàng hóa")
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public BigDecimal getTotalUnpaidCod(String shipperEmail) {
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return codTransactionRepository.sumCodByShipperAndStatus(
+                shipper.getShipperId(),
+                CodTransaction.CodStatus.pending);
+    }
+
+    @Override
+    @Transactional
+    public void submitCod(String shipperEmail, List<Long> codTxIds, String paymentMethod, String note) {
+        log.info("Shipper {} nộp COD: {} transactions, method: {}", shipperEmail, codTxIds.size(), paymentMethod);
+
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            throw new RuntimeException("Không tìm thấy shipper");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Long codTxId : codTxIds) {
+            CodTransaction codTx = codTransactionRepository.findById(codTxId).orElse(null);
+            if (codTx == null) {
+                log.warn("Không tìm thấy COD transaction: {}", codTxId);
+                continue;
+            }
+
+            // Kiểm tra COD thuộc về shipper
+            if (!codTx.getShipper().getShipperId().equals(shipper.getShipperId())) {
+                log.warn("COD {} không thuộc về shipper {}", codTxId, shipperEmail);
+                continue;
+            }
+
+            // Chỉ chuyển nếu đang ở status pending
+            if (codTx.getStatus() != CodStatus.pending) {
+                log.warn("COD {} không ở trạng thái pending (hiện: {}), bỏ qua", codTxId, codTx.getStatus());
+                continue;
+            }
+
+            // Cập nhật trạng thái: pending → collected (shipper đã nộp, chờ Admin duyệt)
+            codTx.setStatus(CodStatus.collected);
+            codTx.setCollectedAt(now); // Thời gian shipper nộp
+            codTx.setPaymentMethod(paymentMethod);
+            codTransactionRepository.save(codTx);
+
+            log.info("COD {} chuyển sang collected (đã nộp, chờ Admin duyệt)", codTxId);
+        }
+    }
+
+    @Override
+    public List<CodHistoryDTO> getCodHistory(String shipperEmail) {
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            return List.of();
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        List<CodHistoryDTO> result = new java.util.ArrayList<>();
+
+        // 1. Lấy COD đã nộp, chờ Admin duyệt (collected)
+        List<vn.web.logistic.entity.CodTransaction> collectedList = codTransactionRepository
+                .findByShipperIdAndStatus(shipper.getShipperId(), CodStatus.collected);
+
+        for (var cod : collectedList) {
+            result.add(CodHistoryDTO.builder()
+                    .transactionId(cod.getCodTxId())
+                    .transactionCode("COD" + String.format("%08d", cod.getCodTxId()))
+                    .amount(cod.getAmount())
+                    .orderCount(1)
+                    .submittedAt(cod.getCollectedAt() != null ? cod.getCollectedAt().format(formatter) : "N/A")
+                    .receiverName("Chờ xác nhận")
+                    .status("collected")
+                    .build());
+        }
+
+        // 2. Lấy COD đã xác nhận (settled)
+        List<vn.web.logistic.entity.CodTransaction> settledList = codTransactionRepository
+                .findSettledByShipperId(shipper.getShipperId());
+
+        for (var cod : settledList) {
+            result.add(CodHistoryDTO.builder()
+                    .transactionId(cod.getCodTxId())
+                    .transactionCode("COD" + String.format("%08d", cod.getCodTxId()))
+                    .amount(cod.getAmount())
+                    .orderCount(1)
+                    .submittedAt(cod.getSettledAt() != null ? cod.getSettledAt().format(formatter) : "N/A")
+                    .receiverName("Admin")
+                    .status("settled")
+                    .build());
+        }
+
+        return result;
+    }
+
+    // EARNINGS IMPLEMENTATION
+
+    @Override
+    public ShipperEarningsDTO getEarningsData(String shipperEmail) {
+        log.info("Lấy dữ liệu thu nhập của shipper: {}", shipperEmail);
+
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            return ShipperEarningsDTO.builder()
+                    .todayEarnings(BigDecimal.ZERO)
+                    .weeklyEarnings(BigDecimal.ZERO)
+                    .monthlyEarnings(BigDecimal.ZERO)
+                    .totalEarnings(BigDecimal.ZERO)
+                    .todayOrders(0)
+                    .weeklyOrders(0)
+                    .monthlyOrders(0)
+                    .totalOrders(0)
+                    .averagePerOrder(BigDecimal.ZERO)
+                    .successRate(0)
+                    .bonusAmount(BigDecimal.ZERO)
+                    .chartLabels(List.of())
+                    .chartData(List.of())
+                    .recentHistory(List.of())
+                    .build();
+        }
+
+        Long shipperId = shipper.getShipperId();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
+        LocalDateTime startOfWeek = now.toLocalDate().minusDays(now.getDayOfWeek().getValue() - 1).atStartOfDay();
+        LocalDateTime startOfMonth = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
+
+        // Lấy tất cả task đã hoàn thành của shipper
+        List<ShipperTask> allTasks = shipperTaskRepository.findByShipperShipperId(shipperId);
+        List<ShipperTask> completedTasks = allTasks.stream()
+                .filter(t -> t.getTaskStatus() == TaskStatus.completed)
+                .collect(Collectors.toList());
+        List<ShipperTask> failedTasks = allTasks.stream()
+                .filter(t -> t.getTaskStatus() == TaskStatus.failed)
+                .collect(Collectors.toList());
+
+        // Tính phí shipper cho mỗi đơn (giả định: 30% phí vận chuyển)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        // Hôm nay
+        List<ShipperTask> todayCompleted = completedTasks.stream()
+                .filter(t -> t.getCompletedAt() != null && t.getCompletedAt().isAfter(startOfToday))
+                .collect(Collectors.toList());
+        BigDecimal todayEarnings = calculateEarnings(todayCompleted);
+
+        // Tuần này
+        List<ShipperTask> weeklyCompleted = completedTasks.stream()
+                .filter(t -> t.getCompletedAt() != null && t.getCompletedAt().isAfter(startOfWeek))
+                .collect(Collectors.toList());
+        BigDecimal weeklyEarnings = calculateEarnings(weeklyCompleted);
+
+        // Tháng này
+        List<ShipperTask> monthlyCompleted = completedTasks.stream()
+                .filter(t -> t.getCompletedAt() != null && t.getCompletedAt().isAfter(startOfMonth))
+                .collect(Collectors.toList());
+        BigDecimal monthlyEarnings = calculateEarnings(monthlyCompleted);
+
+        // Tổng
+        BigDecimal totalEarnings = calculateEarnings(completedTasks);
+
+        // Phí trung bình
+        BigDecimal averagePerOrder = BigDecimal.ZERO;
+        if (!completedTasks.isEmpty()) {
+            averagePerOrder = totalEarnings.divide(
+                    BigDecimal.valueOf(completedTasks.size()), 0, RoundingMode.HALF_UP);
+        }
+
+        // Tỷ lệ thành công
+        double successRate = 0;
+        if (!completedTasks.isEmpty() || !failedTasks.isEmpty()) {
+            successRate = Math.round((double) completedTasks.size() /
+                    (completedTasks.size() + failedTasks.size()) * 100);
+        }
+
+        // Dữ liệu biểu đồ 7 ngày gần nhất
+        List<String> chartLabels = new java.util.ArrayList<>();
+        List<BigDecimal> chartData = new java.util.ArrayList<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM");
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDateTime dayStart = now.toLocalDate().minusDays(i).atStartOfDay();
+            LocalDateTime dayEnd = dayStart.plusDays(1);
+
+            chartLabels.add(dayStart.format(dateFormatter));
+
+            List<ShipperTask> dayCompleted = completedTasks.stream()
+                    .filter(t -> t.getCompletedAt() != null &&
+                            t.getCompletedAt().isAfter(dayStart) &&
+                            t.getCompletedAt().isBefore(dayEnd))
+                    .collect(Collectors.toList());
+            chartData.add(calculateEarnings(dayCompleted));
+        }
+
+        // Lịch sử giao dịch gần đây (10 đơn GIAO HÀNG gần nhất)
+        List<EarningHistoryDTO> recentHistory = completedTasks.stream()
+                .filter(t -> t.getTaskType() == TaskType.delivery) // Chỉ lấy đơn giao hàng
+                .sorted((a, b) -> {
+                    if (a.getCompletedAt() == null)
+                        return 1;
+                    if (b.getCompletedAt() == null)
+                        return -1;
+                    return b.getCompletedAt().compareTo(a.getCompletedAt());
+                })
+                .limit(10)
+                .map(task -> {
+                    ServiceRequest req = task.getRequest();
+                    // 13,000đ cố định cho mỗi đơn giao hàng
+                    BigDecimal shipperFee = new BigDecimal("13000");
+
+                    return EarningHistoryDTO.builder()
+                            .taskId(task.getTaskId())
+                            .trackingNumber(req != null ? "VN" + String.format("%08d", req.getRequestId()) : "N/A")
+                            .customerName(req != null && req.getCustomer() != null &&
+                                    req.getCustomer().getUser() != null ? req.getCustomer().getUser().getFullName()
+                                            : "Khách hàng")
+                            .amount(shipperFee)
+                            .completedAt(
+                                    task.getCompletedAt() != null ? task.getCompletedAt().format(formatter) : "N/A")
+                            .taskType("delivery")
+                            .status("completed")
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        // Tính bonus (ví dụ: 50,000đ nếu giao >= 20 đơn/tháng)
+        BigDecimal bonusAmount = BigDecimal.ZERO;
+        if (monthlyCompleted.size() >= 20) {
+            bonusAmount = new BigDecimal("50000");
+        }
+
+        return ShipperEarningsDTO.builder()
+                .todayEarnings(todayEarnings)
+                .weeklyEarnings(weeklyEarnings)
+                .monthlyEarnings(monthlyEarnings)
+                .totalEarnings(totalEarnings)
+                .todayOrders(todayCompleted.size())
+                .weeklyOrders(weeklyCompleted.size())
+                .monthlyOrders(monthlyCompleted.size())
+                .totalOrders(completedTasks.size())
+                .averagePerOrder(averagePerOrder)
+                .successRate(successRate)
+                .bonusAmount(bonusAmount)
+                .chartLabels(chartLabels)
+                .chartData(chartData)
+                .recentHistory(recentHistory)
+                .build();
+    }
+
+    /**
+     * Tính thu nhập shipper từ danh sách task
+     * Công thức: 13,000đ cố định cho mỗi đơn GIAO HÀNG (delivery)
+     * Không tính tiền cho đơn LẤY HÀNG (pickup)
+     */
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("13000");
+
+    private BigDecimal calculateEarnings(List<ShipperTask> tasks) {
+        long deliveryCount = tasks.stream()
+                .filter(t -> t.getTaskType() == TaskType.delivery)
+                .count();
+        return DELIVERY_FEE.multiply(BigDecimal.valueOf(deliveryCount));
+    }
+
+    // PROFILE IMPLEMENTATION
+
+    @Override
+    public ShipperProfileDTO getProfile(String shipperEmail) {
+        log.info("Lấy thông tin cá nhân của shipper: {}", shipperEmail);
+
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        if (shipper == null) {
+            return null;
+        }
+
+        User user = shipper.getUser();
+        Hub hub = shipper.getHub();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        // Thống kê
+        List<ShipperTask> allTasks = shipperTaskRepository.findByShipperShipperId(shipper.getShipperId());
+        int totalOrders = allTasks.size();
+        int completedOrders = (int) allTasks.stream()
+                .filter(t -> t.getTaskStatus() == TaskStatus.completed)
+                .count();
+        int failedOrders = (int) allTasks.stream()
+                .filter(t -> t.getTaskStatus() == TaskStatus.failed)
+                .count();
+        double successRate = 0;
+        if (completedOrders + failedOrders > 0) {
+            successRate = Math.round((double) completedOrders / (completedOrders + failedOrders) * 100);
+        }
+
+        // Tổng thu nhập
+        long deliveryCompleted = allTasks.stream()
+                .filter(t -> t.getTaskType() == TaskType.delivery && t.getTaskStatus() == TaskStatus.completed)
+                .count();
+        BigDecimal totalEarnings = DELIVERY_FEE.multiply(BigDecimal.valueOf(deliveryCompleted));
+
+        return ShipperProfileDTO.builder()
+                // User info
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .avatarUrl(user.getAvatarUrl())
+                .userStatus(user.getStatus() != null ? user.getStatus().name() : "active")
+                .lastLoginAt(user.getLastLoginAt() != null ? user.getLastLoginAt().format(formatter) : "N/A")
+                .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().format(formatter) : "N/A")
+                // Shipper info
+                .shipperId(shipper.getShipperId())
+                .shipperType(shipper.getShipperType() != null ? shipper.getShipperType().name() : "fulltime")
+                .vehicleType(shipper.getVehicleType())
+                .shipperStatus(shipper.getStatus() != null ? shipper.getStatus().name() : "active")
+                .joinedAt(shipper.getJoinedAt() != null ? shipper.getJoinedAt().format(formatter) : "N/A")
+                .rating(shipper.getRating() != null ? shipper.getRating() : BigDecimal.ZERO)
+                .totalRatings(0) // TODO: Implement rating count
+                // Stats
+                .totalOrders(totalOrders)
+                .completedOrders(completedOrders)
+                .failedOrders(failedOrders)
+                .successRate(successRate)
+                .totalEarnings(totalEarnings)
+                // Hub
+                .hubName(hub != null ? hub.getHubName() : "Chưa phân bổ")
+                .hubAddress(hub != null ? hub.getAddress() : "N/A")
+                .build();
     }
 }

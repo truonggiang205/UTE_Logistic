@@ -1,9 +1,25 @@
 package vn.web.logistic.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "COD_TRANSACTIONS")
@@ -15,8 +31,16 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(exclude = { "request", "shipper" })
 public class CodTransaction {
 
+    /**
+     * Trạng thái COD Transaction:
+     * - pending: Chờ thu (shipper chưa giao hàng)
+     * - collected: Đã thu từ khách, shipper đang giữ tiền (chờ Admin duyệt)
+     * - settled: Admin đã xác nhận, hoàn tất
+     */
     public enum CodStatus {
-        collected, settled, pending
+        pending, // Chờ thu
+        collected, // Đã thu, chờ Admin duyệt
+        settled // Đã xác nhận
     }
 
     @Id
@@ -37,10 +61,10 @@ public class CodTransaction {
 
     private LocalDateTime collectedAt;
 
-    private LocalDateTime settledAt;
+    private LocalDateTime settledAt; // Thời gian Admin xác nhận
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('collected','settled','pending') DEFAULT 'pending'")
+    @Column(columnDefinition = "ENUM('pending','collected','settled') DEFAULT 'pending'")
     @Builder.Default
     private CodStatus status = CodStatus.pending;
 

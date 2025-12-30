@@ -104,12 +104,13 @@ INSERT IGNORE INTO SHIPPER_TASKS (task_id, shipper_id, request_id, taskType, ass
 -- 5. THÊM COD_TRANSACTIONS
 -- =============================================
 INSERT IGNORE INTO COD_TRANSACTIONS (cod_tx_id, request_id, shipper_id, amount, collectedAt, settledAt, status, paymentMethod) VALUES
--- COD pending (chờ thu)
-(101, 103, 1, 750000.00, NULL, NULL, 'pending', 'cash'),
-(102, 104, 1, 200000.00, NULL, NULL, 'pending', 'cash'),
-(103, 107, 1, 450000.00, NULL, NULL, 'pending', 'cash'),
--- COD đã thu từ đơn 105 (online)
-(104, 105, 1, 0.00, DATE_ADD(NOW(), INTERVAL -5 HOUR), NULL, 'collected', 'online');
+-- COD pending (chờ thu) - chưa giao xong
+(101, 101, 1, 350000.00, NULL, NULL, 'pending', NULL),
+(102, 102, 1, 500000.00, NULL, NULL, 'pending', NULL),
+-- COD collected (đã thu từ khách, chờ nộp về công ty) - ĐƠN ĐÃ GIAO XONG
+(103, 103, 1, 750000.00, DATE_ADD(NOW(), INTERVAL -2 HOUR), NULL, 'collected', NULL),
+(104, 104, 1, 200000.00, DATE_ADD(NOW(), INTERVAL -1 HOUR), NULL, 'collected', NULL),
+(105, 107, 1, 450000.00, DATE_ADD(NOW(), INTERVAL -30 MINUTE), NULL, 'collected', NULL);
 
 -- =============================================
 -- 6. THÊM PARCEL_ROUTES

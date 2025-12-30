@@ -164,21 +164,55 @@
             
             <!-- Pagination -->
             <c:if test="${totalPages > 1}">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item ${currentPageNum == 0 ? 'disabled' : ''}">
-                            <a class="page-link" href="?page=${currentPageNum - 1}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">Trước</a>
-                        </li>
-                        <c:forEach begin="0" end="${totalPages - 1}" var="i">
-                            <li class="page-item ${currentPageNum == i ? 'active' : ''}">
-                                <a class="page-link" href="?page=${i}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">${i + 1}</a>
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted small">
+                        Hiển thị ${currentPageNum * 6 + 1} - ${currentPageNum * 6 + orders.size()} / ${totalElements} đơn
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <!-- First Page -->
+                            <li class="page-item ${currentPageNum == 0 ? 'disabled' : ''}">
+                                <a class="page-link" href="?page=0&fromDate=${fromDate}&toDate=${toDate}&status=${status}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
                             </li>
-                        </c:forEach>
-                        <li class="page-item ${currentPageNum == totalPages - 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="?page=${currentPageNum + 1}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">Sau</a>
-                        </li>
-                    </ul>
-                </nav>
+                            <!-- Previous Page -->
+                            <li class="page-item ${currentPageNum == 0 ? 'disabled' : ''}">
+                                <a class="page-link" href="?page=${currentPageNum - 1}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Page Numbers -->
+                            <c:forEach begin="0" end="${totalPages - 1}" var="i">
+                                <c:if test="${i == currentPageNum || i == currentPageNum - 1 || i == currentPageNum + 1 || i == 0 || i == totalPages - 1}">
+                                    <c:if test="${i == currentPageNum - 1 && currentPageNum > 2}">
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    </c:if>
+                                    <li class="page-item ${currentPageNum == i ? 'active' : ''}">
+                                        <a class="page-link" href="?page=${i}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">${i + 1}</a>
+                                    </li>
+                                    <c:if test="${i == currentPageNum + 1 && currentPageNum < totalPages - 3}">
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    </c:if>
+                                </c:if>
+                            </c:forEach>
+                            
+                            <!-- Next Page -->
+                            <li class="page-item ${currentPageNum == totalPages - 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="?page=${currentPageNum + 1}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <!-- Last Page -->
+                            <li class="page-item ${currentPageNum == totalPages - 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="?page=${totalPages - 1}&fromDate=${fromDate}&toDate=${toDate}&status=${status}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </c:if>
         </div>
     </div>

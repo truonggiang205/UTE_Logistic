@@ -2,10 +2,15 @@ package vn.web.logistic.controller;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,12 +20,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.dto.response.ShipperDashboardDTO;
 import vn.web.logistic.service.ShipperDashboardService;
 
 /**
  * Controller cho các trang web của Shipper
  */
+@Slf4j
 @Controller
 @RequestMapping("/shipper")
 public class ShipperViewController {
@@ -112,24 +119,75 @@ public class ShipperViewController {
         return "redirect:/shipper/" + from;
     }
 
+    @GetMapping("/orders/{taskId}")
+    public String orderDetail(@PathVariable Long taskId, Model model, Principal principal) {
+        model.addAttribute("currentPage", "orders");
+
+        if (principal != null) {
+            var orderDetail = shipperDashboardService.getOrderDetail(taskId, principal.getName());
+            if (orderDetail == null) {
+                return "redirect:/shipper/orders";
+            }
+            model.addAttribute("order", orderDetail);
+        }
+
+        return "shipper/order-detail";
+    }
+
     @GetMapping("/orders")
     public String orders(
             @RequestParam(required = false, defaultValue = "all") String taskType,
             @RequestParam(required = false, defaultValue = "all") String status,
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(required = false, defaultValue = "0") int page,
             Model model,
             Principal principal) {
+
+        final int PAGE_SIZE = 6; // 6 đơn/trang
 
         model.addAttribute("currentPage", "orders");
         model.addAttribute("selectedTaskType", taskType);
         model.addAttribute("selectedStatus", status);
+        model.addAttribute("search", search);
 
         if (principal != null) {
-            var orders = shipperDashboardService.getAllOrdersByShipper(
+            // Lấy tất cả đơn theo bộ lọc
+            var allFilteredOrders = shipperDashboardService.getAllOrdersByShipper(
                     principal.getName(), taskType, status);
-            model.addAttribute("orders", orders);
-            model.addAttribute("totalOrders", orders.size());
 
-            // Statistics
+            // Tìm kiếm theo mã đơn hoặc số điện thoại
+            if (search != null && !search.trim().isEmpty()) {
+                String searchLower = search.trim().toLowerCase();
+                allFilteredOrders = allFilteredOrders.stream()
+                        .filter(o -> (o.getTrackingNumber() != null
+                                && o.getTrackingNumber().toLowerCase().contains(searchLower)) ||
+                                (o.getContactPhone() != null && o.getContactPhone().contains(searchLower)) ||
+                                (o.getContactName() != null && o.getContactName().toLowerCase().contains(searchLower)))
+                        .collect(Collectors.toList());
+            }
+
+            // Tính toán phân trang
+            int totalOrders = allFilteredOrders.size();
+            int totalPages = (int) Math.ceil((double) totalOrders / PAGE_SIZE);
+            if (page < 0)
+                page = 0;
+            if (page >= totalPages && totalPages > 0)
+                page = totalPages - 1;
+
+            int fromIndex = page * PAGE_SIZE;
+            int toIndex = Math.min(fromIndex + PAGE_SIZE, totalOrders);
+
+            var ordersPage = totalOrders > 0
+                    ? allFilteredOrders.subList(fromIndex, toIndex)
+                    : java.util.List.of();
+
+            model.addAttribute("orders", ordersPage);
+            model.addAttribute("totalOrders", totalOrders);
+            model.addAttribute("pageNumber", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("pageSize", PAGE_SIZE);
+
+            // Statistics (dùng tất cả đơn, không filter)
             var allOrders = shipperDashboardService.getAllOrdersByShipper(
                     principal.getName(), "all", "all");
             long pickupCount = allOrders.stream()
@@ -192,11 +250,11 @@ public class ShipperViewController {
 
     @GetMapping("/history")
     public String history(
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate toDate,
             @RequestParam(required = false, defaultValue = "") String status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "6") int size,
             Model model,
             Principal principal) {
 
@@ -204,7 +262,7 @@ public class ShipperViewController {
 
         if (principal != null) {
             // Phân trang
-            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page,
+            Pageable pageable = PageRequest.of(page,
                     size);
 
             // Lấy dữ liệu lịch sử
@@ -240,10 +298,24 @@ public class ShipperViewController {
         model.addAttribute("currentPage", "cod");
 
         if (principal != null) {
-            ShipperDashboardDTO dashboardData = shipperDashboardService.getDashboardData(principal.getName());
-            model.addAttribute("totalUnpaidCod", dashboardData.getTotalCodAmount());
+            log.info("=== DEBUG COD PAGE cho user: {} ===", principal.getName());
+
+            // Lấy danh sách COD chưa nộp
+            var unpaidOrders = shipperDashboardService.getUnpaidCodOrders(principal.getName());
+            log.info("Số lượng COD chưa nộp (collected): {}", unpaidOrders.size());
+            model.addAttribute("unpaidOrders", unpaidOrders);
+            model.addAttribute("unpaidOrdersCount", unpaidOrders.size());
+
+            // Tổng COD chưa nộp
+            var totalUnpaidCod = shipperDashboardService.getTotalUnpaidCod(principal.getName());
+            model.addAttribute("totalUnpaidCod", totalUnpaidCod);
+
+            // Lịch sử nộp COD
+            var codHistory = shipperDashboardService.getCodHistory(principal.getName());
+            model.addAttribute("codHistory", codHistory);
+
+            // Tổng đã nộp hôm nay (tạm thời = 0, có thể tính sau)
             model.addAttribute("todayPaidCod", 0);
-            model.addAttribute("unpaidOrdersCount", 0);
         } else {
             model.addAttribute("totalUnpaidCod", 0);
             model.addAttribute("todayPaidCod", 0);
@@ -253,30 +325,48 @@ public class ShipperViewController {
         return "shipper/cod";
     }
 
+    @PostMapping("/cod/submit")
+    public String submitCod(
+            @RequestParam String orderIds,
+            @RequestParam String paymentMethod,
+            @RequestParam(required = false) String note,
+            Principal principal,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            if (principal == null) {
+                redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập lại");
+                return "redirect:/shipper/cod";
+            }
+
+            // Parse orderIds
+            List<Long> codTxIds = Arrays.stream(orderIds.split(","))
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+
+            if (codTxIds.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Vui lòng chọn ít nhất một đơn hàng");
+                return "redirect:/shipper/cod";
+            }
+
+            shipperDashboardService.submitCod(principal.getName(), codTxIds, paymentMethod, note);
+            redirectAttributes.addFlashAttribute("success",
+                    "Đã nộp thành công " + codTxIds.size() + " đơn COD!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+
+        return "redirect:/shipper/cod";
+    }
+
     @GetMapping("/earnings")
     public String earnings(Model model, Principal principal) {
         model.addAttribute("currentPage", "earnings");
 
         if (principal != null) {
-            ShipperDashboardDTO dashboardData = shipperDashboardService.getDashboardData(principal.getName());
-            model.addAttribute("monthlyEarnings", dashboardData.getMonthlyEarnings());
-            model.addAttribute("monthlyOrders", dashboardData.getMonthlyOrders());
-            model.addAttribute("successRate", dashboardData.getSuccessRate());
-            if (dashboardData.getMonthlyOrders() > 0) {
-                model.addAttribute("averagePerOrder",
-                        dashboardData.getMonthlyEarnings().divide(
-                                java.math.BigDecimal.valueOf(dashboardData.getMonthlyOrders()),
-                                0, java.math.RoundingMode.HALF_UP));
-            } else {
-                model.addAttribute("averagePerOrder", 0);
-            }
-            model.addAttribute("bonusAmount", 0);
-        } else {
-            model.addAttribute("monthlyEarnings", 0);
-            model.addAttribute("monthlyOrders", 0);
-            model.addAttribute("averagePerOrder", 0);
-            model.addAttribute("bonusAmount", 0);
-            model.addAttribute("successRate", 0);
+            var earnings = shipperDashboardService.getEarningsData(principal.getName());
+            model.addAttribute("earnings", earnings);
         }
 
         return "shipper/earnings";
@@ -285,12 +375,12 @@ public class ShipperViewController {
     @GetMapping("/profile")
     public String profile(Model model, Principal principal) {
         model.addAttribute("currentPage", "profile");
-        return "shipper/profile";
-    }
 
-    @GetMapping("/vehicle")
-    public String vehicle(Model model) {
-        model.addAttribute("currentPage", "vehicle");
+        if (principal != null) {
+            var profile = shipperDashboardService.getProfile(principal.getName());
+            model.addAttribute("profile", profile);
+        }
+
         return "shipper/profile";
     }
 

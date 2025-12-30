@@ -136,7 +136,11 @@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
                 <span class="badge badge-warning mr-2">🔄 Đang lấy</span>
-                <strong class="text-primary">${task.trackingNumber}</strong>
+                <a
+                  href="${pageContext.request.contextPath}/shipper/orders/${task.taskId}"
+                  class="text-primary font-weight-bold">
+                  ${task.trackingNumber}
+                </a>
               </div>
             </div>
             <div class="row">
@@ -216,7 +220,11 @@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
                 <span class="badge badge-info mr-2">🚚 Đang giao</span>
-                <strong class="text-primary">${task.trackingNumber}</strong>
+                <a
+                  href="${pageContext.request.contextPath}/shipper/orders/${task.taskId}"
+                  class="text-primary font-weight-bold">
+                  ${task.trackingNumber}
+                </a>
               </div>
               <c:if test="${task.codAmount > 0}">
                 <span class="badge badge-danger px-2 py-1">
