@@ -99,4 +99,8 @@ public class ServiceRequest {
     private Hub currentHub;
 
     private LocalDateTime createdAt;
+
+    @Column(name = "item_name", length = 255)
+    private String itemName;
+
 }

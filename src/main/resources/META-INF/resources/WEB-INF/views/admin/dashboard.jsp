@@ -71,6 +71,85 @@
                 </div>
             </div>
 
+            <!-- Section: Vận tải & Trung chuyển -->
+            <div class="d-sm-flex align-items-center justify-content-between mb-3 mt-4">
+                <h5 class="mb-0 text-gray-700">
+                    <i class="fas fa-truck text-info"></i> Vận tải & Trung chuyển
+                </h5>
+            </div>
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Xe đang chạy
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiVehicleInTransit">0</div>
+                                </div>
+                                <div class="col-auto"><i class="fas fa-truck-moving fa-2x text-gray-300"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Xe sẵn sàng
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiVehicleAvailable">0</div>
+                                </div>
+                                <div class="col-auto"><i class="fas fa-truck fa-2x text-gray-300"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Chuyến xe hôm
+                                        nay</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="kpiTripsToday">0</div>
+                                </div>
+                                <div class="col-auto"><i class="fas fa-route fa-2x text-gray-300"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Hiệu suất tải
+                                    </div>
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col-auto">
+                                            <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800" id="kpiLoadFactor">
+                                                0%</div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="progress progress-sm mr-2">
+                                                <div class="progress-bar bg-primary" role="progressbar"
+                                                    style="width: 0%" id="kpiLoadFactorBar"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-auto"><i class="fas fa-weight-hanging fa-2x text-gray-300"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-xl-6 col-lg-6">
                     <div class="card shadow mb-4">
@@ -121,6 +200,22 @@
                         document.getElementById('kpiRevenue').innerText = new Intl.NumberFormat('vi-VN').format(data.totalRevenue || 0) + 'đ';
                     })
                     .catch(function (err) { console.error("Lỗi KPI:", err); });
+
+                // 1.5 Transport Stats KPI
+                fetch('/api/admin/stats/transport')
+                    .then(function (res) { return res.json(); })
+                    .then(function (response) {
+                        if (response.success && response.data) {
+                            var data = response.data;
+                            document.getElementById('kpiVehicleInTransit').innerText = data.activeVehicles || 0;
+                            document.getElementById('kpiVehicleAvailable').innerText = data.availableVehicles || 0;
+                            document.getElementById('kpiTripsToday').innerText = data.totalTripsToday || 0;
+                            var loadFactor = data.loadFactor || 0;
+                            document.getElementById('kpiLoadFactor').innerText = loadFactor + '%';
+                            document.getElementById('kpiLoadFactorBar').style.width = loadFactor + '%';
+                        }
+                    })
+                    .catch(function (err) { console.error("Lỗi Transport Stats:", err); });
 
                 // 2. Chart
                 fetch(apiUrl + '/revenue-chart')

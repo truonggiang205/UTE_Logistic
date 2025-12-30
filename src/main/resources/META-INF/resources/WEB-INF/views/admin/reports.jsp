@@ -110,6 +110,66 @@
                 </div>
             </div>
 
+            <!-- Báo cáo Vận tải -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-dark">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-truck"></i> Báo cáo Vận tải
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3">
+                        Thống kê số chuyến xe chạy theo từng ngày và tổng trọng lượng vận chuyển.
+                    </p>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="small font-weight-bold">Từ ngày</label>
+                            <input type="date" class="form-control form-control-sm" id="transportFromDate">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small font-weight-bold">Đến ngày</label>
+                            <input type="date" class="form-control form-control-sm" id="transportToDate">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button class="btn btn-dark btn-sm" onclick="loadTransportReport()">
+                                <i class="fas fa-search"></i> Xem báo cáo
+                            </button>
+                            <button class="btn btn-success btn-sm ml-2" onclick="exportReport('TRANSPORT')">
+                                <i class="fas fa-file-excel"></i> Xuất Excel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="transportReportTable">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Số chuyến xe</th>
+                                    <th>Tổng trọng lượng (kg)</th>
+                                    <th>Chuyến hoàn thành</th>
+                                    <th>Chuyến đang chạy</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transportReportData">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Chọn khoảng thời gian và nhấn "Xem
+                                        báo cáo"</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-light font-weight-bold" id="transportReportFooter" style="display: none;">
+                                <tr>
+                                    <td>Tổng cộng</td>
+                                    <td id="totalTrips">0</td>
+                                    <td id="totalWeight">0</td>
+                                    <td id="totalCompleted">0</td>
+                                    <td id="totalOngoing">0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Quick Export Section -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
@@ -133,6 +193,11 @@
                         <div class="col-md-4 mb-2">
                             <button class="btn btn-outline-warning btn-block" onclick="exportReport('COD_DEBT', true)">
                                 <i class="fas fa-money-bill-wave"></i> Tất cả Công nợ COD
+                            </button>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <button class="btn btn-outline-dark btn-block" onclick="exportReport('TRANSPORT', true)">
+                                <i class="fas fa-truck"></i> Tất cả Vận tải
                             </button>
                         </div>
                     </div>
@@ -298,4 +363,79 @@
                     $('.alert').alert('close');
                 }, 3000);
             }
+
+            // Transport Report Functions
+            function loadTransportReport() {
+                var fromDate = document.getElementById('transportFromDate').value;
+                var toDate = document.getElementById('transportToDate').value;
+
+                if (!fromDate || !toDate) {
+                    showAlert('warning', 'Vui lòng chọn khoảng thời gian');
+                    return;
+                }
+
+                var url = '/api/admin/stats/transport-report?fromDate=' + fromDate + '&toDate=' + toDate;
+
+                fetch(url)
+                    .then(function (res) { return res.json(); })
+                    .then(function (response) {
+                        if (response.success && response.data) {
+                            renderTransportReport(response.data);
+                        } else {
+                            showAlert('danger', 'Lỗi tải dữ liệu báo cáo');
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('Error:', err);
+                        showAlert('danger', 'Lỗi kết nối server');
+                    });
+            }
+
+            function renderTransportReport(data) {
+                var tbody = document.getElementById('transportReportData');
+                var footer = document.getElementById('transportReportFooter');
+                var nf = new Intl.NumberFormat('vi-VN');
+
+                if (!data.dailyStats || data.dailyStats.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Không có dữ liệu trong khoảng thời gian này</td></tr>';
+                    footer.style.display = 'none';
+                    return;
+                }
+
+                var html = '';
+                var totalTrips = 0, totalWeight = 0, totalCompleted = 0, totalOngoing = 0;
+
+                for (var i = 0; i < data.dailyStats.length; i++) {
+                    var row = data.dailyStats[i];
+                    totalTrips += row.tripCount || 0;
+                    totalWeight += row.totalWeight || 0;
+                    totalCompleted += row.completedCount || 0;
+                    totalOngoing += row.ongoingCount || 0;
+
+                    html += '<tr>' +
+                        '<td>' + row.date + '</td>' +
+                        '<td>' + (row.tripCount || 0) + '</td>' +
+                        '<td>' + nf.format(row.totalWeight || 0) + '</td>' +
+                        '<td><span class="badge badge-success">' + (row.completedCount || 0) + '</span></td>' +
+                        '<td><span class="badge badge-warning">' + (row.ongoingCount || 0) + '</span></td>' +
+                        '</tr>';
+                }
+
+                tbody.innerHTML = html;
+                footer.style.display = 'table-footer-group';
+                document.getElementById('totalTrips').innerText = totalTrips;
+                document.getElementById('totalWeight').innerText = nf.format(totalWeight) + ' kg';
+                document.getElementById('totalCompleted').innerText = totalCompleted;
+                document.getElementById('totalOngoing').innerText = totalOngoing;
+            }
+
+            // Initialize default dates (last 7 days)
+            document.addEventListener('DOMContentLoaded', function () {
+                var today = new Date();
+                var lastWeek = new Date();
+                lastWeek.setDate(today.getDate() - 7);
+
+                document.getElementById('transportFromDate').value = lastWeek.toISOString().split('T')[0];
+                document.getElementById('transportToDate').value = today.toISOString().split('T')[0];
+            });
         </script>

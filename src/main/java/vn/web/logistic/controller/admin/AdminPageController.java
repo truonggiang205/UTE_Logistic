@@ -49,4 +49,30 @@ public class AdminPageController {
         // Trả về file: /WEB-INF/views/admin/reports.jsp
         return "admin/reports";
     }
+
+    // ==================== Vận tải & Trung chuyển ====================
+
+    @GetMapping("/vehicle-management")
+    public String viewVehicleManagement() {
+        // Trả về file: /WEB-INF/views/admin/vehicle-management.jsp
+        return "admin/vehicle-management";
+    }
+
+    @GetMapping("/driver-management")
+    public String viewDriverManagement() {
+        // Trả về file: /WEB-INF/views/admin/driver-management.jsp
+        return "admin/driver-management";
+    }
+
+    @GetMapping("/trip-monitor")
+    public String viewTripMonitor() {
+        // Trả về file: /WEB-INF/views/admin/trip-monitor.jsp
+        return "admin/trip-monitor";
+    }
+
+    @GetMapping("/container-management")
+    public String viewContainerManagement() {
+        // Trả về file: /WEB-INF/views/admin/container-management.jsp
+        return "admin/container-management";
+    }
 }

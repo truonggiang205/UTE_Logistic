@@ -69,6 +69,36 @@
 
         <hr class="sidebar-divider">
 
+        <div class="sidebar-heading">Vận tải & Trung chuyển</div>
+
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTransport">
+                <i class="fas fa-fw fa-truck"></i>
+                <span>Quản lý Vận tải</span>
+            </a>
+            <div id="collapseTransport" class="collapse" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Đội xe:</h6>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/vehicle-management">
+                        <i class="fas fa-truck-moving fa-sm text-gray-400"></i> Quản lý Xe
+                    </a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/driver-management">
+                        <i class="fas fa-id-card fa-sm text-gray-400"></i> Quản lý Tài xế
+                    </a>
+                    <div class="collapse-divider"></div>
+                    <h6 class="collapse-header">Vận hành:</h6>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/trip-monitor">
+                        <i class="fas fa-route fa-sm text-gray-400"></i> Giám sát Chuyến xe
+                    </a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/container-management">
+                        <i class="fas fa-box-open fa-sm text-gray-400"></i> Tra cứu Bao hàng
+                    </a>
+                </div>
+            </div>
+        </li>
+
+        <hr class="sidebar-divider">
+
         <div class="sidebar-heading">Số liệu & Báo cáo</div>
 
         <li class="nav-item">
