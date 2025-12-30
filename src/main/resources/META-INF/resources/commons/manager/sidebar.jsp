@@ -42,7 +42,7 @@
                 <div id="collapseInbound" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Tác nghiệp:</h6>
-                        <a class="collapse-item" href="<c:url value='/manager/inbound/scan'/>">Quét nhập kho</a>
+                        <a class="collapse-item" href="<c:url value='/manager/inbound/scan-in'/>">Quét nhập kho</a>
                         <a class="collapse-item" href="<c:url value='/manager/inbound/drop-off'/>">Tạo đơn tại quầy</a>
                     </div>
                 </div>
@@ -78,10 +78,11 @@
                     data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Quản lý Shipper:</h6>
-                        <a class="collapse-item" href="<c:url value='/manager/delivery/assign'/>">Phân công Shipper</a>
-                        <a class="collapse-item" href="<c:url value='/manager/delivery/update-status'/>">Cập nhật kết
+                        <a class="collapse-item" href="<c:url value='/manager/lastmile/assign-task'/>">Phân công
+                            Shipper</a>
+                        <a class="collapse-item" href="<c:url value='/manager/lastmile/confirm-delivery'/>">Cập nhật kết
                             quả giao</a>
-                        <a class="collapse-item" href="<c:url value='/manager/delivery/counter-pickup'/>">Khách nhận tại
+                        <a class="collapse-item" href="<c:url value='/manager/lastmile/counter-pickup'/>">Khách nhận tại
                             quầy</a>
                     </div>
                 </div>

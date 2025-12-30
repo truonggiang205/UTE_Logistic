@@ -33,4 +33,28 @@ public interface ContainerRepository extends JpaRepository<Container, Long> {
     int updateStatus(@Param("containerId") Long containerId, @Param("status") ContainerStatus status);
 
     boolean existsByContainerCode(String containerCode);
+
+    /**
+     * Tìm containers theo status và destination hub
+     * Dùng cho chức năng Gate Out - lấy containers sẵn sàng để nạp lên xe
+     */
+    @Query("SELECT c FROM Container c " +
+            "LEFT JOIN FETCH c.createdAtHub " +
+            "LEFT JOIN FETCH c.destinationHub " +
+            "WHERE c.status = :status " +
+            "AND c.destinationHub.hubId = :toHubId " +
+            "ORDER BY c.createdAt DESC")
+    java.util.List<Container> findByStatusAndDestinationHub(
+            @Param("status") ContainerStatus status,
+            @Param("toHubId") Long toHubId);
+
+    /**
+     * Tìm containers theo status
+     */
+    @Query("SELECT c FROM Container c " +
+            "LEFT JOIN FETCH c.createdAtHub " +
+            "LEFT JOIN FETCH c.destinationHub " +
+            "WHERE c.status = :status " +
+            "ORDER BY c.createdAt DESC")
+    java.util.List<Container> findByStatus(@Param("status") ContainerStatus status);
 }
