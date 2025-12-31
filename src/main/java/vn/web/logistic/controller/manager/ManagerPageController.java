@@ -1,13 +1,18 @@
 package vn.web.logistic.controller.manager;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.entity.Trip;
-import vn.web.logistic.repository.*;
+import vn.web.logistic.repository.DriverRepository;
+import vn.web.logistic.repository.HubRepository;
+import vn.web.logistic.repository.ServiceTypeRepository;
+import vn.web.logistic.repository.TripRepository;
+import vn.web.logistic.repository.VehicleRepository;
 
 /**
  * Controller để render các trang JSP cho Manager
@@ -127,5 +132,15 @@ public class ManagerPageController {
     public String viewLastMileCounterPickup(Model model) {
         log.info("Truy cập trang Khách Nhận Tại Quầy");
         return "manager/lastmile/counter-pickup";
+    }
+
+    // ===================== COD SETTLEMENT =====================
+    /**
+     * Trang Quyết Toán COD (đường dẫn /finance/cod-settlement)
+     */
+    @GetMapping("/finance/cod-settlement")
+    public String viewFinanceCodSettlement(Model model) {
+        log.info("Truy cập trang Quyết Toán COD (Finance)");
+        return "manager/cod-settlement";
     }
 }
