@@ -43,8 +43,7 @@ VALUES
   (4, 'CUSTOMER','Customer user',        'active');
 
 -- USERS
--- Password sẽ được hash tự động bởi DataInitializer khi app khởi động
--- Sau khi hash, mật khẩu sẽ là: 123456
+-- NOTE: password_hash here is only seed data (no security wired yet)
 INSERT INTO USERS (
   user_id, username, password_hash, full_name, phone, email, status,
   avatar_url, last_login_at, created_at, updated_at

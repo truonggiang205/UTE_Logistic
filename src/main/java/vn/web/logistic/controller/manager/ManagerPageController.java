@@ -143,4 +143,14 @@ public class ManagerPageController {
         log.info("Truy cập trang Quyết Toán COD (Finance)");
         return "manager/cod-settlement";
     }
+
+    // ===================== QUẢN LÝ SHIPPER =====================
+    /**
+     * Trang Quản Lý Shipper
+     */
+    @GetMapping("/shippers")
+    public String viewShipperManagement(Model model) {
+        log.info("Truy cập trang Quản Lý Shipper");
+        return "manager/shipper-management";
+    }
 }

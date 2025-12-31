@@ -18,8 +18,8 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   </div>
 </div>
 
-<!-- Stats Cards -->
-<div class="row mb-4">
+<!-- Stats Cards - Hàng 1 -->
+<div class="row mb-2">
   <div class="col-xl-3 col-md-6 mb-4">
     <div class="card border-left-primary shadow h-100 py-2">
       <div class="card-body">
@@ -27,7 +27,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
           <div class="col mr-2">
             <div
               class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-              Tổng Shipper Chờ Nộp
+              Shipper Chờ Duyệt
             </div>
             <div
               class="h5 mb-0 font-weight-bold text-gray-800"
@@ -49,7 +49,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
           <div class="col mr-2">
             <div
               class="text-xs font-weight-bold text-success text-uppercase mb-1">
-              Tổng Tiền Chờ Nộp
+              Tiền Chờ Duyệt (Collected)
             </div>
             <div
               class="h5 mb-0 font-weight-bold text-gray-800"
@@ -58,7 +58,29 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
             </div>
           </div>
           <div class="col-auto">
-            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-danger shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+              Tiền Shipper Đang Giữ (Pending)
+            </div>
+            <div
+              class="h5 mb-0 font-weight-bold text-gray-800"
+              id="stat-pending-total">
+              0đ
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-wallet fa-2x text-gray-300"></i>
           </div>
         </div>
       </div>
@@ -70,7 +92,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
         <div class="row no-gutters align-items-center">
           <div class="col mr-2">
             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-              Tổng Đơn Hàng
+              Tổng Đơn Chờ Duyệt
             </div>
             <div
               class="h5 mb-0 font-weight-bold text-gray-800"
@@ -85,14 +107,18 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
       </div>
     </div>
   </div>
-  <div class="col-xl-3 col-md-6 mb-4">
+</div>
+
+<!-- Stats Cards - Hàng 2 -->
+<div class="row mb-4">
+  <div class="col-xl-6 col-md-6 mb-4">
     <div class="card border-left-warning shadow h-100 py-2">
       <div class="card-body">
         <div class="row no-gutters align-items-center">
           <div class="col mr-2">
             <div
               class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-              Hôm Nay Đã Nộp
+              Hôm Nay Đã Duyệt
             </div>
             <div
               class="h5 mb-0 font-weight-bold text-gray-800"
@@ -101,7 +127,28 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
             </div>
           </div>
           <div class="col-auto">
-            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-6 col-md-6 mb-4">
+    <div class="card border-left-dark shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">
+              Tổng Doanh Thu Đã Duyệt
+            </div>
+            <div
+              class="h5 mb-0 font-weight-bold text-gray-800"
+              id="stat-total-settled">
+              0đ
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
           </div>
         </div>
       </div>
@@ -373,6 +420,12 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   .border-left-warning {
     border-left: 4px solid #f6c23e !important;
   }
+  .border-left-danger {
+    border-left: 4px solid #e74a3b !important;
+  }
+  .border-left-dark {
+    border-left: 4px solid #5a5c69 !important;
+  }
 </style>
 
 <script>
@@ -401,12 +454,22 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
 
         if (data.success && data.data && data.data.length > 0) {
           renderShipperList(data.data);
-          updateStats(data.data, data.settledToday);
+          updateStats(
+            data.data,
+            data.settledToday,
+            data.pendingTotal,
+            data.totalSettled
+          );
         } else {
           document
             .getElementById("shipper-list-empty")
             .classList.remove("d-none");
-          updateStats([], data.settledToday);
+          updateStats(
+            [],
+            data.settledToday,
+            data.pendingTotal,
+            data.totalSettled
+          );
         }
       })
       .catch(function (err) {
@@ -458,7 +521,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   }
 
   // Cập nhật thống kê
-  function updateStats(shippers, settledToday) {
+  function updateStats(shippers, settledToday, pendingTotal, totalSettled) {
     var totalAmount = 0;
     var totalOrders = 0;
 
@@ -473,6 +536,12 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
     document.getElementById("stat-order-count").textContent = totalOrders;
     document.getElementById("stat-settled-today").textContent = formatCurrency(
       settledToday || 0
+    );
+    document.getElementById("stat-pending-total").textContent = formatCurrency(
+      pendingTotal || 0
+    );
+    document.getElementById("stat-total-settled").textContent = formatCurrency(
+      totalSettled || 0
     );
   }
 

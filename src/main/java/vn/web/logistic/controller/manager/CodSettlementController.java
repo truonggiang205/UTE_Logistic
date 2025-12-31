@@ -1,5 +1,6 @@
 package vn.web.logistic.controller.manager;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,6 @@ import vn.web.logistic.dto.request.CodSettlementRequest;
 import vn.web.logistic.dto.response.manager.CodSettlementResultDTO;
 import vn.web.logistic.dto.response.manager.ShipperCodSummaryDTO;
 import vn.web.logistic.entity.User;
-import vn.web.logistic.repository.CodSettlementRepository;
 import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.CodSettlementService;
 
@@ -41,7 +41,6 @@ import vn.web.logistic.service.CodSettlementService;
 public class CodSettlementController {
 
     private final CodSettlementService codSettlementService;
-    private final CodSettlementRepository codSettlementRepository;
     private final UserRepository userRepository;
 
     /**
@@ -68,15 +67,17 @@ public class CodSettlementController {
 
         List<ShipperCodSummaryDTO> shippers = codSettlementService.getShippersWithPendingCod(hubId);
 
-        // Lấy tổng tiền đã quyết toán hôm nay
-        java.math.BigDecimal settledToday = codSettlementRepository.sumSettledTodayByHubId(hubId);
+        // Lấy thống kê từ Service (không gọi Repository trực tiếp)
+        Map<String, BigDecimal> stats = codSettlementService.getHubStatistics(hubId);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
+
         response.put("data", shippers);
         response.put("count", shippers.size());
-        response.put("hubId", hubId);
-        response.put("settledToday", settledToday);
+
+        response.put("settledToday", stats.get("settledToday"));
+        response.put("pendingTotal", stats.get("pendingTotal"));
+        response.put("totalSettled", stats.get("totalSettled"));
 
         return ResponseEntity.ok(response);
     }
