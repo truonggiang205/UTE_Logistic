@@ -628,6 +628,16 @@
                     orders.forEach(function (order) {
                         var priorityClass = 'priority-' + (order.priorityLevel || 'NORMAL');
                         var badges = '';
+                        // Hiển thị trạng thái đơn hàng
+                        var statusBadgeClass = 'badge-secondary';
+                        var statusText = order.status || 'N/A';
+                        if (order.status === 'pending_pickup') { statusBadgeClass = 'badge-info'; statusText = 'Chờ lấy hàng'; }
+                        else if (order.status === 'picked_up') { statusBadgeClass = 'badge-primary'; statusText = 'Đã lấy hàng'; }
+                        else if (order.status === 'in_hub') { statusBadgeClass = 'badge-success'; statusText = 'Tại kho'; }
+                        else if (order.status === 'failed') { statusBadgeClass = 'badge-danger'; statusText = 'Giao thất bại'; }
+                        else if (order.status === 'returning') { statusBadgeClass = 'badge-warning'; statusText = 'Đang hoàn'; }
+                        else if (order.status === 'returned') { statusBadgeClass = 'badge-dark'; statusText = 'Đã hoàn'; }
+                        badges += '<span class="badge ' + statusBadgeClass + ' mr-1">' + statusText + '</span>';
                         if (order.codAmount && order.codAmount > 0) badges += '<span class="order-badge badge-cod">COD: ' + formatCurrency(order.codAmount) + '</span>';
                         if (order.serviceTypeName) { var badgeClass = order.serviceTypeName.toLowerCase().includes('express') ? 'badge-express' : ''; badges += '<span class="order-badge ' + badgeClass + '">' + order.serviceTypeName + '</span>'; }
                         if (order.weight) badges += '<span class="order-badge badge-weight">' + order.weight + ' kg</span>';
@@ -728,7 +738,10 @@
                 }
                 function sealContainer() {
                     if (!selectedContainerId) return;
-                    if (!confirm('Bạn có chắc muốn niêm phong bao này?\n\nSau khi niêm phong sẽ không thể thêm/xóa đơn hàng.')) return;
+                    $('#sealConfirmModal').modal('show');
+                }
+                function doSealContainer() {
+                    $('#sealConfirmModal').modal('hide');
                     $.ajax({
                         url: contextPath + '/api/manager/outbound/containers/' + selectedContainerId + '/seal?actorId=' + managerId, method: 'POST',
                         success: function (response) { if (response.success) { showToast('success', 'Đã niêm phong!', 'Bao hàng đã được niêm phong và sẵn sàng xếp xe'); loadContainers(selectedHubId); loadContainerDetail(selectedContainerId); } else { showToast('error', 'Lỗi', response.message); } },
@@ -737,13 +750,21 @@
                 }
                 function reopenContainer() {
                     if (!selectedContainerId) return;
-                    if (!confirm('Bạn có chắc muốn mở lại bao này?\n\nSau khi mở lại bạn có thể thêm/bớt đơn hàng.')) return;
+                    $('#reopenConfirmModal').modal('show');
+                }
+                function doReopenContainer() {
+                    $('#reopenConfirmModal').modal('hide');
                     $.ajax({
                         url: contextPath + '/api/manager/outbound/containers/' + selectedContainerId + '/reopen?actorId=' + managerId, method: 'POST',
                         success: function (response) { if (response.success) { showToast('success', 'Đã mở lại bao!', 'Bạn có thể thêm/bớt đơn hàng'); loadContainers(selectedHubId); loadContainerDetail(selectedContainerId); } else { showToast('error', 'Lỗi', response.message); } },
                         error: function (xhr) { var error = xhr.responseJSON || {}; showToast('error', 'Lỗi', error.message || 'Không thể mở lại bao'); }
                     });
                 }
+                // Event handlers for modal confirm buttons
+                $(document).ready(function () {
+                    $('#confirmSealBtn').click(function () { doSealContainer(); });
+                    $('#confirmReopenBtn').click(function () { doReopenContainer(); });
+                });
             </script>
         </body>
 

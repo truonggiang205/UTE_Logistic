@@ -144,6 +144,29 @@ public class ManagerPageController {
         return "manager/outbound/gate-out";
     }
 
+    /**
+     * Trang Quản lý Chuyến Xe (Trip Management) - Xem tất cả chuyến xe kể cả đã
+     * xuất bến
+     */
+    @GetMapping("/outbound/trip-management")
+    public String viewTripManagement(Model model) {
+        log.info("Truy cập trang Quản lý Chuyến Xe");
+        model.addAttribute("hubs", hubRepository.findAll());
+        return "manager/outbound/trip-management";
+    }
+
+    // ===================== RESOURCE MANAGEMENT =====================
+
+    /**
+     * Trang Quản lý Tài xế & Xe (Resource Management)
+     */
+    @GetMapping("/resource/management")
+    public String viewResourceManagement(Model model) {
+        log.info("Truy cập trang Quản lý Tài xế & Xe");
+        model.addAttribute("hubs", hubRepository.findAll());
+        return "manager/resource/resource-management";
+    }
+
     // ===================== COD SETTLEMENT =====================
     /**
      * Trang Quyết Toán COD (đường dẫn /finance/cod-settlement)

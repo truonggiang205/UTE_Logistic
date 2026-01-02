@@ -299,6 +299,58 @@
 
         <body id="page-top">
             <div class="toast-container" id="toastContainer"></div>
+            <!-- Modal Xác nhận Xếp bao lên xe -->
+            <div class="modal fade" id="loadConfirmModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header"
+                            style="background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%); color: #fff;">
+                            <h5 class="modal-title"><i class="fas fa-arrow-right mr-2"></i> Xác nhận xếp bao</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <i class="fas fa-truck-loading fa-4x text-success mb-3"></i>
+                            <h5 class="font-weight-bold">Xếp bao lên xe?</h5>
+                            <p class="text-muted">Bạn có chắc muốn xếp bao <strong id="loadContainerCodeDisplay"
+                                    class="text-primary"></strong> lên xe?</p>
+                            <p class="text-info"><i class="fas fa-info-circle mr-1"></i> Sau khi xếp, bao sẽ được vận
+                                chuyển theo chuyến xe này.</p>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-secondary px-4" data-dismiss="modal"><i
+                                    class="fas fa-times mr-1"></i> Hủy</button>
+                            <button type="button" class="btn btn-success px-4" id="confirmLoadBtn"><i
+                                    class="fas fa-arrow-right mr-1"></i> Xếp lên xe</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal Xác nhận Dỡ bao khỏi xe -->
+            <div class="modal fade" id="unloadConfirmModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header"
+                            style="background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%); color: #fff;">
+                            <h5 class="modal-title"><i class="fas fa-times mr-2"></i> Xác nhận dỡ bao</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <i class="fas fa-box-open fa-4x text-danger mb-3"></i>
+                            <h5 class="font-weight-bold">Dỡ bao khỏi xe?</h5>
+                            <p class="text-muted">Bạn có chắc muốn dỡ bao <strong id="unloadContainerCodeDisplay"
+                                    class="text-danger"></strong> khỏi xe?</p>
+                            <p class="text-warning"><i class="fas fa-exclamation-triangle mr-1"></i> Bao sẽ được đưa trở
+                                lại kho để xếp vào chuyến khác.</p>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-secondary px-4" data-dismiss="modal"><i
+                                    class="fas fa-times mr-1"></i> Hủy</button>
+                            <button type="button" class="btn btn-danger px-4" id="confirmUnloadBtn"><i
+                                    class="fas fa-times-circle mr-1"></i> Dỡ khỏi xe</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="wrapper">
                 <div id="content-wrapper" class="d-flex flex-column">
                     <div id="content">
@@ -428,6 +480,10 @@
                 var vehicleCapacity = 0;
                 var allTrips = [];
                 var allAvailableContainers = [];
+                var pendingLoadContainerId = null;
+                var pendingLoadContainerCode = null;
+                var pendingUnloadContainerId = null;
+                var pendingUnloadContainerCode = null;
 
                 $(document).ready(function () {
                     loadTrips('');
@@ -435,6 +491,9 @@
                     $('#statusFilter').change(function () { filterTrips(); });
                     $('#tripSearchInput').on('input', function () { filterTrips(); });
                     $('#containerSearchInput').on('input', function () { filterContainers(); });
+                    // Modal confirm button handlers
+                    $('#confirmLoadBtn').click(function () { doLoadContainer(); });
+                    $('#confirmUnloadBtn').click(function () { doUnloadContainer(); });
                 });
 
                 function showToast(type, title, message) {
@@ -624,14 +683,23 @@
                         showToast('warning', 'Chưa chọn chuyến', 'Vui lòng chọn chuyến xe trước');
                         return;
                     }
+                    pendingLoadContainerId = containerId;
+                    pendingLoadContainerCode = containerCode;
+                    $('#loadContainerCodeDisplay').text(containerCode);
+                    $('#loadConfirmModal').modal('show');
+                }
+
+                function doLoadContainer() {
+                    $('#loadConfirmModal').modal('hide');
+                    if (!pendingLoadContainerId) return;
                     $.ajax({
                         url: contextPath + '/api/manager/outbound/load-container?actorId=' + managerId,
                         method: 'POST',
                         contentType: 'application/json',
-                        data: JSON.stringify({ tripId: selectedTripId, containerId: containerId }),
+                        data: JSON.stringify({ tripId: selectedTripId, containerId: pendingLoadContainerId }),
                         success: function (response) {
                             if (response.success) {
-                                showToast('success', 'Xếp bao thành công!', 'Đã xếp bao ' + containerCode + ' lên xe');
+                                showToast('success', 'Xếp bao thành công!', 'Đã xếp bao ' + pendingLoadContainerCode + ' lên xe');
                                 if (response.message && response.message.indexOf('quá tải') > -1) {
                                     showToast('warning', 'Cảnh báo', response.message);
                                 }
@@ -650,15 +718,23 @@
 
                 function unloadContainer(containerId, containerCode) {
                     if (!selectedTripId) return;
-                    if (!confirm('Bạn có chắc muốn dỡ bao ' + containerCode + ' khỏi xe?')) return;
+                    pendingUnloadContainerId = containerId;
+                    pendingUnloadContainerCode = containerCode;
+                    $('#unloadContainerCodeDisplay').text(containerCode);
+                    $('#unloadConfirmModal').modal('show');
+                }
+
+                function doUnloadContainer() {
+                    $('#unloadConfirmModal').modal('hide');
+                    if (!pendingUnloadContainerId) return;
                     $.ajax({
                         url: contextPath + '/api/manager/outbound/unload-container?actorId=' + managerId,
                         method: 'POST',
                         contentType: 'application/json',
-                        data: JSON.stringify({ tripId: selectedTripId, containerId: containerId }),
+                        data: JSON.stringify({ tripId: selectedTripId, containerId: pendingUnloadContainerId }),
                         success: function (response) {
                             if (response.success) {
-                                showToast('success', 'Dỡ bao thành công!', 'Đã dỡ bao ' + containerCode + ' khỏi xe');
+                                showToast('success', 'Dỡ bao thành công!', 'Đã dỡ bao ' + pendingUnloadContainerCode + ' khỏi xe');
                                 selectTrip(selectedTripId, selectedTripFromHubId);
                                 loadTrips($('#hubSelect').val());
                             } else {

@@ -13,21 +13,24 @@ import java.util.List;
 @Repository
 public interface ContainerDetailRepository extends JpaRepository<ContainerDetail, Long> {
 
-    List<ContainerDetail> findByContainerContainerId(Long containerId);
+        List<ContainerDetail> findByContainerContainerId(Long containerId);
 
-    @Query("SELECT cd FROM ContainerDetail cd JOIN FETCH cd.request r WHERE cd.container.containerId = :containerId")
-    List<ContainerDetail> findByContainerIdWithRequest(@Param("containerId") Long containerId);
+        // Thêm cho ResourceController
+        List<ContainerDetail> findByContainer_ContainerId(Long containerId);
 
-    // optional helper
-    List<ContainerDetail> findByRequestRequestId(Long requestId);
+        @Query("SELECT cd FROM ContainerDetail cd JOIN FETCH cd.request r WHERE cd.container.containerId = :containerId")
+        List<ContainerDetail> findByContainerIdWithRequest(@Param("containerId") Long containerId);
 
-    // Xóa tất cả ContainerDetail của một đơn hàng
-    void deleteByRequest_RequestId(Long requestId);
+        // optional helper
+        List<ContainerDetail> findByRequestRequestId(Long requestId);
 
-    @Query("SELECT c FROM Container c " +
-            "WHERE c.createdAtHub.hubId = :hubId " +
-            "AND c.status IN :statuses")
-    List<Container> findByHubAndStatuses(
-            @Param("hubId") Long hubId,
-            @Param("statuses") List<Container.ContainerStatus> statuses);
+        // Xóa tất cả ContainerDetail của một đơn hàng
+        void deleteByRequest_RequestId(Long requestId);
+
+        @Query("SELECT c FROM Container c " +
+                        "WHERE c.createdAtHub.hubId = :hubId " +
+                        "AND c.status IN :statuses")
+        List<Container> findByHubAndStatuses(
+                        @Param("hubId") Long hubId,
+                        @Param("statuses") List<Container.ContainerStatus> statuses);
 }

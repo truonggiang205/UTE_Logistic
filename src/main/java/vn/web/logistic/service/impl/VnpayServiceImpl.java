@@ -45,7 +45,7 @@ public class VnpayServiceImpl implements VnpayService {
                     .createdAt(LocalDateTime.now()).build();
             vnpayTransactionRepository.save(transaction);
 
-            Map<String, String> vnpParams = new HashMap<>();
+            Map<String, String> vnpParams = new LinkedHashMap<>();
             vnpParams.put("vnp_Version", vnpayConfig.getVnpVersion());
             vnpParams.put("vnp_Command", vnpayConfig.getVnpCommand());
             vnpParams.put("vnp_TmnCode", vnpayConfig.getVnpTmnCode());
@@ -56,7 +56,8 @@ public class VnpayServiceImpl implements VnpayService {
             vnpParams.put("vnp_OrderType", vnpayConfig.getVnpOrderType());
             vnpParams.put("vnp_Locale", "vn");
             vnpParams.put("vnp_ReturnUrl", vnpayConfig.getVnpReturnUrl());
-            vnpParams.put("vnp_IpAddr", ipAddress != null ? ipAddress : "127.0.0.1");
+            // Luôn sử dụng 127.0.0.1 cho môi trường Sandbox
+            vnpParams.put("vnp_IpAddr", "127.0.0.1");
 
             // Timezone theo VNPAY - dùng Etc/GMT+7 như code mẫu
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
@@ -69,6 +70,7 @@ public class VnpayServiceImpl implements VnpayService {
             vnpParams.put("vnp_ExpireDate", vnpExpireDate);
 
             // Build hashData và query ĐỒNG THỜI như code mẫu VNPAY
+            // QUAN TRỌNG: Sort theo alphabetical order
             List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
             Collections.sort(fieldNames);
             StringBuilder hashData = new StringBuilder();
@@ -78,17 +80,21 @@ public class VnpayServiceImpl implements VnpayService {
                 String fieldName = itr.next();
                 String fieldValue = vnpParams.get(fieldName);
                 if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                    // Build hash data
-                    hashData.append(fieldName);
-                    hashData.append('=');
-                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    // Build query
-                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
-                    query.append('=');
-                    query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    if (itr.hasNext()) {
-                        query.append('&');
-                        hashData.append('&');
+                    try {
+                        // Build hash data - encode theo US_ASCII như code mẫu VNPAY
+                        hashData.append(fieldName);
+                        hashData.append('=');
+                        hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                        // Build query - cả fieldName và fieldValue đều phải encode
+                        query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
+                        query.append('=');
+                        query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                        if (itr.hasNext()) {
+                            query.append('&');
+                            hashData.append('&');
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error encoding parameter: {}", fieldName, e);
                     }
                 }
             }
@@ -127,6 +133,8 @@ public class VnpayServiceImpl implements VnpayService {
 
     /**
      * Verify chữ ký từ VNPAY callback
+     * QUAN TRỌNG: Phải loại bỏ vnp_SecureHash và vnp_SecureHashType trước khi
+     * verify
      */
     private boolean verifySignature(Map<String, String> params) {
         String vnpSecureHash = params.get("vnp_SecureHash");
@@ -135,24 +143,23 @@ public class VnpayServiceImpl implements VnpayService {
             return false;
         }
 
-        // Tạo map mới không chứa vnp_SecureHash và vnp_SecureHashType
-        Map<String, String> fieldsToHash = new HashMap<>();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            String key = entry.getKey();
-            if (!key.equals("vnp_SecureHash") && !key.equals("vnp_SecureHashType")) {
-                fieldsToHash.put(key, entry.getValue());
-            }
-        }
+        // Sử dụng method verifySecureHash từ VnpayConfig - đã loại bỏ vnp_SecureHash và
+        // vnp_SecureHashType bên trong
+        boolean isValid = vnpayConfig.verifySecureHash(params, vnpSecureHash);
 
-        // Tính hash từ các field nhận được
-        String calculatedHash = vnpayConfig.hashAllFields(fieldsToHash);
-
-        // So sánh (case-insensitive vì VNPAY có thể trả về uppercase)
-        boolean isValid = vnpSecureHash.equalsIgnoreCase(calculatedHash);
         if (!isValid) {
             logger.error("Signature verification failed!");
             logger.error("Received hash: {}", vnpSecureHash);
-            logger.error("Calculated hash: {}", calculatedHash);
+
+            // Debug: Log các fields được hash
+            Map<String, String> fieldsToHash = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                String key = entry.getKey();
+                if (!key.equals("vnp_SecureHash") && !key.equals("vnp_SecureHashType")) {
+                    fieldsToHash.put(key, entry.getValue());
+                }
+            }
+            logger.error("Fields to hash: {}", fieldsToHash);
         }
         return isValid;
     }
@@ -169,7 +176,8 @@ public class VnpayServiceImpl implements VnpayService {
         logger.info("IPN Params: {}", params);
 
         try {
-            // 1. Verify signature
+            // 1. Verify signature - đã loại bỏ vnp_SecureHash và vnp_SecureHashType bên
+            // trong
             if (!verifySignature(params)) {
                 result.put("RspCode", "97");
                 result.put("Message", "Invalid signature");
@@ -251,7 +259,8 @@ public class VnpayServiceImpl implements VnpayService {
         logger.info("Return Params: {}", params);
 
         try {
-            // 1. Verify signature
+            // 1. Verify signature - đã loại bỏ vnp_SecureHash và vnp_SecureHashType bên
+            // trong
             if (!verifySignature(params)) {
                 logger.error("Return URL signature verification failed");
                 return null;

@@ -72,12 +72,17 @@
                     data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Tác nghiệp:</h6>
-                        <a class="collapse-item" href="<c:url value='/manager/outbound/consolidate'/>">Đóng bao
-                            (Consolidate)</a>
-                        <a class="collapse-item" href="<c:url value='/manager/outbound/trip-planning'/>">Điều phối xe
-                            (Trip)</a>
-                        <a class="collapse-item" href="<c:url value='/manager/outbound/gate-out'/>">Xuất bến (Gate
-                            Out)</a>
+                        <a class="collapse-item" href="<c:url value='/manager/outbound/consolidate'/>">
+                            <i class="fas fa-box text-primary mr-1"></i> Đóng bao (Consolidate)</a>
+                        <a class="collapse-item" href="<c:url value='/manager/outbound/loading'/>">
+                            <i class="fas fa-truck-loading text-success mr-1"></i> Xếp bao vào xe (Loading)</a>
+                        <a class="collapse-item" href="<c:url value='/manager/outbound/trip-planning'/>">
+                            <i class="fas fa-route text-warning mr-1"></i> Điều phối xe (Trip)</a>
+                        <a class="collapse-item" href="<c:url value='/manager/outbound/gate-out'/>">
+                            <i class="fas fa-sign-out-alt text-danger mr-1"></i> Xuất bến (Gate Out)</a>
+                        <h6 class="collapse-header">Tra cứu:</h6>
+                        <a class="collapse-item" href="<c:url value='/manager/outbound/trip-management'/>">
+                            <i class="fas fa-clipboard-list text-info mr-1"></i> Quản lý Chuyến xe</a>
                     </div>
                 </div>
             </li>
@@ -150,11 +155,12 @@
                 <div id="collapseResources" class="collapse" aria-labelledby="headingPages"
                     data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Quản lý:</h6>
+                        <a class="collapse-item" href="<c:url value='/manager/resource/management'/>">
+                            <i class="fas fa-users-cog text-primary mr-1"></i> Tài xế & Xe</a>
                         <h6 class="collapse-header">Danh sách:</h6>
-                        <a class="collapse-item" href="<c:url value='/manager/resource/shippers'/>">Đội ngũ Shipper</a>
-                        <a class="collapse-item" href="<c:url value='/manager/resource/drivers'/>">Đội ngũ Tài xế</a>
-                        <a class="collapse-item" href="<c:url value='/manager/resource/vehicles'/>">Phương tiện (Xe
-                            tải)</a>
+                        <a class="collapse-item" href="<c:url value='/manager/resource/shippers'/>">
+                            <i class="fas fa-motorcycle text-success mr-1"></i> Đội ngũ Shipper</a>
                     </div>
                 </div>
             </li>
