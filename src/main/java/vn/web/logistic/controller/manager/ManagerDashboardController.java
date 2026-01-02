@@ -2,14 +2,12 @@ package vn.web.logistic.controller.manager;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import vn.web.logistic.dto.response.manager.ManagerDashboardStatsResponse;
 import vn.web.logistic.dto.response.manager.OrderTrackingResponse;
 import vn.web.logistic.entity.User;
-import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.ManagerDashboardService;
+import vn.web.logistic.service.UserService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +26,7 @@ import java.util.Map;
 public class ManagerDashboardController {
 
     private final ManagerDashboardService managerDashboardService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     /**
      * API lấy thống kê tổng quan cho Manager Dashboard
@@ -38,15 +36,15 @@ public class ManagerDashboardController {
      */
     @GetMapping("/dashboard/stats")
     public ResponseEntity<?> getManagerStats() {
-        // Lấy thông tin user từ Spring Security
-        User currentUser = getCurrentUser();
+        // Lấy thông tin user từ UserService
+        User currentUser = userService.getCurrentUser();
 
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
 
-        // Lấy hub_id từ Staff của user (Manager là staff của Hub)
-        Long hubId = getHubIdFromUser(currentUser);
+        // Lấy hub_id từ User thông qua UserService
+        Long hubId = userService.getHubIdFromUser(currentUser);
 
         if (hubId == null) {
             return ResponseEntity.badRequest().body(
@@ -78,7 +76,7 @@ public class ManagerDashboardController {
             @RequestParam(required = false) String keyword) {
 
         // Kiểm tra đăng nhập
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
@@ -126,7 +124,7 @@ public class ManagerDashboardController {
             @PathVariable Long requestId) {
 
         // Kiểm tra đăng nhập
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
@@ -157,13 +155,13 @@ public class ManagerDashboardController {
             @RequestParam(required = false, defaultValue = "all") String status) {
 
         // Kiểm tra đăng nhập
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
 
         // Lấy hub_id từ user
-        Long hubId = getHubIdFromUser(currentUser);
+        Long hubId = userService.getHubIdFromUser(currentUser);
         if (hubId == null) {
             return ResponseEntity.badRequest().body(
                     createErrorResponse("Không tìm thấy thông tin Hub."));
@@ -182,40 +180,6 @@ public class ManagerDashboardController {
     }
 
     /**
-     * Lấy User hiện tại từ Spring Security
-     */
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        String email = authentication.getName();
-        if (email == null || "anonymousUser".equals(email)) {
-            return null;
-        }
-
-        return userRepository.findByEmail(email).orElse(null);
-    }
-
-    /**
-     * Lấy hub_id từ User (qua Staff hoặc Shipper)
-     */
-    private Long getHubIdFromUser(User user) {
-        // Ưu tiên lấy từ Staff (Manager là staff)
-        if (user.getStaff() != null && user.getStaff().getHub() != null) {
-            return user.getStaff().getHub().getHubId();
-        }
-
-        // Fallback: lấy từ Shipper nếu có
-        if (user.getShipper() != null && user.getShipper().getHub() != null) {
-            return user.getShipper().getHub().getHubId();
-        }
-
-        return null;
-    }
-
-    /**
      * Tạo response lỗi chuẩn
      */
     private Map<String, Object> createErrorResponse(String message) {
@@ -231,12 +195,12 @@ public class ManagerDashboardController {
      */
     @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUserInfo() {
-        User currentUser = getCurrentUser();
+        User currentUser = userService.getCurrentUser();
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
 
-        Long hubId = getHubIdFromUser(currentUser);
+        Long hubId = userService.getHubIdFromUser(currentUser);
 
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("userId", currentUser.getUserId());

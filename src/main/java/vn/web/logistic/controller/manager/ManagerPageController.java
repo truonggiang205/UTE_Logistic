@@ -11,19 +11,14 @@ import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.TrackingCode;
 import vn.web.logistic.entity.Trip;
-import vn.web.logistic.repository.DriverRepository;
-import vn.web.logistic.repository.HubRepository;
-import vn.web.logistic.repository.ServiceRequestRepository;
-import vn.web.logistic.repository.ServiceTypeRepository;
-import vn.web.logistic.repository.TrackingCodeRepository;
-import vn.web.logistic.repository.TripRepository;
-import vn.web.logistic.repository.VehicleRepository;
+import vn.web.logistic.service.ManagerPageService;
 
 import java.time.format.DateTimeFormatter;
 import java.math.BigDecimal;
 
 /**
  * Controller để render các trang JSP cho Manager
+ * Sử dụng ManagerPageService để lấy dữ liệu (tuân thủ mô hình MVC)
  */
 @Slf4j
 @Controller
@@ -31,13 +26,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class ManagerPageController {
 
-    private final HubRepository hubRepository;
-    private final ServiceTypeRepository serviceTypeRepository;
-    private final VehicleRepository vehicleRepository;
-    private final DriverRepository driverRepository;
-    private final TripRepository tripRepository;
-    private final ServiceRequestRepository serviceRequestRepository;
-    private final TrackingCodeRepository trackingCodeRepository;
+    private final ManagerPageService managerPageService;
 
     @GetMapping("/dashboard")
     public String viewDashboard() {
@@ -63,8 +52,8 @@ public class ManagerPageController {
     @GetMapping("/inbound/drop-off")
     public String viewInboundDropOff(Model model) {
         log.info("Truy cập trang Tạo Đơn Tại Quầy");
-        model.addAttribute("hubs", hubRepository.findAll());
-        model.addAttribute("serviceTypes", serviceTypeRepository.findAllByIsActiveTrue());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
+        model.addAttribute("serviceTypes", managerPageService.getActiveServiceTypes());
         return "manager/inbound/drop-off";
     }
 
@@ -94,7 +83,7 @@ public class ManagerPageController {
     @GetMapping("/outbound/consolidate")
     public String viewOutboundConsolidate(Model model) {
         log.info("Truy cập trang Đóng Bao");
-        model.addAttribute("hubs", hubRepository.findAll());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
         return "manager/outbound/consolidate";
     }
 
@@ -104,15 +93,13 @@ public class ManagerPageController {
     @GetMapping("/outbound/trip-planning")
     public String viewOutboundTripPlanning(Model model) {
         log.info("Truy cập trang Tạo Chuyến Xe");
-        model.addAttribute("hubs", hubRepository.findAll());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
         // Lấy tất cả xe (hiển thị unavailable cho xe không available)
-        model.addAttribute("vehicles", vehicleRepository.findAll());
+        model.addAttribute("vehicles", managerPageService.getAllVehicles());
         // Lấy tất cả tài xế (hiển thị inactive cho tài xế không active)
-        model.addAttribute("drivers", driverRepository.findAll());
+        model.addAttribute("drivers", managerPageService.getAllDrivers());
         // Lấy các chuyến đang loading để hiển thị bên phải
-        model.addAttribute("trips", tripRepository.findAllWithFilters(
-                null, null, Trip.TripStatus.loading, null, null,
-                org.springframework.data.domain.Pageable.unpaged()).getContent());
+        model.addAttribute("trips", managerPageService.getTripsByStatus(Trip.TripStatus.loading));
         return "manager/outbound/trip-planning";
     }
 
@@ -122,11 +109,9 @@ public class ManagerPageController {
     @GetMapping("/outbound/loading")
     public String viewOutboundLoading(Model model) {
         log.info("Truy cập trang Xếp Bao vào Xe");
-        model.addAttribute("hubs", hubRepository.findAll());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
         // Lấy các chuyến đang loading để xếp bao
-        model.addAttribute("trips", tripRepository.findAllWithFilters(
-                null, null, Trip.TripStatus.loading, null, null,
-                org.springframework.data.domain.Pageable.unpaged()).getContent());
+        model.addAttribute("trips", managerPageService.getTripsByStatus(Trip.TripStatus.loading));
         return "manager/outbound/loading";
     }
 
@@ -136,11 +121,9 @@ public class ManagerPageController {
     @GetMapping("/outbound/gate-out")
     public String viewOutboundGateOut(Model model) {
         log.info("Truy cập trang Xuất Bến");
-        model.addAttribute("hubs", hubRepository.findAll());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
         // Lấy các chuyến đang loading
-        model.addAttribute("trips", tripRepository.findAllWithFilters(
-                null, null, Trip.TripStatus.loading, null, null,
-                org.springframework.data.domain.Pageable.unpaged()).getContent());
+        model.addAttribute("trips", managerPageService.getTripsByStatus(Trip.TripStatus.loading));
         return "manager/outbound/gate-out";
     }
 
@@ -151,7 +134,7 @@ public class ManagerPageController {
     @GetMapping("/outbound/trip-management")
     public String viewTripManagement(Model model) {
         log.info("Truy cập trang Quản lý Chuyến Xe");
-        model.addAttribute("hubs", hubRepository.findAll());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
         return "manager/outbound/trip-management";
     }
 
@@ -163,7 +146,7 @@ public class ManagerPageController {
     @GetMapping("/resource/management")
     public String viewResourceManagement(Model model) {
         log.info("Truy cập trang Quản lý Tài xế & Xe");
-        model.addAttribute("hubs", hubRepository.findAll());
+        model.addAttribute("hubs", managerPageService.getAllHubs());
         return "manager/resource/resource-management";
     }
 
@@ -185,12 +168,10 @@ public class ManagerPageController {
     public String viewPrintLabel(@PathVariable Long requestId, Model model) {
         log.info("In tem vận đơn cho requestId: {}", requestId);
 
-        ServiceRequest order = serviceRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại: " + requestId));
+        ServiceRequest order = managerPageService.getOrderById(requestId);
 
         // Lấy mã vận đơn
-        TrackingCode trackingCode = trackingCodeRepository.findByRequest_RequestId(requestId)
-                .orElse(null);
+        TrackingCode trackingCode = managerPageService.getTrackingCodeByRequestId(requestId);
 
         model.addAttribute("order", order);
         model.addAttribute("trackingCode", trackingCode != null ? trackingCode.getCode() : "N/A");

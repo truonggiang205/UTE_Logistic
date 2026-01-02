@@ -9,7 +9,6 @@ import vn.web.logistic.entity.CustomerAddress;
 import vn.web.logistic.entity.Route;
 import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.ServiceType;
-import vn.web.logistic.repository.RouteRepository;
 import vn.web.logistic.service.FileUploadService;
 import vn.web.logistic.service.InboundService;
 
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 public class InboundController {
 
     private final InboundService inboundService;
-    private final RouteRepository routeRepository;
     private final FileUploadService fileUploadService;
 
     /**
@@ -271,43 +269,5 @@ public class InboundController {
         }
 
         return dto;
-    }
-
-    /**
-     * GET /api/manager/inbound/debug-all-routes
-     */
-    @GetMapping("/debug-all-routes")
-    public ResponseEntity<?> debugAllRoutes() {
-        try {
-            List<Route> allRoutes = routeRepository.findAll();
-            System.out.println("[DEBUG] Total routes in database: " + allRoutes.size());
-
-            List<Map<String, Object>> routeDTOs = allRoutes.stream()
-                    .map(r -> {
-                        Map<String, Object> dto = new HashMap<>();
-                        dto.put("routeId", r.getRouteId());
-                        dto.put("description", r.getDescription());
-                        dto.put("fromHubId", r.getFromHub() != null ? r.getFromHub().getHubId() : null);
-                        dto.put("fromHubName", r.getFromHub() != null ? r.getFromHub().getHubName() : null);
-                        dto.put("toHubId", r.getToHub() != null ? r.getToHub().getHubId() : null);
-                        dto.put("toHubName", r.getToHub() != null ? r.getToHub().getHubName() : null);
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("totalRoutes", allRoutes.size());
-            response.put("routes", routeDTOs);
-            response.put("message", allRoutes.isEmpty()
-                    ? "Bảng route TRỐNG! Hãy chạy seed_logistic.sql để thêm dữ liệu."
-                    : "Tìm thấy " + allRoutes.size() + " routes trong database.");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Lỗi: " + e.getMessage()));
-        }
     }
 }
