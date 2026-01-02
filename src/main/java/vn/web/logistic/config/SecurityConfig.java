@@ -1,7 +1,6 @@
 package vn.web.logistic.config;
 
 import java.util.Arrays;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +11,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -23,112 +21,148 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+// Kích hoạt tính năng phân quyền trực tiếp trên method (Controller/Service)
+// Ví dụ: @PreAuthorize("hasRole('ADMIN')")
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired
-    private UserDetailsService userDetailsService;
-
-    @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // 1. Bean mã hóa mật khẩu
+    // Sử dụng BCrypt để băm mật khẩu (hash) trước khi lưu vào DB hoặc khi so sánh
+    // đăng nhập
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // 2. Bean quản lý xác thực
+    // Cần thiết để Spring Security thực hiện việc kiểm tra user/pass
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
     /**
-     * Security filter cho API endpoints - sử dụng JWT (stateless)
+     * PHẦN QUAN TRỌNG 1: Cấu hình bảo mật cho API (Mobile/Frontend riêng)
+     * @Order(1): Đánh dấu bộ lọc này chạy TRƯỚC bộ lọc Web
      */
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
+                // Chỉ áp dụng cấu hình này cho các URL bắt đầu bằng /api/
                 .securityMatcher("/api/**")
+
+                // Cấu hình CORS (cho phép frontend từ domain khác gọi vào)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // Tắt CSRF vì API dùng Token, không dùng Session Cookie nên không sợ lỗi này
                 .csrf(csrf -> csrf.disable())
-                // Cho phép cả JWT và Session
+
+                // Quản lý Session: IF_REQUIRED (Tạo session nếu cần, nhưng chủ yếu API sẽ là
+                // Stateless)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+
+                // Phân quyền chi tiết cho từng API URL
                 .authorizeHttpRequests(auth -> auth
+                        // Cho phép truy cập tự do (login, register API)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+
+                        // Các API cần quyền cụ thể
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/staff/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/api/shipper/**").hasAnyRole("ADMIN", "SHIPPER")
                         .requestMatchers("/api/customer/**").hasAnyRole("ADMIN", "CUSTOMER")
+
+                        // Tất cả request API còn lại phải có Token hợp lệ
                         .anyRequest().authenticated())
+
+                // QUAN TRỌNG: Chèn filter kiểm tra JWT vào trước filter đăng nhập mặc định
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     /**
-     * Security filter cho Web pages - sử dụng Form Login (session-based)
+     * PHẦN QUAN TRỌNG 2: Cấu hình bảo mật cho Web truyền thống (JSP/Thymeleaf)
+     * @Order(2): Chạy SAU khi check API xong. Nếu URL không phải /api/** thì sẽ rơi
+     * vào đây.
      */
     @Bean
     @Order(2)
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
+                // Áp dụng cho tất cả các URL còn lại
                 .securityMatcher("/**")
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.disable()) // Tắt CSRF (trong thực tế Web nên bật cái này, nhưng demo thì tắt cho dễ)
+
                 .authorizeHttpRequests(auth -> auth
-                        // Static resources
+                        // Cho phép tải tài nguyên tĩnh (CSS, JS, ảnh) không cần đăng nhập
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**", "/webjars/**").permitAll()
                         .requestMatchers("/WEB-INF/**").permitAll()
 
-                        // Public pages
+                        // Các trang Public
                         .requestMatchers("/", "/home", "/login", "/register", "/error").permitAll()
 
-                        // Admin pages
+                        // Phân quyền truy cập trang theo Role
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                        // Staff pages
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
-
-                        // Manager pages
                         .requestMatchers("/manager/**").hasAnyRole("ADMIN", "STAFF")
-
-                        // Shipper pages
                         .requestMatchers("/shipper/**").hasAnyRole("ADMIN", "SHIPPER")
-
-                        // Customer pages
                         .requestMatchers("/customer/**").hasAnyRole("ADMIN", "CUSTOMER")
 
+                        // Các trang khác bắt buộc phải đăng nhập
                         .anyRequest().authenticated())
+
+                // Cấu hình Form Login (Giao diện đăng nhập)
                 .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/do-login")
-                        .usernameParameter("email")
-                        .passwordParameter("password")
-                        .defaultSuccessUrl("/login-success", true)
-                        .failureUrl("/login?error=true")
+                        .loginPage("/login") // URL trang login custom của bạn
+                        .loginProcessingUrl("/do-login") // URL action trong thẻ <form> để submit username/password
+                        .usernameParameter("email") // Tên field input email trong form
+                        .passwordParameter("password") // Tên field input password trong form
+                        .defaultSuccessUrl("/login-success", true) // Chuyển hướng sau khi login thành công
+                        .failureUrl("/login?error=true") // Chuyển hướng khi login sai
                         .permitAll())
+
+                // Cấu hình Đăng xuất
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout=true")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
+                        .logoutUrl("/logout") // URL để gọi logout
+                        .logoutSuccessUrl("/login?logout=true") // Chuyển hướng sau khi logout
+                        .invalidateHttpSession(true) // Hủy session
+                        .deleteCookies("JSESSIONID") // Xóa cookie
                         .permitAll())
+
+                // Xử lý khi user cố truy cập trang không đủ quyền (403 Forbidden)
                 .exceptionHandling(ex -> ex
                         .accessDeniedPage("/access-denied"));
 
         return http.build();
     }
 
+    /**
+     * Cấu hình CORS: Cho phép ai được gọi API của server này?
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Cho phép frontend React (3000) và chính nó (9090) gọi
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:9090", "http://localhost:3000"));
+
+        // Cho phép các method HTTP
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+
+        // Cho phép gửi kèm mọi header
         configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // Cho phép client đọc được header Authorization (chứa Token) trả về
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
+
+        // Cho phép gửi kèm Cookie/Credential
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setMaxAge(3600L); // Cache cấu hình này trong 1 giờ
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -2,6 +2,9 @@ package vn.web.logistic.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -29,7 +32,8 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, length = 255)
+    // --- SỬA QUAN TRỌNG 1: Ánh xạ đúng vào cột password_hash ---
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
     @Column(name = "full_name", length = 100)
@@ -38,7 +42,7 @@ public class User {
     @Column(length = 20)
     private String phone;
 
-    @Column(length = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
     @Enumerated(EnumType.STRING)
@@ -49,9 +53,20 @@ public class User {
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
 
+    // --- SỬA QUAN TRỌNG 2: Ánh xạ cột & Tự động cập nhật thời gian ---
+
+    @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
+
+    @CreationTimestamp // Tự động lấy giờ hiện tại khi INSERT
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp // Tự động cập nhật giờ hiện tại khi UPDATE
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // ----------------------------------------------------------------
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "USER_ROLES", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
