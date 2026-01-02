@@ -46,4 +46,10 @@ public class ManagerDashboardStatsResponse {
 
     // Số lượng task đang thực hiện hôm nay
     private Long todayTaskCount;
+
+    // Tỉ lệ giao hàng thành công (%)
+    private Double successRate;
+
+    // Tên Hub
+    private String hubName;
 }

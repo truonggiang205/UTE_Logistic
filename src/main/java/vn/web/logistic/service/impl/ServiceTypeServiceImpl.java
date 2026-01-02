@@ -121,7 +121,15 @@ public class ServiceTypeServiceImpl implements ServiceTypeService {
         return !entity.getServiceName().equals(req.getServiceName()) ||
                 entity.getBaseFee().compareTo(req.getBaseFee()) != 0 ||
                 entity.getExtraPricePerKg().compareTo(req.getExtraPricePerKg()) != 0 ||
-                !entity.getDescription().equals(req.getDescription());
+                !entity.getDescription().equals(req.getDescription())||
+                (entity.getInsuranceRate() == null ? req.getInsuranceRate() != null : (req.getInsuranceRate() == null ||
+                 entity.getInsuranceRate().compareTo(req.getInsuranceRate()) != 0)) ||
+                (entity.getCodRate() == null ? req.getCodRate() != null : (req.getCodRate() == null ||
+                 entity.getCodRate().compareTo(req.getCodRate()) != 0)) ||
+                (entity.getCodMinFee() == null ? req.getCodMinFee() != null : (req.getCodMinFee() == null ||
+                 entity.getCodMinFee().compareTo(req.getCodMinFee()) != 0));
+
+                
         // Bạn có thể thêm các trường khác vào đây để so sánh
     }
 

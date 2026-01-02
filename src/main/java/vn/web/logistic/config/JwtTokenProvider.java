@@ -26,16 +26,16 @@ public class JwtTokenProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret}")
-    private String jwtSecret;
+    private String jwtSecret; // Lấy chuỗi bí mật từ file application.properties
 
     @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    private long jwtExpiration; // Lấy thời gian hết hạn token từ config
 
-    private SecretKey key;
+    private SecretKey key; // Đối tượng Key chuẩn dùng để ký và xác thực
 
     @PostConstruct
     public void init() {
-        // Tạo key từ secret string
+        // Chuyển chuỗi bí mật thành Key thuật toán HMAC-SHA ngay khi ứng dụng chạy
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -48,11 +48,11 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
-                .subject(userDetails.getUsername())
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .subject(userDetails.getUsername()) // Đưa username vào phần payload của token
+                .issuedAt(now) // Thời điểm tạo
+                .expiration(expiryDate) // Thời điểm hết hạn
+                .signWith(key) // Ký token bằng Key bí mật (quan trọng nhất)
+                .compact(); // Đóng gói thành chuỗi JWT
     }
 
     /**
@@ -63,10 +63,10 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
-                .subject(username)
+                .subject(username) // Đưa username vào token
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(key)
+                .signWith(key) // Ký token
                 .compact();
     }
 
@@ -75,12 +75,12 @@ public class JwtTokenProvider {
      */
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parser()
-                .verifyWith(key)
+                .verifyWith(key) // Dùng Key để xác minh chữ ký token
                 .build()
-                .parseSignedClaims(token)
+                .parseSignedClaims(token) // Giải mã token
                 .getPayload();
 
-        return claims.getSubject();
+        return claims.getSubject(); // Trả về username đã lưu trong token
     }
 
     /**
@@ -89,20 +89,20 @@ public class JwtTokenProvider {
     public boolean validateToken(String authToken) {
         try {
             Jwts.parser()
-                    .verifyWith(key)
+                    .verifyWith(key) // Kiểm tra xem token có đúng chữ ký của server không
                     .build()
-                    .parseSignedClaims(authToken);
+                    .parseSignedClaims(authToken); // Nếu giải mã thành công -> Token hợp lệ
             return true;
         } catch (io.jsonwebtoken.security.SignatureException ex) {
-            logger.error("Invalid JWT signature");
+            logger.error("Invalid JWT signature"); // Lỗi: Chữ ký sai (token bị sửa đổi)
         } catch (MalformedJwtException ex) {
-            logger.error("Invalid JWT token");
+            logger.error("Invalid JWT token"); // Lỗi: Token sai định dạng/cấu trúc
         } catch (ExpiredJwtException ex) {
-            logger.error("Expired JWT token");
+            logger.error("Expired JWT token"); // Lỗi: Token đã hết hạn
         } catch (UnsupportedJwtException ex) {
-            logger.error("Unsupported JWT token");
+            logger.error("Unsupported JWT token"); // Lỗi: Token không hỗ trợ
         } catch (IllegalArgumentException ex) {
-            logger.error("JWT claims string is empty");
+            logger.error("JWT claims string is empty"); // Lỗi: Token rỗng
         }
         return false;
     }

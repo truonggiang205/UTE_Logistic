@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class VnpayTransaction {
 
     public enum VnpayPaymentStatus {
-        pending, success, failed
+        pending, paid, failed
     }
 
     @Id
@@ -40,15 +40,23 @@ public class VnpayTransaction {
     @Column(name = "vnp_response_code", length = 10)
     private String vnpResponseCode;
 
+    @Column(name = "vnp_bank_code", length = 50)
+    private String vnpBankCode;
+
+    @Column(name = "vnp_pay_date", length = 20)
+    private String vnpPayDate;
+
     @Column(name = "vnp_order_info", length = 255)
     private String vnpOrderInfo;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('pending','success','failed') DEFAULT 'pending'")
+    @Column(columnDefinition = "ENUM('pending','paid','failed') DEFAULT 'pending'")
     @Builder.Default
     private VnpayPaymentStatus paymentStatus = VnpayPaymentStatus.pending;
 
     private LocalDateTime paidAt;
 
     private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }

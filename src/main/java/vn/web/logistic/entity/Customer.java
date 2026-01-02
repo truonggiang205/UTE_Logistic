@@ -55,12 +55,12 @@ public class Customer {
             this.createdAt = LocalDateTime.now();
         }
     }
-}
 
-enum CustomerType {
-    individual, business
-}
+    public enum CustomerType {
+        individual, business
+    }
 
-enum CustomerStatus {
-    active, inactive
+    public enum CustomerStatus {
+        active, inactive
+    }
 }

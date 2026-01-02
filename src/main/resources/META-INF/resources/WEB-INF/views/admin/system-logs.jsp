@@ -146,9 +146,6 @@
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="resetFilter()">
                                     <i class="fas fa-eraser"></i> Xóa bộ lọc
                                 </button>
-                                <button type="button" class="btn btn-success btn-sm" onclick="exportReport()">
-                                    <i class="fas fa-file-excel"></i> Xuất Excel
-                                </button>
                             </div>
                         </div>
                     </form>
@@ -359,9 +356,5 @@
 
             function reloadAll() {
                 loadData(currentPage);
-            }
-
-            function exportReport() {
-                alert('Chức năng xuất Excel đang phát triển.');
             }
         </script>

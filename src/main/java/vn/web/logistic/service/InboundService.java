@@ -1,33 +1,35 @@
 package vn.web.logistic.service;
 
-import vn.web.logistic.dto.request.inbound.DropOffRequest;
-import vn.web.logistic.dto.request.inbound.ScanInRequest;
-import vn.web.logistic.dto.response.inbound.DropOffResponse;
-import vn.web.logistic.dto.response.inbound.ScanInResponse;
+import vn.web.logistic.entity.*;
+import java.util.List;
 
-/**
- * Service Interface cho phân hệ NHẬP KHO (INBOUND)
- * Xử lý các nghiệp vụ liên quan đến việc nhập hàng vào kho
- */
 public interface InboundService {
 
-    /**
-     * Chức năng 1: Quét Nhập (Scan In)
-     * Nhân viên kho quét mã đơn hàng để xác nhận hàng đã về kho hiện tại
-     *
-     * @param request Thông tin quét nhập (danh sách đơn, kho, chuyến xe)
-     * @param actorId ID người thực hiện (nhân viên kho)
-     * @return ScanInResponse Kết quả quét nhập
-     */
-    ScanInResponse scanIn(ScanInRequest request, Long actorId);
+    // --- CHỨC NĂNG 1: TẠO ĐƠN TẠI QUẦY (DROP-OFF) ---
+    // Xử lý logic: Khách hàng -> Địa chỉ -> Tính phí -> Lưu đơn -> Ghi log -> Tạo
+    // giao dịch tiền
+    // routeId: Tuyến đường do Manager chọn
+    ServiceRequest createDropOffOrder(ServiceRequest orderRequest, String senderPhone, String receiverPhone,
+            Long managerId, Long routeId);
 
-    /**
-     * Chức năng 2: Tạo đơn tại quầy (Drop-off)
-     * Khách mang hàng ra bưu cục gửi trực tiếp
-     *
-     * @param request Thông tin tạo đơn (sender, receiver, weight, ...)
-     * @param actorId ID người thực hiện (nhân viên quầy)
-     * @return DropOffResponse Thông tin đơn hàng vừa tạo
-     */
-    DropOffResponse createDropOffOrder(DropOffRequest request, Long actorId);
+    // --- CHỨC NĂNG 2: NHẬP KHO TỪ XE TẢI (INTER-HUB INBOUND) ---
+    // Xử lý logic: Tìm đơn theo mã -> Cập nhật kho hiện tại -> Ghi log ParcelAction
+    // actionTypeId: ID của loại hành động được chọn từ danh sách
+    ServiceRequest processInterHubInbound(String trackingCode, Long currentHubId, Long managerId, Long actionTypeId);
+
+    // --- CHỨC NĂNG 3: NHẬP KHO TỪ SHIPPER (PICKUP SUCCESS) ---
+    // Xử lý logic: Cập nhật status 'picked' -> Cập nhật kho -> Ghi log
+    // actionTypeId: ID của loại hành động được chọn từ danh sách
+    ServiceRequest processShipperInbound(String trackingCode, Long currentHubId, Long managerId, Long actionTypeId);
+
+    // --- CÁC HÀM HỖ TRỢ GIAO DIỆN ---
+    List<CustomerAddress> getCustomerAddresses(String phone);
+
+    List<ServiceType> getActiveServices();
+
+    // Lấy danh sách tuyến đường xuất phát từ Hub (dùng cho Manager chọn tuyến)
+    List<Route> getAvailableRoutes(Long hubId);
+
+    // Lấy danh sách các loại hành động (ActionType) để Manager chọn khi quét mã
+    List<ActionType> getInboundActionTypes();
 }

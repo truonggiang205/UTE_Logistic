@@ -1,159 +1,313 @@
 package vn.web.logistic.controller.manager;
 
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.web.logistic.dto.request.inbound.DropOffRequest;
-import vn.web.logistic.dto.request.inbound.ScanInRequest;
-import vn.web.logistic.dto.response.inbound.DropOffResponse;
-import vn.web.logistic.dto.response.inbound.ScanInResponse;
-import vn.web.logistic.entity.User;
+import org.springframework.web.multipart.MultipartFile;
+import vn.web.logistic.entity.ActionType;
+import vn.web.logistic.entity.CustomerAddress;
+import vn.web.logistic.entity.Route;
+import vn.web.logistic.entity.ServiceRequest;
+import vn.web.logistic.entity.ServiceType;
+import vn.web.logistic.repository.RouteRepository;
+import vn.web.logistic.service.FileUploadService;
 import vn.web.logistic.service.InboundService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-/**
- * REST Controller cho phân hệ NHẬP KHO (INBOUND) - Manager Portal
- * Xử lý các API liên quan đến việc nhập hàng vào kho
- * 
- * Endpoints:
- * - POST /api/manager/inbound/scan-in : Quét nhập kho
- * - POST /api/manager/inbound/drop-off : Tạo đơn tại quầy
- */
-@Slf4j
 @RestController
 @RequestMapping("/api/manager/inbound")
 @RequiredArgsConstructor
 public class InboundController {
 
     private final InboundService inboundService;
-
-    // ===================================================================
-    // CHỨC NĂNG 1: QUÉT NHẬP (SCAN IN)
-    // ===================================================================
+    private final RouteRepository routeRepository;
+    private final FileUploadService fileUploadService;
 
     /**
-     * API Quét nhập kho
-     * Nhân viên kho quét mã đơn hàng để xác nhận hàng đã về kho hiện tại
-     *
-     * @param request Thông tin quét nhập (danh sách mã đơn, kho hiện tại, tripId
-     *                optional)
-     * @param session HttpSession để lấy thông tin user đăng nhập
-     * @return ScanInResponse Kết quả quét nhập với chi tiết từng đơn
-     */
-    @PostMapping("/scan-in")
-    public ResponseEntity<?> scanIn(
-            @Valid @RequestBody ScanInRequest request,
-            HttpSession session) {
-
-        log.info("=== API QUÉT NHẬP KHO ===");
-        log.info("Request: {} đơn, Hub: {}, Trip: {}",
-                request.getRequestIds().size(),
-                request.getCurrentHubId(),
-                request.getTripId());
-
-        try {
-            // Lấy user từ session
-            Long actorId = getActorIdFromSession(session);
-
-            // Gọi service xử lý
-            ScanInResponse response = inboundService.scanIn(request, actorId);
-
-            log.info("Kết quả: Thành công {}/{} đơn", response.getSuccessCount(), response.getTotalScanned());
-
-            return ResponseEntity.ok(response);
-
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
-
-        } catch (Exception e) {
-            log.error("Lỗi khi quét nhập kho: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("Lỗi hệ thống: " + e.getMessage()));
-        }
-    }
-
-    // ===================================================================
-    // CHỨC NĂNG 2: TẠO ĐƠN TẠI QUẦY (DROP-OFF)
-    // ===================================================================
-
-    /**
-     * API Tạo đơn tại quầy
-     * Khách mang hàng ra bưu cục gửi trực tiếp
-     *
-     * @param request Thông tin tạo đơn (sender, receiver, weight, serviceType, ...)
-     * @param session HttpSession để lấy thông tin user đăng nhập
-     * @return DropOffResponse Thông tin đơn hàng vừa tạo với chi tiết phí
+     * API 1: TẠO ĐƠN HÀNG TẠI QUẦY
+     * POST /api/manager/inbound/drop-off
      */
     @PostMapping("/drop-off")
     public ResponseEntity<?> createDropOffOrder(
-            @Valid @RequestBody DropOffRequest request,
-            HttpSession session) {
-
-        log.info("=== API TẠO ĐƠN TẠI QUẦY ===");
-        log.info("Request - Sender: {}, Receiver: {}, Weight: {} kg, ServiceType: {}",
-                request.getSenderInfo().getContactPhone(),
-                request.getReceiverInfo().getContactPhone(),
-                request.getWeight(),
-                request.getServiceTypeId());
-
+            @RequestBody ServiceRequest order,
+            @RequestParam String senderPhone,
+            @RequestParam String receiverPhone,
+            @RequestParam Long managerId,
+            @RequestParam Long routeId,
+            @RequestParam(required = false, defaultValue = "unpaid") String paymentStatus) {
         try {
-            // Lấy user từ session
-            Long actorId = getActorIdFromSession(session);
+            // Set paymentStatus từ request
+            if ("paid".equalsIgnoreCase(paymentStatus)) {
+                order.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
+            } else {
+                order.setPaymentStatus(ServiceRequest.PaymentStatus.unpaid);
+            }
 
-            // Gọi service xử lý
-            DropOffResponse response = inboundService.createDropOffOrder(request, actorId);
+            ServiceRequest savedOrder = inboundService.createDropOffOrder(
+                    order, senderPhone, receiverPhone, managerId, routeId);
 
-            log.info("Đã tạo đơn thành công: {} - Tổng tiền: {}",
-                    response.getRequestId(),
-                    response.getFeeDetails().getTotalPrice());
+            // Chuyển sang DTO để tránh lỗi Hibernate Proxy serialization
+            Map<String, Object> orderDTO = convertServiceRequestToDTO(savedOrder);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-        } catch (IllegalArgumentException e) {
-            log.warn("Validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
-
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tạo đơn hàng thành công!");
+            response.put("data", orderDTO);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Lỗi khi tạo đơn tại quầy: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("Lỗi hệ thống: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Lỗi: " + e.getMessage()));
         }
     }
 
-    // ===================================================================
-    // HELPER METHODS
-    // ===================================================================
-
     /**
-     * Lấy Actor ID từ session
-     * Nếu không có user trong session -> trả về ID mặc định (1) cho testing
+     * API 2: QUÉT MÃ NHẬP KHO TRUNG CHUYỂN (TỪ HUB KHÁC TỚI)
+     * POST /api/manager/inbound/hub-in
      */
-    private Long getActorIdFromSession(HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user != null) {
-            return user.getUserId();
+    @PostMapping("/hub-in")
+    public ResponseEntity<?> processHubInbound(
+            @RequestParam String trackingCode,
+            @RequestParam Long currentHubId,
+            @RequestParam Long managerId,
+            @RequestParam Long actionTypeId) {
+        try {
+            ServiceRequest sr = inboundService.processInterHubInbound(trackingCode, currentHubId, managerId,
+                    actionTypeId);
+            // Trả về DTO để tránh lỗi Hibernate Proxy serialization
+            Map<String, Object> data = convertServiceRequestToDTO(sr);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Nhập kho thành công vận đơn: " + trackingCode,
+                    "data", data));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
-
-        // Fallback cho testing - trong production cần throw exception
-        log.warn("Không tìm thấy user trong session, sử dụng ID mặc định = 1");
-        return 1L;
     }
 
     /**
-     * Tạo response error chuẩn
+     * API 3: SHIPPER BÀN GIAO HÀNG CHO BƯU CỤC
+     * POST /api/manager/inbound/shipper-in
      */
-    private Map<String, Object> createErrorResponse(String message) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("success", false);
-        error.put("message", message);
-        error.put("timestamp", System.currentTimeMillis());
-        return error;
+    @PostMapping("/shipper-in")
+    public ResponseEntity<?> processShipperInbound(
+            @RequestParam String trackingCode,
+            @RequestParam Long currentHubId,
+            @RequestParam Long managerId,
+            @RequestParam Long actionTypeId) {
+        try {
+            ServiceRequest sr = inboundService.processShipperInbound(trackingCode, currentHubId, managerId,
+                    actionTypeId);
+            // Trả về DTO để tránh lỗi Hibernate Proxy serialization
+            Map<String, Object> data = convertServiceRequestToDTO(sr);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Shipper đã bàn giao thành công!",
+                    "data", data));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    // --- CÁC API HỖ TRỢ GIAO DIỆN (UI HELPERS) ---
+
+    /**
+     * Upload ảnh hàng hóa
+     * POST /api/manager/inbound/upload-image
+     */
+    @PostMapping("/upload-image")
+    public ResponseEntity<?> uploadParcelImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String imagePath = fileUploadService.uploadImage(file, "parcels");
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Upload ảnh thành công",
+                    "imagePath", imagePath));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Lỗi upload ảnh: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Lấy danh sách địa chỉ cũ của khách theo SĐT (để gợi ý khi nhập)
+     */
+    @GetMapping("/customer-addresses")
+    public ResponseEntity<List<CustomerAddress>> getAddresses(@RequestParam String phone) {
+        return ResponseEntity.ok(inboundService.getCustomerAddresses(phone));
+    }
+
+    /**
+     * Lấy danh sách các dịch vụ (Nhanh, Tiết kiệm...)
+     */
+    @GetMapping("/active-services")
+    public ResponseEntity<List<ServiceType>> getServices() {
+        return ResponseEntity.ok(inboundService.getActiveServices());
+    }
+
+    /**
+     * Lấy danh sách các hướng đi (Route) từ bưu cục hiện tại
+     * Trả về DTO để tránh lỗi Hibernate Proxy serialization
+     */
+    @GetMapping("/available-routes/{hubId}")
+    public ResponseEntity<?> getRoutes(@PathVariable Long hubId) {
+        try {
+            System.out.println("[DEBUG] Loading routes for hubId: " + hubId);
+            List<Route> routes = inboundService.getAvailableRoutes(hubId);
+            System.out.println("[DEBUG] Found " + routes.size() + " routes for hubId: " + hubId);
+
+            // Chuyển sang Map để tránh lỗi Hibernate Proxy
+            List<Map<String, Object>> routeDTOs = routes.stream()
+                    .map(r -> {
+                        Map<String, Object> dto = new HashMap<>();
+                        dto.put("routeId", r.getRouteId());
+                        dto.put("description", r.getDescription());
+                        dto.put("estimatedTime", r.getEstimatedTime());
+
+                        // FromHub
+                        if (r.getFromHub() != null) {
+                            Map<String, Object> fromHub = new HashMap<>();
+                            fromHub.put("hubId", r.getFromHub().getHubId());
+                            fromHub.put("hubName", r.getFromHub().getHubName());
+                            fromHub.put("province", r.getFromHub().getProvince());
+                            dto.put("fromHub", fromHub);
+                        }
+
+                        // ToHub
+                        if (r.getToHub() != null) {
+                            Map<String, Object> toHub = new HashMap<>();
+                            toHub.put("hubId", r.getToHub().getHubId());
+                            toHub.put("hubName", r.getToHub().getHubName());
+                            toHub.put("province", r.getToHub().getProvince());
+                            dto.put("toHub", toHub);
+                        }
+
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(routeDTOs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Lỗi lấy danh sách tuyến: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Lấy danh sách các loại hành động (ActionType) để Manager chọn khi quét mã
+     */
+    @GetMapping("/action-types")
+    public ResponseEntity<?> getActionTypes() {
+        try {
+            List<ActionType> actionTypes = inboundService.getInboundActionTypes();
+
+            // Chuyển sang DTO để tránh lỗi serialization
+            List<Map<String, Object>> dtos = actionTypes.stream()
+                    .map(at -> {
+                        Map<String, Object> dto = new HashMap<>();
+                        dto.put("actionTypeId", at.getActionTypeId());
+                        dto.put("actionCode", at.getActionCode());
+                        dto.put("description", at.getDescription());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(dtos);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Lỗi lấy danh sách ActionType: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Chuyển ServiceRequest entity sang DTO để tránh lỗi Hibernate Proxy
+     * serialization
+     */
+    private Map<String, Object> convertServiceRequestToDTO(ServiceRequest sr) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("requestId", sr.getRequestId());
+        dto.put("status", sr.getStatus() != null ? sr.getStatus().name() : null);
+        dto.put("note", sr.getNote());
+        dto.put("createdAt", sr.getCreatedAt());
+
+        // Pickup Address
+        if (sr.getPickupAddress() != null) {
+            Map<String, Object> pickup = new HashMap<>();
+            pickup.put("contactName", sr.getPickupAddress().getContactName());
+            pickup.put("contactPhone", sr.getPickupAddress().getContactPhone());
+            pickup.put("addressDetail", sr.getPickupAddress().getAddressDetail());
+            pickup.put("ward", sr.getPickupAddress().getWard());
+            pickup.put("district", sr.getPickupAddress().getDistrict());
+            pickup.put("province", sr.getPickupAddress().getProvince());
+            dto.put("pickupAddress", pickup);
+        }
+
+        // Delivery Address
+        if (sr.getDeliveryAddress() != null) {
+            Map<String, Object> delivery = new HashMap<>();
+            delivery.put("contactName", sr.getDeliveryAddress().getContactName());
+            delivery.put("contactPhone", sr.getDeliveryAddress().getContactPhone());
+            delivery.put("addressDetail", sr.getDeliveryAddress().getAddressDetail());
+            delivery.put("ward", sr.getDeliveryAddress().getWard());
+            delivery.put("district", sr.getDeliveryAddress().getDistrict());
+            delivery.put("province", sr.getDeliveryAddress().getProvince());
+            dto.put("deliveryAddress", delivery);
+        }
+
+        // Current Hub
+        if (sr.getCurrentHub() != null) {
+            Map<String, Object> hub = new HashMap<>();
+            hub.put("hubId", sr.getCurrentHub().getHubId());
+            hub.put("hubName", sr.getCurrentHub().getHubName());
+            dto.put("currentHub", hub);
+        }
+
+        return dto;
+    }
+
+    /**
+     * GET /api/manager/inbound/debug-all-routes
+     */
+    @GetMapping("/debug-all-routes")
+    public ResponseEntity<?> debugAllRoutes() {
+        try {
+            List<Route> allRoutes = routeRepository.findAll();
+            System.out.println("[DEBUG] Total routes in database: " + allRoutes.size());
+
+            List<Map<String, Object>> routeDTOs = allRoutes.stream()
+                    .map(r -> {
+                        Map<String, Object> dto = new HashMap<>();
+                        dto.put("routeId", r.getRouteId());
+                        dto.put("description", r.getDescription());
+                        dto.put("fromHubId", r.getFromHub() != null ? r.getFromHub().getHubId() : null);
+                        dto.put("fromHubName", r.getFromHub() != null ? r.getFromHub().getHubName() : null);
+                        dto.put("toHubId", r.getToHub() != null ? r.getToHub().getHubId() : null);
+                        dto.put("toHubName", r.getToHub() != null ? r.getToHub().getHubName() : null);
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalRoutes", allRoutes.size());
+            response.put("routes", routeDTOs);
+            response.put("message", allRoutes.isEmpty()
+                    ? "Bảng route TRỐNG! Hãy chạy seed_logistic.sql để thêm dữ liệu."
+                    : "Tìm thấy " + allRoutes.size() + " routes trong database.");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Lỗi: " + e.getMessage()));
+        }
     }
 }

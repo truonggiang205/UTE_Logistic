@@ -92,4 +92,10 @@ public interface CodTransactionRepository extends
                         "WHERE c.status = vn.web.logistic.entity.CodTransaction.CodStatus.collected " +
                         "AND s.hub.hubId = :hubId")
         BigDecimal sumCollectedCodByHubId(@Param("hubId") Long hubId);
+
+        // Xóa tất cả giao dịch COD của một đơn hàng
+        void deleteByRequest_RequestId(Long requestId);
+
+        // [MẶC ĐỊNH] save(CodTransaction entity): Lưu giao dịch thu tiền tại quầy hoặc
+        // thu tiền hộ.
 }

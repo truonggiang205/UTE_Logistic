@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import vn.web.logistic.entity.Container;
 import vn.web.logistic.entity.ContainerDetail;
 
 import java.util.List;
@@ -18,4 +20,14 @@ public interface ContainerDetailRepository extends JpaRepository<ContainerDetail
 
     // optional helper
     List<ContainerDetail> findByRequestRequestId(Long requestId);
+
+    // Xóa tất cả ContainerDetail của một đơn hàng
+    void deleteByRequest_RequestId(Long requestId);
+
+    @Query("SELECT c FROM Container c " +
+            "WHERE c.createdAtHub.hubId = :hubId " +
+            "AND c.status IN :statuses")
+    List<Container> findByHubAndStatuses(
+            @Param("hubId") Long hubId,
+            @Param("statuses") List<Container.ContainerStatus> statuses);
 }

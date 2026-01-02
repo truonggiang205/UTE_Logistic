@@ -6,10 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.web.logistic.dto.response.manager.ActionHistoryResponse;
 import vn.web.logistic.dto.response.manager.ManagerDashboardStatsResponse;
 import vn.web.logistic.dto.response.manager.OrderTrackingResponse;
-import vn.web.logistic.entity.CustomerAddress;
-import vn.web.logistic.entity.ParcelAction;
-import vn.web.logistic.entity.ServiceRequest;
-import vn.web.logistic.entity.Shipper;
+import vn.web.logistic.entity.*;
 import vn.web.logistic.repository.*;
 
 import java.math.BigDecimal;
@@ -30,6 +27,8 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
     private final ShipperRepository shipperRepository;
     private final ShipperTaskRepository shipperTaskRepository;
     private final ParcelActionRepository parcelActionRepository;
+    private final TrackingCodeRepository trackingCodeRepository;
+    private final HubRepository hubRepository;
 
     @Override
     public ManagerDashboardStatsResponse getManagerStats(Long hubId) {
@@ -58,6 +57,20 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         long todayTaskCount = shipperTaskRepository.countTodayTasksByHubId(hubId, startOfDay);
 
+        // Logic C: Tính tỉ lệ giao hàng thành công
+        // Tỉ lệ = deliveredCount / (deliveredCount + failedCount + cancelledCount) *
+        // 100
+        double successRate = 0.0;
+        long completedOrders = deliveredCount + failedCount + cancelledCount;
+        if (completedOrders > 0) {
+            successRate = Math.round((deliveredCount * 100.0 / completedOrders) * 10.0) / 10.0;
+        }
+
+        // Lấy tên Hub
+        String hubName = hubRepository.findById(hubId)
+                .map(Hub::getHubName)
+                .orElse("Hub #" + hubId);
+
         return ManagerDashboardStatsResponse.builder()
                 .totalOrders(totalOrders)
                 .pendingCount(pendingCount)
@@ -70,6 +83,8 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
                 .totalCodCollected(totalCodCollected != null ? totalCodCollected : BigDecimal.ZERO)
                 .activeShipperCount(activeShipperCount)
                 .todayTaskCount(todayTaskCount)
+                .successRate(successRate)
+                .hubName(hubName)
                 .build();
     }
 
@@ -128,8 +143,14 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
                 .map(this::mapToActionHistoryResponse)
                 .collect(Collectors.toList());
 
+        // Lấy tracking code
+        String trackingCode = trackingCodeRepository.findByRequestId(request.getRequestId())
+                .map(TrackingCode::getCode)
+                .orElse(null);
+
         return OrderTrackingResponse.builder()
                 .requestId(request.getRequestId())
+                .trackingCode(trackingCode)
                 .status(request.getStatus() != null ? request.getStatus().name() : null)
                 .senderName(senderName)
                 .senderPhone(senderPhone)
@@ -196,5 +217,45 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
         }
 
         return sb.length() > 0 ? sb.toString() : null;
+    }
+
+    @Override
+    public OrderTrackingResponse trackByTrackingCode(String trackingCode) {
+        if (trackingCode == null || trackingCode.trim().isEmpty()) {
+            return null;
+        }
+
+        return trackingCodeRepository.findByCode(trackingCode.trim())
+                .map(tc -> mapToOrderTrackingResponseWithCode(tc.getRequest(), tc.getCode()))
+                .orElse(null);
+    }
+
+    @Override
+    public List<OrderTrackingResponse> getOrdersByHubAndStatus(Long hubId, String status) {
+        List<ServiceRequest> requests;
+
+        if (status == null || status.isEmpty() || "all".equalsIgnoreCase(status)) {
+            requests = serviceRequestRepository.findAllByHubId(hubId);
+        } else {
+            try {
+                ServiceRequest.RequestStatus requestStatus = ServiceRequest.RequestStatus.valueOf(status.toLowerCase());
+                requests = serviceRequestRepository.findByHubIdAndStatus(hubId, requestStatus);
+            } catch (IllegalArgumentException e) {
+                requests = new ArrayList<>();
+            }
+        }
+
+        return requests.stream()
+                .map(this::mapToOrderTrackingResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Map ServiceRequest với tracking code
+     */
+    private OrderTrackingResponse mapToOrderTrackingResponseWithCode(ServiceRequest request, String trackingCode) {
+        OrderTrackingResponse response = mapToOrderTrackingResponse(request);
+        response.setTrackingCode(trackingCode);
+        return response;
     }
 }

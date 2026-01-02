@@ -3,16 +3,24 @@ package vn.web.logistic.controller.manager;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.web.logistic.entity.ServiceRequest;
+import vn.web.logistic.entity.TrackingCode;
 import vn.web.logistic.entity.Trip;
 import vn.web.logistic.repository.DriverRepository;
 import vn.web.logistic.repository.HubRepository;
+import vn.web.logistic.repository.ServiceRequestRepository;
 import vn.web.logistic.repository.ServiceTypeRepository;
+import vn.web.logistic.repository.TrackingCodeRepository;
 import vn.web.logistic.repository.TripRepository;
 import vn.web.logistic.repository.VehicleRepository;
+
+import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
 
 /**
  * Controller để render các trang JSP cho Manager
@@ -28,10 +36,18 @@ public class ManagerPageController {
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
     private final TripRepository tripRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
+    private final TrackingCodeRepository trackingCodeRepository;
 
     @GetMapping("/dashboard")
     public String viewDashboard() {
         return "manager/dashboard";
+    }
+
+    @GetMapping("/hub-orders")
+    public String viewHubOrders() {
+        log.info("Truy cập trang Quản lý Đơn hàng Hub");
+        return "manager/hub-orders";
     }
 
     @GetMapping("/tracking")
@@ -42,16 +58,6 @@ public class ManagerPageController {
     // ===================== INBOUND =====================
 
     /**
-     * Trang Quét Nhập Kho (Scan In)
-     */
-    @GetMapping("/inbound/scan-in")
-    public String viewInboundScanIn(Model model) {
-        log.info("Truy cập trang Quét Nhập Kho");
-        model.addAttribute("hubs", hubRepository.findAll());
-        return "manager/inbound/scan-in";
-    }
-
-    /**
      * Trang Tạo Đơn Tại Quầy (Drop-off)
      */
     @GetMapping("/inbound/drop-off")
@@ -60,6 +66,24 @@ public class ManagerPageController {
         model.addAttribute("hubs", hubRepository.findAll());
         model.addAttribute("serviceTypes", serviceTypeRepository.findAllByIsActiveTrue());
         return "manager/inbound/drop-off";
+    }
+
+    /**
+     * Trang Nhập kho từ xe tải (Hub-In)
+     */
+    @GetMapping("/inbound/hub-in")
+    public String viewInboundHubIn(Model model) {
+        log.info("Truy cập trang Nhập kho từ Hub");
+        return "manager/inbound/hub-in";
+    }
+
+    /**
+     * Trang Shipper bàn giao (Shipper-In)
+     */
+    @GetMapping("/inbound/shipper-in")
+    public String viewInboundShipperIn(Model model) {
+        log.info("Truy cập trang Shipper bàn giao");
+        return "manager/inbound/shipper-in";
     }
 
     // ===================== OUTBOUND =====================
@@ -93,45 +117,31 @@ public class ManagerPageController {
     }
 
     /**
+     * Trang Xếp Bao vào Xe (Loading)
+     */
+    @GetMapping("/outbound/loading")
+    public String viewOutboundLoading(Model model) {
+        log.info("Truy cập trang Xếp Bao vào Xe");
+        model.addAttribute("hubs", hubRepository.findAll());
+        // Lấy các chuyến đang loading để xếp bao
+        model.addAttribute("trips", tripRepository.findAllWithFilters(
+                null, null, Trip.TripStatus.loading, null, null,
+                org.springframework.data.domain.Pageable.unpaged()).getContent());
+        return "manager/outbound/loading";
+    }
+
+    /**
      * Trang Xuất Bến (Gate Out)
      */
     @GetMapping("/outbound/gate-out")
     public String viewOutboundGateOut(Model model) {
         log.info("Truy cập trang Xuất Bến");
+        model.addAttribute("hubs", hubRepository.findAll());
         // Lấy các chuyến đang loading
         model.addAttribute("trips", tripRepository.findAllWithFilters(
                 null, null, Trip.TripStatus.loading, null, null,
                 org.springframework.data.domain.Pageable.unpaged()).getContent());
         return "manager/outbound/gate-out";
-    }
-
-    // ===================== LAST MILE (GIAO HÀNG) =====================
-
-    /**
-     * Trang Phân công Shipper (Assign Task)
-     */
-    @GetMapping("/lastmile/assign-task")
-    public String viewLastMileAssignTask(Model model) {
-        log.info("Truy cập trang Phân công Shipper");
-        return "manager/lastmile/assign-task";
-    }
-
-    /**
-     * Trang Xác nhận Giao Xong / Hẹn Lại (Confirm Delivery)
-     */
-    @GetMapping("/lastmile/confirm-delivery")
-    public String viewLastMileConfirmDelivery(Model model) {
-        log.info("Truy cập trang Xác nhận Giao Xong");
-        return "manager/lastmile/confirm-delivery";
-    }
-
-    /**
-     * Trang Khách Nhận Tại Quầy (Counter Pickup)
-     */
-    @GetMapping("/lastmile/counter-pickup")
-    public String viewLastMileCounterPickup(Model model) {
-        log.info("Truy cập trang Khách Nhận Tại Quầy");
-        return "manager/lastmile/counter-pickup";
     }
 
     // ===================== COD SETTLEMENT =====================
@@ -142,5 +152,61 @@ public class ManagerPageController {
     public String viewFinanceCodSettlement(Model model) {
         log.info("Truy cập trang Quyết Toán COD (Finance)");
         return "manager/cod-settlement";
+    }
+
+    // ===================== IN TEM VẬN ĐƠN =====================
+    /**
+     * Trang In Tem Vận Đơn (Print Label) - Khổ A6 cho máy in nhiệt
+     */
+    @GetMapping("/inbound/print-label/{requestId}")
+    public String viewPrintLabel(@PathVariable Long requestId, Model model) {
+        log.info("In tem vận đơn cho requestId: {}", requestId);
+
+        ServiceRequest order = serviceRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại: " + requestId));
+
+        // Lấy mã vận đơn
+        TrackingCode trackingCode = trackingCodeRepository.findByRequest_RequestId(requestId)
+                .orElse(null);
+
+        model.addAttribute("order", order);
+        model.addAttribute("trackingCode", trackingCode != null ? trackingCode.getCode() : "N/A");
+
+        // Format dates và numbers cho JSP (vì fmt:formatDate không hoạt động với
+        // LocalDateTime)
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        model.addAttribute("createdAtFormatted",
+                order.getCreatedAt() != null ? order.getCreatedAt().format(dtf) : "N/A");
+
+        // Format số tiền để tránh lỗi null
+        model.addAttribute("codAmountFormatted",
+                order.getCodAmount() != null ? String.format("%,.0f", order.getCodAmount()) : "0");
+        model.addAttribute("totalPriceFormatted",
+                order.getTotalPrice() != null ? String.format("%,.0f", order.getTotalPrice()) : "0");
+
+        // Thêm chi tiết phí
+        model.addAttribute("shippingFeeFormatted",
+                order.getShippingFee() != null ? String.format("%,.0f", order.getShippingFee()) : "0");
+        model.addAttribute("codFeeFormatted",
+                order.getCodFee() != null ? String.format("%,.0f", order.getCodFee()) : "0");
+        model.addAttribute("insuranceFeeFormatted",
+                order.getInsuranceFee() != null ? String.format("%,.0f", order.getInsuranceFee()) : "0");
+        model.addAttribute("insuranceFee", order.getInsuranceFee());
+        // Kiểm tra miễn ship (shippingFee = 0 hoặc null)
+        model.addAttribute("isFreeShipping",
+                order.getShippingFee() == null || order.getShippingFee().compareTo(BigDecimal.ZERO) == 0);
+
+        // Null-safe item info
+        model.addAttribute("itemNameSafe", order.getItemName() != null ? order.getItemName() : "Hàng hóa");
+        model.addAttribute("weightSafe", order.getWeight() != null ? order.getWeight() : BigDecimal.ONE);
+        model.addAttribute("lengthSafe", order.getLength() != null ? order.getLength() : BigDecimal.ONE);
+        model.addAttribute("widthSafe", order.getWidth() != null ? order.getWidth() : BigDecimal.ONE);
+        model.addAttribute("heightSafe", order.getHeight() != null ? order.getHeight() : BigDecimal.ONE);
+
+        // Check COD > 0
+        model.addAttribute("hasCod",
+                order.getCodAmount() != null && order.getCodAmount().compareTo(BigDecimal.ZERO) > 0);
+
+        return "manager/inbound/print-label";
     }
 }

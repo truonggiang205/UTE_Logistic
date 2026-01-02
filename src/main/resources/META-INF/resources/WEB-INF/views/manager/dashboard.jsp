@@ -20,7 +20,8 @@
         <div class="row">
             <!-- Tổng đơn hàng -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card border-left-primary shadow h-100 py-2 kpi-card" data-status="all"
+                    data-title="Tổng đơn hàng" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -38,7 +39,8 @@
 
             <!-- Đang chờ xử lý -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card border-left-warning shadow h-100 py-2 kpi-card" data-status="pending"
+                    data-title="Đơn chờ xử lý" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -56,7 +58,8 @@
 
             <!-- Đã lấy hàng -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2">
+                <div class="card border-left-info shadow h-100 py-2 kpi-card" data-status="picked"
+                    data-title="Đơn đã lấy hàng" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -74,7 +77,8 @@
 
             <!-- Đang vận chuyển -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card border-left-primary shadow h-100 py-2 kpi-card" data-status="in_transit"
+                    data-title="Đơn đang vận chuyển" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -95,7 +99,8 @@
         <div class="row">
             <!-- Giao thành công -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2">
+                <div class="card border-left-success shadow h-100 py-2 kpi-card" data-status="delivered"
+                    data-title="Đơn giao thành công" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -113,7 +118,8 @@
 
             <!-- Đã hủy / Thất bại -->
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card border-left-danger shadow h-100 py-2 kpi-card" data-status="cancelled,failed"
+                    data-title="Đơn hủy / Thất bại" style="cursor: pointer;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -252,7 +258,7 @@
                             <div class="col-md-8">
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="trackingKeyword"
-                                        placeholder="Nhập mã đơn hàng hoặc số điện thoại người gửi..."
+                                        placeholder="Nhập mã vận đơn (tracking code) hoặc số điện thoại..."
                                         onkeypress="if(event.keyCode==13) searchOrder()">
                                     <div class="input-group-append">
                                         <button class="btn btn-primary" type="button" onclick="searchOrder()">
@@ -395,6 +401,62 @@
         </div>
     </div>
 
+    <!-- KPI Orders Modal -->
+    <div class="modal fade" id="kpiOrdersModal" tabindex="-1" role="dialog" aria-labelledby="kpiOrdersModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="kpiOrdersModalLabel">
+                        <i class="fas fa-list"></i> <span id="kpiModalTitle">Danh sách đơn hàng</span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="kpiModalLoading" class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
+                    </div>
+                    <div id="kpiModalContent" style="display: none;">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle"></i> Tìm thấy <strong id="kpiOrderCount">0</strong> đơn hàng
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-striped" id="kpiOrdersTable">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Mã vận đơn</th>
+                                        <th>Mã đơn</th>
+                                        <th>Người gửi</th>
+                                        <th>Người nhận</th>
+                                        <th>Trạng thái</th>
+                                        <th>COD</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kpiOrdersTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="kpiModalEmpty" class="text-center py-4" style="display: none;">
+                        <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">Không có đơn hàng nào</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Styles -->
     <style>
         .timeline-item {
@@ -485,16 +547,40 @@
         var contextPath = '${pageContext.request.contextPath}';
 
         // Load dashboard stats on page load
-        $(document).ready(function () {
-            loadDashboardStats();
+        // Dùng window.addEventListener vì jQuery được load sau body content trong SiteMesh
+        window.addEventListener('load', function () {
+            // Đảm bảo jQuery đã sẵn sàng
+            if (typeof $ !== 'undefined') {
+                initDashboard();
+            } else {
+                // Fallback: đợi thêm 100ms nếu jQuery chưa sẵn sàng
+                setTimeout(initDashboard, 100);
+            }
         });
+
+        function initDashboard() {
+            console.log('Initializing dashboard...');
+            // Gọi loadDashboardStats ngay khi trang load xong
+            loadDashboardStats();
+
+            // Add click event to KPI cards
+            $('.kpi-card').on('click', function () {
+                var status = $(this).data('status');
+                var title = $(this).data('title');
+                showOrdersByStatus(status, title);
+            });
+        }
+
 
         // Load Dashboard Statistics
         function loadDashboardStats() {
+            console.log('Loading dashboard stats...');
             $.ajax({
                 url: contextPath + '/api/manager/dashboard/stats',
                 type: 'GET',
+                cache: false,
                 success: function (response) {
+                    console.log('Dashboard stats response:', response);
                     if (response.success && response.data) {
                         var data = response.data;
 
@@ -515,25 +601,31 @@
                         $('#activeShippers').text(formatNumber(data.activeShipperCount || 0));
                         $('#todayTasks').text(formatNumber(data.todayTaskCount || 0));
 
-                        // Calculate success rate
-                        var total = data.totalOrders || 0;
-                        var delivered = data.deliveredCount || 0;
-                        var successRate = total > 0 ? Math.round((delivered / total) * 100) : 0;
+                        // Use success rate from API
+                        var successRate = data.successRate || 0;
+                        successRate = Math.round(successRate * 100) / 100; // Round to 2 decimals
                         $('#successRateText').text(successRate + '%');
                         $('#successRateBar').css('width', successRate + '%').attr('aria-valuenow', successRate);
 
-                        // Hub info
-                        if (response.hubId) {
+                        // Hub info - show hub name hoặc hubId từ response
+                        if (data.hubName) {
+                            $('#hubInfo').html('<i class="fas fa-building"></i> Hub: ' + data.hubName);
+                        } else if (response.hubId) {
                             $('#hubInfo').html('<i class="fas fa-building"></i> Hub ID: ' + response.hubId);
                         }
+                    } else if (response.hubId) {
+                        // Trường hợp không có data nhưng có hubId
+                        $('#hubInfo').html('<i class="fas fa-building"></i> Hub ID: ' + response.hubId);
                     }
                 },
                 error: function (xhr) {
                     console.error('Error loading stats:', xhr);
                     if (xhr.status === 401) {
                         showToast('Vui lòng đăng nhập để xem thống kê', 'warning');
+                        $('#hubInfo').html('<i class="fas fa-exclamation-triangle"></i> Chưa đăng nhập');
                     } else {
                         showToast('Lỗi khi tải thống kê', 'error');
+                        $('#hubInfo').html('<i class="fas fa-times-circle"></i> Lỗi tải dữ liệu');
                     }
                 }
             });
@@ -689,6 +781,70 @@
             $('#searchResults').hide();
             $('#noResults').hide();
             $('#orderDetailArea').hide();
+        }
+
+        // Show Orders By Status (KPI Card Click)
+        function showOrdersByStatus(status, title) {
+            $('#kpiModalTitle').text(title || 'Danh sách đơn hàng');
+            $('#kpiModalLoading').show();
+            $('#kpiModalContent').hide();
+            $('#kpiModalEmpty').hide();
+            $('#kpiOrdersModal').modal('show');
+
+            $.ajax({
+                url: contextPath + '/api/manager/orders',
+                type: 'GET',
+                data: { status: status },
+                success: function (response) {
+                    $('#kpiModalLoading').hide();
+
+                    if (response.success && response.data && response.data.length > 0) {
+                        var orders = response.data;
+                        $('#kpiOrderCount').text(orders.length);
+                        renderKpiOrdersTable(orders);
+                        $('#kpiModalContent').show();
+                    } else {
+                        $('#kpiModalEmpty').show();
+                    }
+                },
+                error: function (xhr) {
+                    $('#kpiModalLoading').hide();
+                    $('#kpiModalEmpty').show();
+                    console.error('Error loading orders by status:', xhr);
+                    showToast('Lỗi khi tải danh sách đơn hàng', 'error');
+                }
+            });
+        }
+
+        // Render KPI Orders Table
+        function renderKpiOrdersTable(orders) {
+            var tbody = $('#kpiOrdersTableBody');
+            tbody.empty();
+
+            orders.forEach(function (order, index) {
+                var statusBadge = getStatusBadge(order.status, order.statusDisplay);
+                var row = '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><code>' + (order.trackingCode || '-') + '</code></td>' +
+                    '<td><strong>#' + order.requestId + '</strong></td>' +
+                    '<td>' + (order.senderName || '-') + '<br><small class="text-muted">' + (order.senderPhone || '') + '</small></td>' +
+                    '<td>' + (order.receiverName || '-') + '<br><small class="text-muted">' + (order.receiverPhone || '') + '</small></td>' +
+                    '<td>' + statusBadge + '</td>' +
+                    '<td class="text-danger font-weight-bold">' + formatCurrency(order.codAmount || 0) + '</td>' +
+                    '<td>' + formatDateTime(order.createdAt) + '</td>' +
+                    '<td><button class="btn btn-sm btn-info" onclick="viewOrderFromModal(' + order.requestId + ')">' +
+                    '<i class="fas fa-eye"></i></button></td>' +
+                    '</tr>';
+                tbody.append(row);
+            });
+        }
+
+        // View Order from Modal (close modal and show detail)
+        function viewOrderFromModal(requestId) {
+            $('#kpiOrdersModal').modal('hide');
+            setTimeout(function () {
+                viewOrderDetail(requestId);
+            }, 300);
         }
 
         // Helper Functions

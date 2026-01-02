@@ -29,6 +29,8 @@
                                     <th>Phí cơ bản</th>
                                     <th>Phí/kg</th>
                                     <th>Phí COD (%)</th>
+                                    <th>COD tối thiểu</th>
+                                    <th>Bảo hiểm (%)</th>
                                     <th>Trạng thái</th>
                                     <th>Hành động</th>
                                 </tr>
@@ -68,12 +70,22 @@
                                     <input type="number" class="form-control" id="baseFee" required>
                                 </div>
                                 <div class="col-md-4 form-group">
-                                    <label class="small font-weight-bold">Phí/kg</label>
+                                    <label class="small font-weight-bold">Phí/kg tiếp theo</label>
                                     <input type="number" class="form-control" id="extraPricePerKg">
                                 </div>
                                 <div class="col-md-4 form-group">
-                                    <label class="small font-weight-bold">Tỉ lệ COD (0-1)</label>
-                                    <input type="number" step="0.001" class="form-control" id="codRate">
+                                    <label class="small font-weight-bold">Phí COD tối thiểu</label>
+                                    <input type="number" class="form-control" id="codMinFee">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label class="small font-weight-bold">Tỉ lệ phí COD (0-1)</label>
+                                    <input type="number" step="0.0001" class="form-control" id="codRate">
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label class="small font-weight-bold">Tỉ lệ bảo hiểm (0-1)</label>
+                                    <input type="number" step="0.0001" class="form-control" id="insuranceRate">
                                 </div>
                             </div>
                             <div class="form-group">
@@ -81,12 +93,13 @@
                                 <textarea class="form-control" id="description" rows="2"></textarea>
                             </div>
                             <div id="versionNote" class="alert alert-warning d-none small">
-                                Lưu ý: Thay đổi giá sẽ tạo một phiên bản mới, giá cũ sẽ hết hiệu lực.
+                                Lưu ý: Thay đổi bất kỳ thông số nào bên trên sẽ tạo một phiên bản (Version) mới, giá cũ
+                                sẽ hết hiệu lực.
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button class="btn btn-secondary" type="button" data-dismiss="modal">Hủy</button>
-                            <button class="btn btn-primary" type="submit">Lưu</button>
+                            <button class="btn btn-primary" type="submit">Lưu cấu hình</button>
                         </div>
                     </form>
                 </div>
@@ -94,7 +107,6 @@
         </div>
 
         <script>
-            // Dùng đường dẫn tương đối để đảm bảo an toàn context path
             var API_BASE = window.location.origin + '/api/admin/services';
 
             function loadServices() {
@@ -114,13 +126,14 @@
                             var rowClass = s.active ? '' : 'table-secondary text-muted';
                             var nf = new Intl.NumberFormat('vi-VN');
 
-                            // KHÔNG DÙNG DẤU BACKTICK TẠI ĐÂY - Dùng dấu nháy đơn và dấu cộng
                             var row = '<tr class="' + rowClass + '">' +
                                 '<td>' + s.serviceCode + '</td>' +
                                 '<td>' + s.serviceName + '</td>' +
                                 '<td>' + nf.format(s.baseFee) + 'đ</td>' +
-                                '<td>' + nf.format(s.extraPricePerKg) + 'đ</td>' +
-                                '<td>' + (s.codRate * 100).toFixed(1) + '%</td>' +
+                                '<td>' + nf.format(s.extraPricePerKg || 0) + 'đ</td>' +
+                                '<td>' + ((s.codRate || 0) * 100).toFixed(1) + '%</td>' +
+                                '<td>' + nf.format(s.codMinFee || 0) + 'đ</td>' + // Trường mới
+                                '<td>' + ((s.insuranceRate || 0) * 100).toFixed(1) + '%</td>' + // Trường mới
                                 '<td>' + statusBadge + ' (v' + s.version + ')</td>' +
                                 '<td>';
 
@@ -154,6 +167,8 @@
                         document.getElementById('baseFee').value = s.baseFee;
                         document.getElementById('extraPricePerKg').value = s.extraPricePerKg;
                         document.getElementById('codRate').value = s.codRate;
+                        document.getElementById('codMinFee').value = s.codMinFee; // Gán giá trị mới
+                        document.getElementById('insuranceRate').value = s.insuranceRate; // Gán giá trị mới
                         document.getElementById('description').value = s.description;
                         document.getElementById('versionNote').classList.remove('d-none');
                         document.getElementById('modalTitle').innerText = 'Cập nhật giá dịch vụ';
@@ -170,6 +185,8 @@
                     baseFee: document.getElementById('baseFee').value,
                     extraPricePerKg: document.getElementById('extraPricePerKg').value,
                     codRate: document.getElementById('codRate').value,
+                    codMinFee: document.getElementById('codMinFee').value, // Payload mới
+                    insuranceRate: document.getElementById('insuranceRate').value, // Payload mới
                     description: document.getElementById('description').value
                 };
 
@@ -182,7 +199,7 @@
                         $('#serviceModal').modal('hide');
                         loadServices();
                     } else {
-                        alert('Có lỗi xảy ra!');
+                        alert('Có lỗi xảy ra khi lưu dữ liệu!');
                     }
                 });
             };

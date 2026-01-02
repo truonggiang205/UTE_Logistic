@@ -14,6 +14,10 @@ import java.util.*;
 @EqualsAndHashCode(exclude = "users")
 public class Role {
 
+    public enum RoleStatus {
+        active, inactive
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id")
@@ -32,8 +36,4 @@ public class Role {
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     @Builder.Default
     private Set<User> users = new HashSet<>();
-}
-
-enum RoleStatus {
-    active, inactive
 }

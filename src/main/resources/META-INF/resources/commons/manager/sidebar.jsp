@@ -27,6 +27,13 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="<c:url value='/manager/hub-orders'/>">
+                    <i class="fas fa-fw fa-boxes"></i>
+                    <span>Quản lý Đơn hàng</span>
+                </a>
+            </li>
+
             <hr class="sidebar-divider">
 
             <div class="sidebar-heading">
@@ -42,8 +49,15 @@
                 <div id="collapseInbound" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Tác nghiệp:</h6>
-                        <a class="collapse-item" href="<c:url value='/manager/inbound/scan-in'/>">Quét nhập kho</a>
-                        <a class="collapse-item" href="<c:url value='/manager/inbound/drop-off'/>">Tạo đơn tại quầy</a>
+                        <a class="collapse-item" href="<c:url value='/manager/inbound/drop-off'/>">
+                            <i class="fas fa-store text-primary mr-1"></i> Tạo đơn tại quầy
+                        </a>
+                        <a class="collapse-item" href="<c:url value='/manager/inbound/hub-in'/>">
+                            <i class="fas fa-truck-loading text-success mr-1"></i> Nhập từ xe tải (Hub)
+                        </a>
+                        <a class="collapse-item" href="<c:url value='/manager/inbound/shipper-in'/>">
+                            <i class="fas fa-motorcycle text-warning mr-1"></i> Shipper bàn giao
+                        </a>
                     </div>
                 </div>
             </li>

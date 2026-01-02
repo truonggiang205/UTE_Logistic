@@ -1,25 +1,30 @@
 package vn.web.logistic.controller.admin;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import vn.web.logistic.dto.response.admin.ApiResponse;
 import vn.web.logistic.dto.response.admin.ContainerResponse;
 import vn.web.logistic.dto.response.admin.PageResponse;
 import vn.web.logistic.entity.User;
+import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.ContainerAdminService;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin/containers")
 @RequiredArgsConstructor
 public class ContainerAdminController {
 
     private final ContainerAdminService containerAdminService;
+    private final UserRepository userRepository;
 
     /**
      * GET /api/admin/containers - Tìm kiếm bao hàng (Search by code)
@@ -58,25 +63,41 @@ public class ContainerAdminController {
      */
     @PostMapping("/{id}/force-unpack")
     public ResponseEntity<ApiResponse<ContainerResponse>> forceUnpackContainer(
-            @PathVariable Long id,
-            HttpSession session) {
+            @PathVariable Long id) {
 
-        // Get admin user ID from session
-        Long adminUserId = getAdminUserIdFromSession(session);
+        // Get admin user ID from Spring Security
+        Long adminUserId = getCurrentUserId();
 
         ContainerResponse response = containerAdminService.forceUnpack(id, adminUserId);
         return ResponseEntity.ok(ApiResponse.success("Xả bao cưỡng chế thành công", response));
     }
 
+    // ===================================================================
+    // HELPER METHODS - Spring Security Authentication
+    // ===================================================================
+
     /**
-     * Helper method to get admin user ID from session
+     * Lấy User hiện tại từ Spring Security
      */
-    private Long getAdminUserIdFromSession(HttpSession session) {
-        User user = (User) session.getAttribute("user");
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String email = authentication.getName();
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
+    /**
+     * Lấy UserId hiện tại từ Spring Security
+     */
+    private Long getCurrentUserId() {
+        User user = getCurrentUser();
         if (user != null) {
             return user.getUserId();
         }
-        // Fallback for testing or when no session
-        return 1L; // Default admin ID
+        log.warn("Không tìm thấy user trong SecurityContext, sử dụng ID mặc định = 1");
+        return 1L;
     }
 }

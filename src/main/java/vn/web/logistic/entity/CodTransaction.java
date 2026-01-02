@@ -62,4 +62,14 @@ public class CodTransaction {
 
     @Column(name = "paymentMethod", length = 50)
     private String paymentMethod;
+
+    // THÊM ENUM NÀY
+    public enum CodType {
+        delivery_cod, return_fee
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type", columnDefinition = "ENUM('delivery_cod','return_fee') DEFAULT 'delivery_cod'")
+    @Builder.Default
+    private CodType transactionType = CodType.delivery_cod;
 }

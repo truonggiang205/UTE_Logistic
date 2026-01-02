@@ -31,6 +31,7 @@ public class SiteMeshConfig {
                 builder.addExcludedPath("/images/*");
                 builder.addExcludedPath("/vendor/*");
                 builder.addExcludedPath("/api/*"); // API trả về JSON
+                builder.addExcludedPath("/manager/inbound/print-label/*"); // Trang in tem - không dùng layout
                 builder.addExcludedPath("/login");
                 builder.addExcludedPath("/login*");
                 builder.addExcludedPath("/do-login");

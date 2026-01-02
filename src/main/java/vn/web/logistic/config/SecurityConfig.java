@@ -70,6 +70,8 @@ public class SecurityConfig {
                         // Cho phép truy cập tự do (login, register API)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        // VNPAY Payment APIs - PHẢI permitAll để VNPAY callback
+                        .requestMatchers("/api/payment/**").permitAll()
 
                         // Các API cần quyền cụ thể
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -101,11 +103,14 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         // Cho phép tải tài nguyên tĩnh (CSS, JS, ảnh) không cần đăng nhập
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**", "/webjars/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/vendor/**", "/fonts/**", "/webjars/**")
+                        .permitAll()
                         .requestMatchers("/WEB-INF/**").permitAll()
 
                         // Các trang Public
                         .requestMatchers("/", "/home", "/login", "/register", "/error").permitAll()
+                        // VNPAY Payment return page - PHẢI permitAll để VNPAY redirect về
+                        .requestMatchers("/payment/**").permitAll()
 
                         // Phân quyền truy cập trang theo Role
                         .requestMatchers("/admin/**").hasRole("ADMIN")

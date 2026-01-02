@@ -21,6 +21,9 @@ public class OrderTrackingResponse {
     // ID đơn hàng
     private Long requestId;
 
+    // Mã vận đơn (tracking code)
+    private String trackingCode;
+
     // Trạng thái đơn hàng
     private String status;
 

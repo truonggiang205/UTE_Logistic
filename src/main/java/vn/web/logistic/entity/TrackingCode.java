@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class TrackingCode {
+    public enum TrackingStatus {
+        active, inactive
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,8 +33,4 @@ public class TrackingCode {
     @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
     @Builder.Default
     private TrackingStatus status = TrackingStatus.active;
-}
-
-enum TrackingStatus {
-    active, inactive
 }

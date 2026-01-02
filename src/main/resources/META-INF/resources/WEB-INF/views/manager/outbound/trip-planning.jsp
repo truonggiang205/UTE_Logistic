@@ -1,7 +1,15 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-        <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+        <!DOCTYPE html>
+        <html lang="vi">
 
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Điều Phối Xe - Trip Planning</title>
+            <link href="${pageContext.request.contextPath}/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+            <link href="${pageContext.request.contextPath}/css/sb-admin-2.min.css" rel="stylesheet">
             <style>
                 .trip-header {
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -15,599 +23,981 @@
                     background: #fff;
                     border-radius: 15px;
                     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-                    overflow: hidden;
+                    margin-bottom: 20px;
                 }
 
                 .form-card-header {
-                    background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+                    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
                     color: #fff;
                     padding: 15px 20px;
+                    border-radius: 15px 15px 0 0;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
                 }
 
                 .form-card-body {
-                    padding: 25px;
+                    padding: 20px;
                 }
 
-                .vehicle-card {
-                    border: 2px solid #e3e6f0;
-                    border-radius: 12px;
-                    padding: 15px;
-                    cursor: pointer;
-                    transition: all 0.3s;
+                .search-box {
+                    position: relative;
                     margin-bottom: 15px;
                 }
 
-                .vehicle-card:hover {
-                    border-color: #667eea;
-                    transform: translateY(-2px);
+                .search-box input {
+                    padding-left: 40px;
+                    border-radius: 25px;
+                    border: 2px solid #e3e6f0;
+                    height: 42px;
                 }
 
-                .vehicle-card.selected {
-                    border-color: #28a745;
-                    background: #e8f5e9;
+                .search-box input:focus {
+                    border-color: #4e73df;
+                    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
                 }
 
-                .vehicle-card.unavailable {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-
-                .vehicle-icon {
-                    width: 50px;
-                    height: 50px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #fff;
-                    font-size: 20px;
-                }
-
-                .vehicle-info h6 {
-                    margin: 0;
-                    font-weight: 600;
-                }
-
-                .vehicle-meta {
-                    font-size: 12px;
+                .search-box i {
+                    position: absolute;
+                    left: 15px;
+                    top: 50%;
+                    transform: translateY(-50%);
                     color: #858796;
                 }
 
-                .vehicle-status {
-                    padding: 4px 10px;
-                    border-radius: 15px;
-                    font-size: 11px;
-                    font-weight: 600;
-                }
-
-                .status-available {
-                    background: #d4edda;
-                    color: #155724;
-                }
-
-                .status-in_transit {
-                    background: #fff3cd;
-                    color: #856404;
-                }
-
-                .status-maintenance {
-                    background: #f8d7da;
-                    color: #721c24;
-                }
-
-                .driver-card {
+                .vehicle-option,
+                .driver-option {
                     border: 2px solid #e3e6f0;
-                    border-radius: 12px;
+                    border-radius: 10px;
                     padding: 15px;
+                    margin-bottom: 10px;
                     cursor: pointer;
                     transition: all 0.3s;
-                    margin-bottom: 15px;
                 }
 
-                .driver-card:hover {
-                    border-color: #667eea;
+                .vehicle-option:hover,
+                .driver-option:hover {
+                    border-color: #4e73df;
+                    background: #f8f9fc;
+                    transform: translateY(-2px);
                 }
 
-                .driver-card.selected {
-                    border-color: #28a745;
-                    background: #e8f5e9;
+                .vehicle-option.selected,
+                .driver-option.selected {
+                    border-color: #1cc88a;
+                    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                    box-shadow: 0 3px 10px rgba(28, 200, 138, 0.3);
                 }
 
-                .driver-card.inactive {
+                .vehicle-option.unavailable,
+                .driver-option.unavailable {
                     opacity: 0.5;
-                    cursor: not-allowed;
+                    background: #f8f9fc;
                 }
 
-                .driver-avatar {
-                    width: 50px;
-                    height: 50px;
-                    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #fff;
-                    font-size: 18px;
-                    font-weight: 600;
+                .vehicle-option.hidden,
+                .driver-option.hidden {
+                    display: none;
                 }
 
-                .route-visual {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 15px;
-                    padding: 30px;
-                    color: #fff;
-                    text-align: center;
+                .status-badge {
+                    font-size: 0.75rem;
+                    padding: 3px 8px;
+                    border-radius: 20px;
                 }
 
-                .route-hub {
-                    background: rgba(255, 255, 255, 0.2);
-                    padding: 15px;
+                .trip-card {
+                    background: #fff;
                     border-radius: 10px;
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+                    padding: 15px;
+                    margin-bottom: 10px;
+                    border-left: 4px solid #4e73df;
+                    transition: all 0.3s;
+                    cursor: pointer;
+                    position: relative;
                 }
 
-                .route-arrow {
-                    font-size: 30px;
-                    margin: 20px 0;
+                .trip-card:hover {
+                    transform: translateX(5px);
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
                 }
 
-                .hub-name {
-                    font-weight: 600;
-                    font-size: 16px;
+                .trip-card .action-buttons {
+                    position: absolute;
+                    right: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                }
+
+                .trip-card:hover .action-buttons {
+                    opacity: 1;
+                }
+
+                .trip-card .action-buttons .btn {
+                    padding: 5px 10px;
+                    border-radius: 20px;
+                    font-size: 0.8rem;
                 }
 
                 .btn-create-trip {
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     border: none;
-                    padding: 15px 40px;
-                    font-size: 16px;
-                    font-weight: 600;
+                    padding: 15px 30px;
+                    font-size: 1.1rem;
                     border-radius: 10px;
-                    color: #fff;
-                    cursor: pointer;
-                    transition: all 0.3s;
                 }
 
                 .btn-create-trip:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 5px 20px rgba(40, 167, 69, 0.4);
+                    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+                }
+
+                .hub-select-card {
+                    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                    border-radius: 10px;
+                    padding: 20px;
                     color: #fff;
+                    margin-bottom: 20px;
                 }
 
-                .btn-create-trip:disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                    transform: none;
+                .hub-select-card label {
+                    font-weight: bold;
+                    margin-bottom: 8px;
                 }
 
-                .trip-list {
-                    max-height: 400px;
+                .hub-select-card select {
+                    border: none;
+                    border-radius: 8px;
+                    padding: 10px 15px;
+                }
+
+                .list-container {
+                    max-height: 350px;
                     overflow-y: auto;
                 }
 
-                .trip-item {
-                    background: #f8f9fc;
-                    border-radius: 10px;
+                .list-container::-webkit-scrollbar {
+                    width: 6px;
+                }
+
+                .list-container::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 3px;
+                }
+
+                .list-container::-webkit-scrollbar-thumb {
+                    background: #c1c1c1;
+                    border-radius: 3px;
+                }
+
+                .trips-search-box {
                     padding: 15px;
-                    margin-bottom: 10px;
-                }
-
-                .trip-code {
-                    font-weight: 700;
-                    color: #5a5c69;
-                }
-
-                .success-modal .modal-header {
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-                    color: #fff;
-                }
-
-                .trip-info-box {
                     background: #f8f9fc;
-                    border-radius: 10px;
-                    padding: 20px;
-                }
-
-                .info-row {
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 8px 0;
                     border-bottom: 1px solid #e3e6f0;
                 }
 
-                .info-row:last-child {
-                    border-bottom: none;
+                .trips-search-box input {
+                    border-radius: 20px;
+                    padding-left: 35px;
+                }
+
+                .no-results {
+                    text-align: center;
+                    padding: 30px;
+                    color: #858796;
+                }
+
+                .no-results i {
+                    font-size: 40px;
+                    margin-bottom: 15px;
+                    opacity: 0.5;
+                }
+
+                /* Toast Styles */
+                .toast-container {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                }
+
+                .custom-toast {
+                    min-width: 350px;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    margin-bottom: 10px;
+                    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+                    animation: slideIn 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                }
+
+                .custom-toast.success {
+                    background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+                    color: #fff;
+                }
+
+                .custom-toast.error {
+                    background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
+                    color: #fff;
+                }
+
+                .custom-toast.warning {
+                    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+                    color: #000;
+                }
+
+                .custom-toast.info {
+                    background: linear-gradient(135deg, #36b9cc 0%, #1a8e9e 100%);
+                    color: #fff;
+                }
+
+                .custom-toast .toast-icon {
+                    font-size: 24px;
+                    margin-right: 15px;
+                }
+
+                .custom-toast .toast-content {
+                    flex: 1;
+                }
+
+                .custom-toast .toast-title {
+                    font-weight: bold;
+                    margin-bottom: 3px;
+                }
+
+                .custom-toast .toast-message {
+                    font-size: 0.9rem;
+                    opacity: 0.9;
+                }
+
+                .custom-toast .toast-close {
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    font-size: 18px;
+                    cursor: pointer;
+                    opacity: 0.7;
+                    margin-left: 10px;
+                }
+
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+
+                /* Selection Summary */
+                .selection-summary {
+                    background: linear-gradient(135deg, #f8f9fc 0%, #e3e6f0 100%);
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin-bottom: 15px;
+                    border: 2px dashed #d1d3e2;
+                }
+
+                .selection-summary.has-selection {
+                    border-color: #1cc88a;
+                    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                }
+
+                .selection-item {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 8px;
+                }
+
+                .selection-item:last-child {
+                    margin-bottom: 0;
+                }
+
+                .selection-item i {
+                    width: 30px;
+                    color: #858796;
+                }
+
+                .selection-item.selected i {
+                    color: #1cc88a;
+                }
+
+                .selection-item .label {
+                    width: 100px;
+                    font-weight: 600;
+                    color: #5a5c69;
+                }
+
+                .selection-item .value {
+                    flex: 1;
+                    color: #858796;
+                }
+
+                .selection-item.selected .value {
+                    color: #1cc88a;
+                    font-weight: 600;
                 }
             </style>
+        </head>
 
-            <!-- Header -->
-            <div class="trip-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="mb-1"><i class="fas fa-route"></i> Tạo Chuyến Xe (Trip Planning)</h4>
-                        <p class="mb-0 opacity-75">Lập kế hoạch vận chuyển container giữa các Hub</p>
-                    </div>
-                    <div>
-                        <a href="${pageContext.request.contextPath}/manager/outbound/gate-out" class="btn btn-light">
-                            <i class="fas fa-arrow-right"></i> Xuất Bến
-                        </a>
+        <body id="page-top">
+            <!-- Toast Container -->
+            <div class="toast-container" id="toastContainer"></div>
+
+            <div id="wrapper">
+                <div id="content-wrapper" class="d-flex flex-column">
+                    <div id="content">
+                        <div class="container-fluid py-4">
+                            <!-- Header -->
+                            <div class="trip-header">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h3 class="mb-2"><i class="fas fa-truck-loading mr-2"></i> Điều Phối Xe (Trip
+                                            Planning)</h3>
+                                        <p class="mb-0 opacity-75">Tạo chuyến xe, gắn tài xế và tuyến đường</p>
+                                    </div>
+                                    <div class="col-md-4 text-right">
+                                        <span class="badge badge-light px-3 py-2">
+                                            <i class="fas fa-truck mr-1"></i> ${vehicles.size()} xe |
+                                            <i class="fas fa-user mr-1"></i> ${drivers.size()} tài xế
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Left Column: Tạo chuyến xe -->
+                                <div class="col-lg-7">
+                                    <!-- Hub Selection -->
+                                    <div class="hub-select-card">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label><i class="fas fa-warehouse mr-1"></i> Hub xuất phát:</label>
+                                                <select class="form-control" id="fromHubSelect">
+                                                    <option value="">-- Chọn Hub xuất phát --</option>
+                                                    <c:forEach var="hub" items="${hubs}">
+                                                        <option value="${hub.hubId}">${hub.hubName} - ${hub.province}
+                                                        </option>
+                                                    </c:forEach>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label><i class="fas fa-map-marker-alt mr-1"></i> Hub đích đến:</label>
+                                                <select class="form-control" id="toHubSelect">
+                                                    <option value="">-- Chọn Hub đích --</option>
+                                                    <c:forEach var="hub" items="${hubs}">
+                                                        <option value="${hub.hubId}">${hub.hubName} - ${hub.province}
+                                                        </option>
+                                                    </c:forEach>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Selection Summary -->
+                                    <div class="selection-summary" id="selectionSummary">
+                                        <h6 class="font-weight-bold mb-3"><i class="fas fa-clipboard-check mr-2"></i>
+                                            Thông tin đã chọn:</h6>
+                                        <div class="selection-item" id="summaryVehicle">
+                                            <i class="fas fa-truck"></i>
+                                            <span class="label">Xe:</span>
+                                            <span class="value">Chưa chọn</span>
+                                        </div>
+                                        <div class="selection-item" id="summaryDriver">
+                                            <i class="fas fa-user"></i>
+                                            <span class="label">Tài xế:</span>
+                                            <span class="value">Chưa chọn</span>
+                                        </div>
+                                        <div class="selection-item" id="summaryRoute">
+                                            <i class="fas fa-route"></i>
+                                            <span class="label">Tuyến:</span>
+                                            <span class="value">Chưa chọn</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vehicle & Driver Selection -->
+                                    <div class="row">
+                                        <!-- Chọn xe -->
+                                        <div class="col-md-6">
+                                            <div class="form-card">
+                                                <div class="form-card-header">
+                                                    <span><i class="fas fa-truck mr-2"></i> Chọn Xe</span>
+                                                    <span class="badge badge-light"
+                                                        id="vehicleCount">${vehicles.size()}</span>
+                                                </div>
+                                                <div class="form-card-body">
+                                                    <div class="search-box">
+                                                        <i class="fas fa-search"></i>
+                                                        <input type="text" class="form-control" id="searchVehicle"
+                                                            placeholder="Tìm theo biển số, loại xe...">
+                                                    </div>
+                                                    <div class="list-container" id="vehiclesList">
+                                                        <c:forEach var="vehicle" items="${vehicles}">
+                                                            <div class="vehicle-option ${vehicle.status != 'available' ? 'unavailable' : ''}"
+                                                                data-id="${vehicle.vehicleId}"
+                                                                data-plate="${vehicle.plateNumber}"
+                                                                data-type="${vehicle.vehicleType}"
+                                                                data-capacity="${vehicle.loadCapacity}"
+                                                                data-status="${vehicle.status}">
+                                                                <div
+                                                                    class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <strong
+                                                                            class="text-primary">${vehicle.plateNumber}</strong>
+                                                                        <br><small class="text-muted"><i
+                                                                                class="fas fa-car mr-1"></i>${vehicle.vehicleType}</small>
+                                                                        <br><small><i
+                                                                                class="fas fa-weight mr-1"></i>Tải:
+                                                                            ${vehicle.loadCapacity} kg</small>
+                                                                    </div>
+                                                                    <span
+                                                                        class="status-badge badge ${vehicle.status == 'available' ? 'badge-success' : 'badge-secondary'}">
+                                                                        ${vehicle.status == 'available' ? 'Sẵn sàng' :
+                                                                        vehicle.status}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </c:forEach>
+                                                        <div class="no-results" id="noVehicleResults"
+                                                            style="display: none;">
+                                                            <i class="fas fa-truck"></i>
+                                                            <p>Không tìm thấy xe phù hợp</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Chọn tài xế -->
+                                        <div class="col-md-6">
+                                            <div class="form-card">
+                                                <div class="form-card-header">
+                                                    <span><i class="fas fa-user-tie mr-2"></i> Chọn Tài Xế</span>
+                                                    <span class="badge badge-light"
+                                                        id="driverCount">${drivers.size()}</span>
+                                                </div>
+                                                <div class="form-card-body">
+                                                    <div class="search-box">
+                                                        <i class="fas fa-search"></i>
+                                                        <input type="text" class="form-control" id="searchDriver"
+                                                            placeholder="Tìm theo tên, SĐT, GPLX...">
+                                                    </div>
+                                                    <div class="list-container" id="driversList">
+                                                        <c:forEach var="driver" items="${drivers}">
+                                                            <div class="driver-option ${driver.status != 'active' ? 'unavailable' : ''}"
+                                                                data-id="${driver.driverId}"
+                                                                data-name="${driver.fullName}"
+                                                                data-phone="${driver.phoneNumber}"
+                                                                data-license="${driver.licenseClass}"
+                                                                data-status="${driver.status}">
+                                                                <div
+                                                                    class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <strong
+                                                                            class="text-primary">${driver.fullName}</strong>
+                                                                        <br><small class="text-muted"><i
+                                                                                class="fas fa-phone mr-1"></i>${driver.phoneNumber}</small>
+                                                                        <br><small><i
+                                                                                class="fas fa-id-card mr-1"></i>GPLX:
+                                                                            ${driver.licenseClass}</small>
+                                                                    </div>
+                                                                    <span
+                                                                        class="status-badge badge ${driver.status == 'active' ? 'badge-success' : 'badge-secondary'}">
+                                                                        ${driver.status == 'active' ? 'Hoạt động' :
+                                                                        driver.status}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </c:forEach>
+                                                        <div class="no-results" id="noDriverResults"
+                                                            style="display: none;">
+                                                            <i class="fas fa-user-slash"></i>
+                                                            <p>Không tìm thấy tài xế phù hợp</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Create Trip Button -->
+                                    <button class="btn btn-primary btn-create-trip btn-block mt-3" id="btnCreateTrip"
+                                        disabled>
+                                        <i class="fas fa-plus-circle mr-2"></i> TẠO CHUYẾN XE MỚI
+                                    </button>
+                                </div>
+
+                                <!-- Right Column: Danh sách chuyến xe -->
+                                <div class="col-lg-5">
+                                    <div class="card shadow">
+                                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                            <h6 class="m-0 font-weight-bold text-primary">
+                                                <i class="fas fa-list mr-2"></i> Chuyến xe đang xử lý
+                                            </h6>
+                                            <span class="badge badge-primary" id="tripCount">${trips.size()}</span>
+                                        </div>
+                                        <div class="trips-search-box">
+                                            <div class="search-box mb-0">
+                                                <i class="fas fa-search"></i>
+                                                <input type="text" class="form-control" id="searchTrip"
+                                                    placeholder="Tìm theo mã chuyến, biển số, tài xế...">
+                                            </div>
+                                        </div>
+                                        <div class="card-body" id="tripsList"
+                                            style="max-height: 550px; overflow-y: auto;">
+                                            <c:choose>
+                                                <c:when test="${not empty trips}">
+                                                    <c:forEach var="trip" items="${trips}">
+                                                        <div class="trip-card" data-trip-id="${trip.tripId}"
+                                                            data-code="${trip.tripCode}"
+                                                            data-plate="${trip.vehicle.plateNumber}"
+                                                            data-driver="${trip.driver.fullName}">
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-start">
+                                                                <div>
+                                                                    <strong
+                                                                        class="text-primary">${trip.tripCode}</strong>
+                                                                    <span
+                                                                        class="badge badge-warning ml-2">${trip.status}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="mt-2">
+                                                                <small class="text-muted">
+                                                                    <i
+                                                                        class="fas fa-truck mr-1"></i>${trip.vehicle.plateNumber}
+                                                                    <span class="mx-2">|</span>
+                                                                    <i
+                                                                        class="fas fa-user mr-1"></i>${trip.driver.fullName}
+                                                                </small>
+                                                                <br>
+                                                                <small class="text-info">
+                                                                    <i
+                                                                        class="fas fa-route mr-1"></i>${trip.fromHub.hubName}
+                                                                    → ${trip.toHub.hubName}
+                                                                </small>
+                                                            </div>
+                                                            <div class="action-buttons">
+                                                                <button class="btn btn-sm btn-info btn-view-trip"
+                                                                    data-trip-id="${trip.tripId}" title="Xem chi tiết">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-danger btn-delete-trip"
+                                                                    data-trip-id="${trip.tripId}"
+                                                                    data-trip-code="${trip.tripCode}"
+                                                                    title="Hủy chuyến">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </c:forEach>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="no-results">
+                                                        <i class="fas fa-inbox"></i>
+                                                        <p>Chưa có chuyến xe nào</p>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <!-- Left: Form tạo chuyến -->
-                <div class="col-lg-8">
-                    <div class="form-card mb-4">
-                        <div class="form-card-header">
-                            <i class="fas fa-plus-circle"></i> Thông tin chuyến mới
-                        </div>
-                        <div class="form-card-body">
-                            <!-- Route Selection -->
-                            <div class="row mb-4">
-                                <div class="col-md-5">
-                                    <label><i class="fas fa-warehouse text-primary"></i> Hub xuất phát</label>
-                                    <select class="form-control" id="fromHubId" onchange="filterVehicles()">
-                                        <option value="">-- Chọn Hub --</option>
-                                        <c:forEach var="hub" items="${hubs}">
-                                            <option value="${hub.hubId}" data-name="${hub.hubName}">
-                                                ${hub.hubId} - ${hub.hubName}
-                                            </option>
-                                        </c:forEach>
-                                    </select>
-                                </div>
-                                <div class="col-md-2 text-center d-flex align-items-end justify-content-center pb-2">
-                                    <i class="fas fa-arrow-right fa-2x text-primary"></i>
-                                </div>
-                                <div class="col-md-5">
-                                    <label><i class="fas fa-map-marker-alt text-danger"></i> Hub đích</label>
-                                    <select class="form-control" id="toHubId" onchange="updateRouteVisual()">
-                                        <option value="">-- Chọn Hub --</option>
-                                        <c:forEach var="hub" items="${hubs}">
-                                            <option value="${hub.hubId}" data-name="${hub.hubName}">
-                                                ${hub.hubId} - ${hub.hubName}
-                                            </option>
-                                        </c:forEach>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Vehicle Selection -->
-                            <h6 class="mb-3"><i class="fas fa-truck text-primary"></i> Chọn xe</h6>
-                            <div class="row" id="vehicleList">
-                                <c:forEach var="vehicle" items="${vehicles}">
-                                    <c:set var="statusName" value="${vehicle.status.name()}" />
-                                    <c:set var="isAvailable" value="${statusName eq 'available'}" />
-                                    <div class="col-md-6">
-                                        <div class="vehicle-card ${!isAvailable ? 'unavailable' : ''}"
-                                            data-id="${vehicle.vehicleId}"
-                                            data-hub="${vehicle.currentHub != null ? vehicle.currentHub.hubId : ''}"
-                                            data-status="${statusName}" onclick="selectVehicle(this)">
-                                            <div class="d-flex align-items-center">
-                                                <div class="vehicle-icon mr-3">
-                                                    <i class="fas fa-truck"></i>
-                                                </div>
-                                                <div class="vehicle-info flex-grow-1">
-                                                    <h6 class="mb-1 font-weight-bold">${vehicle.plateNumber}</h6>
-                                                    <div class="vehicle-meta text-muted small">
-                                                        <span class="mr-2">
-                                                            <i class="fas fa-weight"></i> ${vehicle.loadCapacity} kg
-                                                        </span>
-                                                        <span>
-                                                            <i class="fas fa-warehouse"></i>
-                                                            ${vehicle.currentHub != null ? vehicle.currentHub.hubName :
-                                                            'N/A'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <span class="badge vehicle-status status-${statusName}">
-                                                    <c:choose>
-                                                        <c:when test="${isAvailable}">Sẵn sàng</c:when>
-                                                        <c:when test="${statusName eq 'in_transit'}">Đang chạy</c:when>
-                                                        <c:otherwise>Bảo trì</c:otherwise>
-                                                    </c:choose>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </c:forEach>
-                            </div>
-
-                            <!-- Driver Selection -->
-                            <h6 class="mb-3 mt-4"><i class="fas fa-user text-success"></i> Chọn tài xế</h6>
-                            <div class="row" id="driverList">
-                                <c:forEach var="driver" items="${drivers}">
-                                    <c:set var="driverStatusName" value="${driver.status.name()}" />
-                                    <c:set var="isActive" value="${driverStatusName eq 'active'}" />
-                                    <div class="col-md-6">
-                                        <div class="driver-card ${!isActive ? 'inactive' : ''}"
-                                            data-id="${driver.driverId}" data-status="${driverStatusName}"
-                                            onclick="selectDriver(this)">
-                                            <div class="d-flex align-items-center">
-                                                <div class="driver-avatar mr-3">
-                                                    ${driver.fullName.charAt(0)}
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-0">${driver.fullName}</h6>
-                                                    <div class="vehicle-meta">
-                                                        <i class="fas fa-phone"></i> ${driver.phoneNumber} |
-                                                        <i class="fas fa-id-card"></i> ${driver.licenseNumber}
-                                                    </div>
-                                                </div>
-                                                <span
-                                                    class="vehicle-status ${isActive ? 'status-available' : 'status-maintenance'}">
-                                                    <c:choose>
-                                                        <c:when test="${isActive}">Hoạt động</c:when>
-                                                        <c:otherwise>Nghỉ</c:otherwise>
-                                                    </c:choose>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </c:forEach>
-                            </div>
-
-                            <!-- Submit -->
-                            <div class="text-center mt-4">
-                                <button type="button" class="btn btn-create-trip" id="btnCreateTrip"
-                                    onclick="createTrip()" disabled>
-                                    <i class="fas fa-plus-circle"></i> Tạo Chuyến Xe
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Preview & List -->
-                <div class="col-lg-4">
-                    <!-- Route Visual -->
-                    <div class="route-visual mb-4" id="routeVisual">
-                        <div class="route-hub">
-                            <i class="fas fa-warehouse fa-2x mb-2"></i>
-                            <div class="hub-name" id="fromHubName">Chọn Hub xuất phát</div>
-                        </div>
-                        <div class="route-arrow">
-                            <i class="fas fa-arrow-down"></i>
-                        </div>
-                        <div class="route-hub">
-                            <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
-                            <div class="hub-name" id="toHubName">Chọn Hub đích</div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Trips -->
-                    <div class="form-card">
-                        <div class="form-card-header">
-                            <i class="fas fa-history"></i> Chuyến xe gần đây
-                        </div>
-                        <div class="form-card-body">
-                            <div class="trip-list">
-                                <c:choose>
-                                    <c:when test="${not empty recentTrips}">
-                                        <c:forEach var="trip" items="${recentTrips}">
-                                            <c:set var="tripStatusName" value="${trip.status.name()}" />
-                                            <div class="trip-item">
-                                                <div class="d-flex justify-content-between">
-                                                    <span class="trip-code">${trip.tripCode}</span>
-                                                    <span
-                                                        class="badge badge-${tripStatusName eq 'loading' ? 'warning' : 
-                                                                   tripStatusName eq 'in_transit' ? 'info' : 
-                                                                   tripStatusName eq 'completed' ? 'success' : 'secondary'}">
-                                                        <c:choose>
-                                                            <c:when test="${tripStatusName eq 'loading'}">Đang nạp
-                                                            </c:when>
-                                                            <c:when test="${tripStatusName eq 'in_transit'}">Đang chạy
-                                                            </c:when>
-                                                            <c:when test="${tripStatusName eq 'completed'}">Hoàn thành
-                                                            </c:when>
-                                                            <c:otherwise>${tripStatusName}</c:otherwise>
-                                                        </c:choose>
-                                                    </span>
-                                                </div>
-                                                <div class="vehicle-meta mt-2">
-                                                    <div><i class="fas fa-truck"></i> ${trip.vehicle.plateNumber}</div>
-                                                    <div><i class="fas fa-user"></i> ${trip.driver.fullName}</div>
-                                                    <div>
-                                                        <i class="fas fa-route"></i>
-                                                        ${trip.fromHub.hubName} → ${trip.toHub.hubName}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </c:forEach>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <div class="text-center text-muted py-4">
-                                            <i class="fas fa-inbox fa-3x mb-3"></i>
-                                            <p>Chưa có chuyến xe nào</p>
-                                        </div>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Success Modal -->
-            <div class="modal fade success-modal" id="successModal" tabindex="-1">
-                <div class="modal-dialog">
+            <!-- Trip Detail Modal -->
+            <div class="modal fade" id="tripDetailModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title"><i class="fas fa-check-circle"></i> Tạo chuyến thành công!</h5>
-                            <button type="button" class="close text-white" data-dismiss="modal">
-                                <span>&times;</span>
-                            </button>
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-info-circle mr-2"></i> Chi tiết chuyến xe</h5>
+                            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
                         </div>
-                        <div class="modal-body">
-                            <div class="text-center mb-4">
-                                <i class="fas fa-truck fa-4x text-success mb-3"></i>
-                                <h5 id="newTripCode">TRIP-20251230-0001</h5>
-                            </div>
-                            <div class="trip-info-box" id="tripInfoBox">
-                                <!-- Trip info will be inserted here -->
-                            </div>
-                        </div>
+                        <div class="modal-body" id="tripDetailContent"></div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
-                            <a href="${pageContext.request.contextPath}/manager/outbound/gate-out"
-                                class="btn btn-primary">
-                                <i class="fas fa-arrow-right"></i> Đến Xuất Bến
-                            </a>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Delete Confirm Modal -->
+            <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title"><i class="fas fa-exclamation-triangle mr-2"></i> Xác nhận hủy chuyến
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Bạn có chắc chắn muốn hủy chuyến xe <strong id="deleteTripCode"></strong>?</p>
+                            <p class="text-danger"><small>Lưu ý: Chỉ có thể hủy chuyến khi chưa có bao hàng nào được xếp
+                                    lên xe.</small></p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Không</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xác nhận hủy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script src="${pageContext.request.contextPath}/vendor/jquery/jquery.min.js"></script>
+            <script src="${pageContext.request.contextPath}/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+            <script src="${pageContext.request.contextPath}/js/sb-admin-2.min.js"></script>
             <script>
                 var contextPath = '${pageContext.request.contextPath}';
                 var selectedVehicleId = null;
+                var selectedVehiclePlate = null;
                 var selectedDriverId = null;
+                var selectedDriverName = null;
+                var tripIdToDelete = null;
+                var managerId = 1;
 
-                function selectVehicle(el) {
-                    var status = el.getAttribute('data-status');
-                    if (status !== 'available') return;
-
-                    document.querySelectorAll('.vehicle-card').forEach(function (card) {
-                        card.classList.remove('selected');
-                    });
-                    el.classList.add('selected');
-                    selectedVehicleId = parseInt(el.getAttribute('data-id'));
-                    validateForm();
+                // Toast Functions
+                function showToast(type, title, message) {
+                    var icons = {
+                        'success': 'fa-check-circle',
+                        'error': 'fa-times-circle',
+                        'warning': 'fa-exclamation-triangle',
+                        'info': 'fa-info-circle'
+                    };
+                    var toastHtml = '<div class="custom-toast ' + type + '">' +
+                        '<div class="toast-icon"><i class="fas ' + icons[type] + '"></i></div>' +
+                        '<div class="toast-content">' +
+                        '<div class="toast-title">' + title + '</div>' +
+                        '<div class="toast-message">' + message + '</div>' +
+                        '</div>' +
+                        '<button class="toast-close" onclick="closeToast(this)">&times;</button>' +
+                        '</div>';
+                    var $toast = $(toastHtml);
+                    $('#toastContainer').append($toast);
+                    setTimeout(function () {
+                        $toast.css('animation', 'slideOut 0.3s ease');
+                        setTimeout(function () { $toast.remove(); }, 300);
+                    }, 4000);
                 }
 
-                function selectDriver(el) {
-                    var status = el.getAttribute('data-status');
-                    if (status !== 'active') return;
-
-                    document.querySelectorAll('.driver-card').forEach(function (card) {
-                        card.classList.remove('selected');
-                    });
-                    el.classList.add('selected');
-                    selectedDriverId = parseInt(el.getAttribute('data-id'));
-                    validateForm();
+                function closeToast(btn) {
+                    var $toast = $(btn).closest('.custom-toast');
+                    $toast.css('animation', 'slideOut 0.3s ease');
+                    setTimeout(function () { $toast.remove(); }, 300);
                 }
 
-                function filterVehicles() {
-                    var fromHubId = document.getElementById('fromHubId').value;
+                // Update Selection Summary
+                function updateSelectionSummary() {
+                    var fromHub = $('#fromHubSelect option:selected').text();
+                    var toHub = $('#toHubSelect option:selected').text();
 
-                    document.querySelectorAll('.vehicle-card').forEach(function (card) {
-                        var vehicleHub = card.getAttribute('data-hub');
-                        if (fromHubId && vehicleHub !== fromHubId) {
-                            card.classList.add('unavailable');
-                        } else {
-                            var origStatus = card.getAttribute('data-status');
-                            if (origStatus === 'available') {
-                                card.classList.remove('unavailable');
+                    // Vehicle
+                    if (selectedVehiclePlate) {
+                        $('#summaryVehicle').addClass('selected');
+                        $('#summaryVehicle .value').text(selectedVehiclePlate);
+                    } else {
+                        $('#summaryVehicle').removeClass('selected');
+                        $('#summaryVehicle .value').text('Chưa chọn');
+                    }
+
+                    // Driver
+                    if (selectedDriverName) {
+                        $('#summaryDriver').addClass('selected');
+                        $('#summaryDriver .value').text(selectedDriverName);
+                    } else {
+                        $('#summaryDriver').removeClass('selected');
+                        $('#summaryDriver .value').text('Chưa chọn');
+                    }
+
+                    // Route
+                    if ($('#fromHubSelect').val() && $('#toHubSelect').val()) {
+                        $('#summaryRoute').addClass('selected');
+                        $('#summaryRoute .value').text(fromHub.split(' - ')[0] + ' → ' + toHub.split(' - ')[0]);
+                    } else {
+                        $('#summaryRoute').removeClass('selected');
+                        $('#summaryRoute .value').text('Chưa chọn');
+                    }
+
+                    // Update summary card style
+                    if (selectedVehicleId && selectedDriverId && $('#fromHubSelect').val() && $('#toHubSelect').val()) {
+                        $('#selectionSummary').addClass('has-selection');
+                    } else {
+                        $('#selectionSummary').removeClass('has-selection');
+                    }
+                }
+
+                $(document).ready(function () {
+                    // Search Vehicle
+                    $('#searchVehicle').on('keyup', function () {
+                        var searchTerm = $(this).val().toLowerCase();
+                        var visibleCount = 0;
+                        $('.vehicle-option').each(function () {
+                            var plate = $(this).data('plate').toString().toLowerCase();
+                            var type = $(this).data('type').toString().toLowerCase();
+                            if (plate.indexOf(searchTerm) > -1 || type.indexOf(searchTerm) > -1) {
+                                $(this).removeClass('hidden');
+                                visibleCount++;
+                            } else {
+                                $(this).addClass('hidden');
                             }
+                        });
+                        $('#vehicleCount').text(visibleCount);
+                        $('#noVehicleResults').toggle(visibleCount === 0);
+                    });
+
+                    // Search Driver
+                    $('#searchDriver').on('keyup', function () {
+                        var searchTerm = $(this).val().toLowerCase();
+                        var visibleCount = 0;
+                        $('.driver-option').each(function () {
+                            var name = $(this).data('name').toString().toLowerCase();
+                            var phone = $(this).data('phone').toString().toLowerCase();
+                            var license = $(this).data('license').toString().toLowerCase();
+                            if (name.indexOf(searchTerm) > -1 || phone.indexOf(searchTerm) > -1 || license.indexOf(searchTerm) > -1) {
+                                $(this).removeClass('hidden');
+                                visibleCount++;
+                            } else {
+                                $(this).addClass('hidden');
+                            }
+                        });
+                        $('#driverCount').text(visibleCount);
+                        $('#noDriverResults').toggle(visibleCount === 0);
+                    });
+
+                    // Search Trip
+                    $('#searchTrip').on('keyup', function () {
+                        var searchTerm = $(this).val().toLowerCase();
+                        var visibleCount = 0;
+                        $('.trip-card').each(function () {
+                            var code = $(this).data('code').toString().toLowerCase();
+                            var plate = $(this).data('plate').toString().toLowerCase();
+                            var driver = $(this).data('driver').toString().toLowerCase();
+                            if (code.indexOf(searchTerm) > -1 || plate.indexOf(searchTerm) > -1 || driver.indexOf(searchTerm) > -1) {
+                                $(this).show();
+                                visibleCount++;
+                            } else {
+                                $(this).hide();
+                            }
+                        });
+                        $('#tripCount').text(visibleCount);
+                    });
+
+                    // Select Vehicle
+                    $('.vehicle-option').click(function () {
+                        if ($(this).hasClass('unavailable')) {
+                            if (!confirm('Xe này đang không khả dụng. Bạn vẫn muốn chọn?')) return;
+                        }
+                        $('.vehicle-option').removeClass('selected');
+                        $(this).addClass('selected');
+                        selectedVehicleId = $(this).data('id');
+                        selectedVehiclePlate = $(this).data('plate');
+                        updateCreateButton();
+                        updateSelectionSummary();
+                    });
+
+                    // Select Driver
+                    $('.driver-option').click(function () {
+                        if ($(this).hasClass('unavailable')) {
+                            if (!confirm('Tài xế này đang không hoạt động. Bạn vẫn muốn chọn?')) return;
+                        }
+                        $('.driver-option').removeClass('selected');
+                        $(this).addClass('selected');
+                        selectedDriverId = $(this).data('id');
+                        selectedDriverName = $(this).data('name');
+                        updateCreateButton();
+                        updateSelectionSummary();
+                    });
+
+                    // Hub Selection Change
+                    $('#fromHubSelect, #toHubSelect').change(function () {
+                        updateCreateButton();
+                        updateSelectionSummary();
+                    });
+
+                    // Create Trip
+                    $('#btnCreateTrip').click(function () {
+                        var fromHubId = $('#fromHubSelect').val();
+                        var toHubId = $('#toHubSelect').val();
+                        if (!fromHubId || !toHubId || !selectedVehicleId || !selectedDriverId) {
+                            showToast('warning', 'Thiếu thông tin', 'Vui lòng chọn đầy đủ xe, tài xế và tuyến đường');
+                            return;
+                        }
+                        if (fromHubId === toHubId) {
+                            showToast('warning', 'Lỗi tuyến đường', 'Hub xuất phát và Hub đích không được trùng nhau');
+                            return;
+                        }
+                        $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Đang tạo...');
+                        $.ajax({
+                            url: contextPath + '/api/manager/outbound/trips?actorId=' + managerId,
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                vehicleId: selectedVehicleId,
+                                driverId: selectedDriverId,
+                                fromHubId: parseInt(fromHubId),
+                                toHubId: parseInt(toHubId)
+                            }),
+                            success: function (response) {
+                                if (response.success) {
+                                    showToast('success', 'Tạo chuyến thành công!', 'Mã chuyến: ' + response.data.tripCode);
+                                    setTimeout(function () { location.reload(); }, 1500);
+                                } else {
+                                    showToast('error', 'Lỗi', response.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                var error = xhr.responseJSON || {};
+                                showToast('error', 'Lỗi tạo chuyến', error.message || 'Không thể tạo chuyến xe');
+                            },
+                            complete: function () {
+                                $('#btnCreateTrip').prop('disabled', false).html('<i class="fas fa-plus-circle mr-2"></i> TẠO CHUYẾN XE MỚI');
+                                updateCreateButton();
+                            }
+                        });
+                    });
+
+                    // View Trip Detail
+                    $(document).on('click', '.btn-view-trip', function (e) {
+                        e.stopPropagation();
+                        var tripId = $(this).data('trip-id');
+                        viewTripDetail(tripId);
+                    });
+
+                    // Click on trip card to view detail
+                    $(document).on('click', '.trip-card', function (e) {
+                        if (!$(e.target).hasClass('btn') && !$(e.target).closest('.btn').length) {
+                            var tripId = $(this).data('trip-id');
+                            viewTripDetail(tripId);
                         }
                     });
 
-                    updateRouteVisual();
-                    validateForm();
-                }
+                    // Delete Trip
+                    $(document).on('click', '.btn-delete-trip', function (e) {
+                        e.stopPropagation();
+                        tripIdToDelete = $(this).data('trip-id');
+                        var tripCode = $(this).data('trip-code');
+                        $('#deleteTripCode').text(tripCode);
+                        $('#deleteConfirmModal').modal('show');
+                    });
 
-                function updateRouteVisual() {
-                    var fromHub = document.getElementById('fromHubId');
-                    var toHub = document.getElementById('toHubId');
-
-                    document.getElementById('fromHubName').textContent =
-                        fromHub.selectedIndex > 0 ? fromHub.options[fromHub.selectedIndex].text : 'Chọn Hub xuất phát';
-                    document.getElementById('toHubName').textContent =
-                        toHub.selectedIndex > 0 ? toHub.options[toHub.selectedIndex].text : 'Chọn Hub đích';
-
-                    validateForm();
-                }
-
-                function validateForm() {
-                    var fromHubId = document.getElementById('fromHubId').value;
-                    var toHubId = document.getElementById('toHubId').value;
-
-                    var isValid = fromHubId && toHubId && selectedVehicleId && selectedDriverId && fromHubId !== toHubId;
-                    document.getElementById('btnCreateTrip').disabled = !isValid;
-                }
-
-                function createTrip() {
-                    var fromHubId = document.getElementById('fromHubId').value;
-                    var toHubId = document.getElementById('toHubId').value;
-
-                    if (!fromHubId || !toHubId || !selectedVehicleId || !selectedDriverId) {
-                        alert('Vui lòng chọn đầy đủ thông tin!');
-                        return;
-                    }
-
-                    var btn = document.getElementById('btnCreateTrip');
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-
-                    var requestData = {
-                        vehicleId: selectedVehicleId,
-                        driverId: selectedDriverId,
-                        fromHubId: parseInt(fromHubId),
-                        toHubId: parseInt(toHubId)
-                    };
-
-                    fetch(contextPath + '/api/manager/outbound/trip', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestData)
-                    })
-                        .then(function (response) { return response.json(); })
-                        .then(function (data) {
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-plus-circle"></i> Tạo Chuyến Xe';
-
-                            if (data.success) {
-                                showSuccess(data.data);
-                            } else {
-                                alert(data.message || 'Có lỗi xảy ra!');
+                    // Confirm Delete
+                    $('#confirmDeleteBtn').click(function () {
+                        if (!tripIdToDelete) return;
+                        $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Đang hủy...');
+                        $.ajax({
+                            url: contextPath + '/api/manager/outbound/trips/' + tripIdToDelete + '/cancel?actorId=' + managerId,
+                            method: 'PUT',
+                            success: function (response) {
+                                if (response.success) {
+                                    showToast('success', 'Đã hủy chuyến', 'Chuyến xe đã được hủy thành công');
+                                    $('#deleteConfirmModal').modal('hide');
+                                    setTimeout(function () { location.reload(); }, 1500);
+                                } else {
+                                    showToast('error', 'Không thể hủy', response.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                var error = xhr.responseJSON || {};
+                                showToast('error', 'Lỗi', error.message || 'Không thể hủy chuyến xe');
+                            },
+                            complete: function () {
+                                $('#confirmDeleteBtn').prop('disabled', false).html('Xác nhận hủy');
                             }
-                        })
-                        .catch(function (err) {
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-plus-circle"></i> Tạo Chuyến Xe';
-                            console.error(err);
-                            alert('Lỗi kết nối server!');
                         });
+                    });
+                });
+
+                function updateCreateButton() {
+                    var fromHubId = $('#fromHubSelect').val();
+                    var toHubId = $('#toHubSelect').val();
+                    var canCreate = fromHubId && toHubId && selectedVehicleId && selectedDriverId;
+                    $('#btnCreateTrip').prop('disabled', !canCreate);
                 }
 
-                function showSuccess(data) {
-                    document.getElementById('newTripCode').textContent = data.trip.tripCode;
+                function viewTripDetail(tripId) {
+                    $('#tripDetailContent').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2">Đang tải...</p></div>');
+                    $('#tripDetailModal').modal('show');
+                    $.get(contextPath + '/api/manager/outbound/trips/' + tripId, function (response) {
+                        if (response.success) {
+                            var trip = response.data;
+                            var containersHtml = '';
+                            if (trip.containers && trip.containers.length > 0) {
+                                trip.containers.forEach(function (c) {
+                                    var statusClass = c.tripContainerStatus === 'loaded' ? 'success' : 'secondary';
+                                    containersHtml += '<tr>' +
+                                        '<td><strong>' + c.containerCode + '</strong></td>' +
+                                        '<td><span class="badge badge-info">' + c.type + '</span></td>' +
+                                        '<td>' + c.orderCount + '</td>' +
+                                        '<td>' + (c.weight || 0) + ' kg</td>' +
+                                        '<td><span class="badge badge-' + statusClass + '">' + c.tripContainerStatus + '</span></td>' +
+                                        '</tr>';
+                                });
+                            } else {
+                                containersHtml = '<tr><td colspan="5" class="text-center text-muted py-3"><i class="fas fa-box-open mr-2"></i>Chưa có bao hàng nào</td></tr>';
+                            }
 
-                    var html = '<div class="info-row">' +
-                        '<span>Xe:</span><strong>' + data.vehicle.plateNumber + '</strong>' +
-                        '</div>' +
-                        '<div class="info-row">' +
-                        '<span>Tài xế:</span><strong>' + data.driver.fullName + '</strong>' +
-                        '</div>' +
-                        '<div class="info-row">' +
-                        '<span>Điện thoại:</span><strong>' + data.driver.phoneNumber + '</strong>' +
-                        '</div>' +
-                        '<div class="info-row">' +
-                        '<span>Từ Hub:</span><strong>' + data.fromHub.hubName + '</strong>' +
-                        '</div>' +
-                        '<div class="info-row">' +
-                        '<span>Đến Hub:</span><strong>' + data.toHub.hubName + '</strong>' +
-                        '</div>' +
-                        '<div class="info-row">' +
-                        '<span>Trạng thái:</span><span class="badge badge-warning">Đang nạp hàng</span>' +
-                        '</div>';
-
-                    document.getElementById('tripInfoBox').innerHTML = html;
-                    $('#successModal').modal('show');
-
-                    // Reset form
-                    selectedVehicleId = null;
-                    selectedDriverId = null;
-                    document.querySelectorAll('.vehicle-card, .driver-card').forEach(function (card) {
-                        card.classList.remove('selected');
+                            var html = '<div class="row">' +
+                                '<div class="col-md-6">' +
+                                '<div class="card bg-light mb-3"><div class="card-body">' +
+                                '<h6 class="font-weight-bold text-primary"><i class="fas fa-info-circle mr-2"></i>Thông tin chuyến</h6>' +
+                                '<p class="mb-1"><strong>Mã chuyến:</strong> ' + trip.tripCode + '</p>' +
+                                '<p class="mb-1"><strong>Trạng thái:</strong> <span class="badge badge-warning">' + trip.status + '</span></p>' +
+                                '<p class="mb-0"><strong>Tạo lúc:</strong> ' + formatDate(trip.createdAt) + '</p>' +
+                                '</div></div>' +
+                                '</div>' +
+                                '<div class="col-md-6">' +
+                                '<div class="card bg-light mb-3"><div class="card-body">' +
+                                '<h6 class="font-weight-bold text-primary"><i class="fas fa-truck mr-2"></i>Xe & Tài xế</h6>' +
+                                '<p class="mb-1"><strong>Xe:</strong> ' + trip.vehicle.plateNumber + ' (' + trip.vehicle.vehicleType + ')</p>' +
+                                '<p class="mb-1"><strong>Sức chứa:</strong> ' + (trip.vehicleCapacity || 0) + ' kg</p>' +
+                                '<p class="mb-1"><strong>Tài xế:</strong> ' + trip.driver.fullName + '</p>' +
+                                '<p class="mb-0"><strong>SĐT:</strong> ' + trip.driver.phoneNumber + '</p>' +
+                                '</div></div>' +
+                                '</div>' +
+                                '</div>' +
+                                '<div class="card bg-info text-white mb-3"><div class="card-body py-2">' +
+                                '<i class="fas fa-route mr-2"></i>' + trip.fromHub.hubName + ' <i class="fas fa-arrow-right mx-2"></i> ' + trip.toHub.hubName +
+                                '</div></div>' +
+                                '<h6 class="font-weight-bold"><i class="fas fa-boxes mr-2"></i>Bao hàng trên xe (' + trip.containerCount + ' bao - ' + (trip.totalLoadedWeight || 0) + ' kg)</h6>' +
+                                '<table class="table table-sm table-bordered table-hover">' +
+                                '<thead class="thead-light">' +
+                                '<tr><th>Mã bao</th><th>Loại</th><th>Số đơn</th><th>Trọng lượng</th><th>Trạng thái</th></tr>' +
+                                '</thead>' +
+                                '<tbody>' + containersHtml + '</tbody>' +
+                                '</table>';
+                            $('#tripDetailContent').html(html);
+                        }
+                    }).fail(function () {
+                        $('#tripDetailContent').html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle mr-2"></i>Không thể tải thông tin chuyến xe</div>');
                     });
-                    document.getElementById('fromHubId').value = '';
-                    document.getElementById('toHubId').value = '';
-                    updateRouteVisual();
+                }
 
-                    // Refresh page after modal closed to update trip list
-                    $('#successModal').on('hidden.bs.modal', function () {
-                        location.reload();
-                    });
+                function formatDate(dateStr) {
+                    if (!dateStr) return 'N/A';
+                    var date = new Date(dateStr);
+                    return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
                 }
             </script>
+        </body>
+
+        </html>

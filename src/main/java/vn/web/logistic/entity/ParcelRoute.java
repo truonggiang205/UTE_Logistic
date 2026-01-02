@@ -13,6 +13,10 @@ import lombok.*;
 @EqualsAndHashCode(exclude = { "request", "route" })
 public class ParcelRoute {
 
+    public enum ParcelRouteStatus {
+        planned, in_progress, completed
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "parcel_route_id")
@@ -33,8 +37,4 @@ public class ParcelRoute {
     @Column(columnDefinition = "ENUM('planned','in_progress','completed') DEFAULT 'planned'")
     @Builder.Default
     private ParcelRouteStatus status = ParcelRouteStatus.planned;
-}
-
-enum ParcelRouteStatus {
-    planned, in_progress, completed
 }

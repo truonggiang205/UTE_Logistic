@@ -109,4 +109,56 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             "AND s.createdAt >= :startOfDay")
     long countTodayOrdersByHubId(@Param("hubId") Long hubId,
             @Param("startOfDay") LocalDateTime startOfDay);
+
+    // Lấy danh sách đơn hàng theo Hub và trạng thái (cho KPI click)
+    @Query("SELECT s FROM ServiceRequest s " +
+            "LEFT JOIN FETCH s.pickupAddress " +
+            "LEFT JOIN FETCH s.deliveryAddress " +
+            "LEFT JOIN FETCH s.currentHub " +
+            "WHERE s.currentHub.hubId = :hubId AND s.status = :status " +
+            "ORDER BY s.createdAt DESC")
+    List<ServiceRequest> findByHubIdAndStatus(@Param("hubId") Long hubId, @Param("status") RequestStatus status);
+
+    // Lấy tất cả đơn hàng theo Hub (cho tổng số đơn)
+    @Query("SELECT s FROM ServiceRequest s " +
+            "LEFT JOIN FETCH s.pickupAddress " +
+            "LEFT JOIN FETCH s.deliveryAddress " +
+            "LEFT JOIN FETCH s.currentHub " +
+            "WHERE s.currentHub.hubId = :hubId " +
+            "ORDER BY s.createdAt DESC")
+    List<ServiceRequest> findAllByHubId(@Param("hubId") Long hubId);
+
+    // Nhóm chức năng cho Inbound
+    // [MẶC ĐỊNH] save(ServiceRequest entity): Lưu thông tin đơn hàng và các khoản
+    // phí tính toán.
+    // [MẶC ĐỊNH] findById(Long id): Lấy thông tin chi tiết đơn hàng.
+
+    /**
+     * [TÙY CHỈNH] Tìm đơn hàng bằng mã vận đơn (Tracking Code String)
+     * Tác dụng: Manager quét mã tracking_code (ví dụ: 'LOG12345'), hàm này trả về
+     * đơn
+     * hàng tương ứng.
+     * Sử dụng trong: Chức năng 2 (Nhập kho từ xe) và Chức năng 3 (Nhập kho từ
+     * Shipper).
+     */
+    @Query("SELECT sr FROM ServiceRequest sr JOIN TrackingCode tc ON tc.request.requestId = sr.requestId WHERE tc.code = :code")
+    Optional<ServiceRequest> findByTrackingCode(@Param("code") String code);
+
+    /**
+     * [TÙY CHỈNH] Tìm đơn hàng theo trạng thái và Hub hiện tại
+     * Sử dụng trong: OutboundService - Lấy đơn hàng chờ đóng gói
+     */
+    @Query("SELECT s FROM ServiceRequest s " +
+            "LEFT JOIN FETCH s.pickupAddress " +
+            "LEFT JOIN FETCH s.deliveryAddress " +
+            "LEFT JOIN FETCH s.currentHub " +
+            "WHERE s.status IN :statuses " +
+            "AND s.currentHub.hubId = :hubId " +
+            // Điều kiện quan trọng: request_id không được tồn tại trong bảng
+            // container_details
+            "AND NOT EXISTS (SELECT 1 FROM ContainerDetail cd WHERE cd.request.requestId = s.requestId) " +
+            "ORDER BY s.createdAt ASC")
+    List<ServiceRequest> findOrdersForConsolidation(
+            @Param("statuses") List<ServiceRequest.RequestStatus> statuses,
+            @Param("hubId") Long hubId);
 }

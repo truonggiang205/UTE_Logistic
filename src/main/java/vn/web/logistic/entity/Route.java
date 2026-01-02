@@ -1,5 +1,7 @@
 package vn.web.logistic.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,8 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = { "fromHub", "toHub" })
-@EqualsAndHashCode(exclude = { "fromHub", "toHub" })
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Route {
 
     @Id
@@ -19,11 +20,13 @@ public class Route {
     private Long routeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({ "routes", "staffs", "parcels" })
     @JoinColumn(name = "from_hub_id", nullable = false)
     private Hub fromHub;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_hub_id", nullable = false)
+    @JsonIgnoreProperties({ "routes", "staffs", "parcels" })
     private Hub toHub;
 
     private Integer estimatedTime;

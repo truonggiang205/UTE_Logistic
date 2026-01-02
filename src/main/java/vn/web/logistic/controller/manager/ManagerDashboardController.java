@@ -1,12 +1,14 @@
 package vn.web.logistic.controller.manager;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import vn.web.logistic.dto.response.manager.ManagerDashboardStatsResponse;
 import vn.web.logistic.dto.response.manager.OrderTrackingResponse;
 import vn.web.logistic.entity.User;
+import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.ManagerDashboardService;
 
 import java.util.HashMap;
@@ -17,7 +19,8 @@ import java.util.Map;
  * REST API Controller cho Manager Dashboard (Trưởng bưu cục)
  * 
  * Chức năng 1: Lấy thống kê tổng quan của Hub
- * Chức năng 2: Tra cứu đơn hàng theo mã đơn hoặc SĐT người gửi
+ * Chức năng 2: Tra cứu đơn hàng theo mã vận đơn (tracking code)
+ * Chức năng 3: Xem danh sách đơn hàng theo trạng thái (click KPI)
  */
 @RestController
 @RequestMapping("/api/manager")
@@ -25,6 +28,7 @@ import java.util.Map;
 public class ManagerDashboardController {
 
     private final ManagerDashboardService managerDashboardService;
+    private final UserRepository userRepository;
 
     /**
      * API lấy thống kê tổng quan cho Manager Dashboard
@@ -33,9 +37,9 @@ public class ManagerDashboardController {
      * Yêu cầu: Manager phải đăng nhập và có hub_id
      */
     @GetMapping("/dashboard/stats")
-    public ResponseEntity<?> getManagerStats(HttpSession session) {
-        // Lấy thông tin user từ session
-        User currentUser = (User) session.getAttribute("currentUser");
+    public ResponseEntity<?> getManagerStats() {
+        // Lấy thông tin user từ Spring Security
+        User currentUser = getCurrentUser();
 
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
@@ -61,32 +65,54 @@ public class ManagerDashboardController {
     }
 
     /**
-     * API tra cứu đơn hàng theo keyword (mã đơn hoặc SĐT người gửi)
+     * API tra cứu đơn hàng theo mã vận đơn (tracking code)
      * GET /api/manager/tracking?keyword=xxx
+     * 
+     * Keyword có thể là:
+     * - Mã vận đơn (tracking code)
+     * - Request ID
+     * - SĐT người gửi
      */
     @GetMapping("/tracking")
     public ResponseEntity<?> trackOrder(
-            @RequestParam(required = false) String keyword,
-            HttpSession session) {
+            @RequestParam(required = false) String keyword) {
 
         // Kiểm tra đăng nhập
-        User currentUser = (User) session.getAttribute("currentUser");
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
 
         if (keyword == null || keyword.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(
-                    createErrorResponse("Vui lòng nhập mã đơn hàng hoặc số điện thoại người gửi"));
+                    createErrorResponse("Vui lòng nhập mã vận đơn hoặc số điện thoại người gửi"));
         }
 
-        List<OrderTrackingResponse> results = managerDashboardService.trackOrder(keyword.trim());
+        String cleanKeyword = keyword.trim();
+
+        // Ưu tiên tìm theo tracking code trước
+        OrderTrackingResponse trackingResult = managerDashboardService.trackByTrackingCode(cleanKeyword);
+
+        if (trackingResult != null) {
+            // Tìm thấy theo tracking code
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", List.of(trackingResult));
+            response.put("count", 1);
+            response.put("keyword", cleanKeyword);
+            response.put("searchType", "tracking_code");
+            return ResponseEntity.ok(response);
+        }
+
+        // Fallback: tìm theo requestId hoặc SĐT
+        List<OrderTrackingResponse> results = managerDashboardService.trackOrder(cleanKeyword);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", results);
         response.put("count", results.size());
-        response.put("keyword", keyword.trim());
+        response.put("keyword", cleanKeyword);
+        response.put("searchType", "keyword");
 
         return ResponseEntity.ok(response);
     }
@@ -97,11 +123,10 @@ public class ManagerDashboardController {
      */
     @GetMapping("/tracking/{requestId}")
     public ResponseEntity<?> getOrderDetail(
-            @PathVariable Long requestId,
-            HttpSession session) {
+            @PathVariable Long requestId) {
 
         // Kiểm tra đăng nhập
-        User currentUser = (User) session.getAttribute("currentUser");
+        User currentUser = getCurrentUser();
         if (currentUser == null) {
             return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
         }
@@ -118,6 +143,59 @@ public class ManagerDashboardController {
         response.put("data", order);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API lấy danh sách đơn hàng theo trạng thái (cho click KPI)
+     * GET /api/manager/orders?status=pending
+     * 
+     * Status có thể là: pending, picked, in_transit, delivered, cancelled, failed,
+     * all
+     */
+    @GetMapping("/orders")
+    public ResponseEntity<?> getOrdersByStatus(
+            @RequestParam(required = false, defaultValue = "all") String status) {
+
+        // Kiểm tra đăng nhập
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+        }
+
+        // Lấy hub_id từ user
+        Long hubId = getHubIdFromUser(currentUser);
+        if (hubId == null) {
+            return ResponseEntity.badRequest().body(
+                    createErrorResponse("Không tìm thấy thông tin Hub."));
+        }
+
+        List<OrderTrackingResponse> orders = managerDashboardService.getOrdersByHubAndStatus(hubId, status);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", orders);
+        response.put("count", orders.size());
+        response.put("status", status);
+        response.put("hubId", hubId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy User hiện tại từ Spring Security
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String email = authentication.getName();
+        if (email == null || "anonymousUser".equals(email)) {
+            return null;
+        }
+
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     /**
@@ -145,5 +223,28 @@ public class ManagerDashboardController {
         error.put("success", false);
         error.put("message", message);
         return error;
+    }
+
+    /**
+     * API: Lấy thông tin User hiện tại (dùng cho frontend)
+     * GET /api/manager/current-user
+     */
+    @GetMapping("/current-user")
+    public ResponseEntity<?> getCurrentUserInfo() {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+        }
+
+        Long hubId = getHubIdFromUser(currentUser);
+
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("userId", currentUser.getUserId());
+        userInfo.put("username", currentUser.getUsername());
+        userInfo.put("fullName", currentUser.getFullName());
+        userInfo.put("email", currentUser.getEmail());
+        userInfo.put("hubId", hubId);
+
+        return ResponseEntity.ok(userInfo);
     }
 }

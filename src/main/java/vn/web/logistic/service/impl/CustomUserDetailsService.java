@@ -18,54 +18,54 @@ import vn.web.logistic.repository.UserRepository;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserRepository userRepository;
 
-    @Override
-    @Transactional
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // Tìm user bằng email (dùng email làm identifier chính cho đăng nhập)
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException(
-                        "Không tìm thấy người dùng với email: " + email));
+        @Override
+        @Transactional
+        public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+                // Tìm user bằng email (dùng email làm identifier chính cho đăng nhập)
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                "Không tìm thấy người dùng với email: " + email));
 
-        // Check if user is active
-        if (user.getStatus() != User.UserStatus.active) {
-            throw new UsernameNotFoundException("Tài khoản không hoạt động: " + email);
+                // Check if user is active
+                if (user.getStatus() != User.UserStatus.active) {
+                        throw new UsernameNotFoundException("Tài khoản không hoạt động: " + email);
+                }
+
+                Set<GrantedAuthority> authorities = user.getRoles().stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
+                                .collect(Collectors.toSet());
+
+                // Sử dụng email làm username trong Spring Security
+                return org.springframework.security.core.userdetails.User
+                                .withUsername(user.getEmail())
+                                .password(user.getPasswordHash())
+                                .authorities(authorities)
+                                .accountExpired(false)
+                                .accountLocked(user.getStatus() == User.UserStatus.banned)
+                                .credentialsExpired(false)
+                                .disabled(user.getStatus() == User.UserStatus.inactive)
+                                .build();
         }
 
-        Set<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
-                .collect(Collectors.toSet());
+        /**
+         * Load user by user ID
+         */
+        @Transactional
+        public UserDetails loadUserById(Long userId) {
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
 
-        // Sử dụng email làm username trong Spring Security
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPasswordHash())
-                .authorities(authorities)
-                .accountExpired(false)
-                .accountLocked(user.getStatus() == User.UserStatus.banned)
-                .credentialsExpired(false)
-                .disabled(user.getStatus() == User.UserStatus.inactive)
-                .build();
-    }
+                Set<GrantedAuthority> authorities = user.getRoles().stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
+                                .collect(Collectors.toSet());
 
-    /**
-     * Load user by user ID
-     */
-    @Transactional
-    public UserDetails loadUserById(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
-
-        Set<GrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoleName()))
-                .collect(Collectors.toSet());
-
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-                .password(user.getPasswordHash())
-                .authorities(authorities)
-                .build();
-    }
+                return org.springframework.security.core.userdetails.User
+                                .withUsername(user.getUsername())
+                                .password(user.getPasswordHash())
+                                .authorities(authorities)
+                                .build();
+        }
 }
