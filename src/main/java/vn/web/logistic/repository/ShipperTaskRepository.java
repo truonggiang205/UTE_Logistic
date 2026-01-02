@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.ShipperTask;
 import vn.web.logistic.repository.projection.TopPerformerProjection;
 
@@ -60,4 +61,54 @@ public interface ShipperTaskRepository extends JpaRepository<ShipperTask, Long> 
                         "WHERE t.shipper.shipperId = :shipperId " +
                         "AND t.taskStatus IN ('assigned', 'in_progress')")
         long countActiveTasksByShipperId(@Param("shipperId") Long shipperId);
+
+        /* ========================= PHÂN CÔNG SHIPPER =========================== */
+
+        // Kiểm tra đơn đã được gán task loại này chưa (bất kỳ trạng thái)
+        boolean existsByRequestAndTaskType(
+                        vn.web.logistic.entity.ServiceRequest request,
+                        ShipperTask.TaskType taskType);
+
+        // Kiểm tra đơn đã có task ĐANG ACTIVE (assigned/in_progress) chưa
+        // Dùng để cho phép phân công lại khi task cũ đã failed
+        @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END " +
+                        "FROM ShipperTask t " +
+                        "WHERE t.request = :request " +
+                        "AND t.taskType = :taskType " +
+                        "AND t.taskStatus IN ('assigned', 'in_progress')")
+        boolean existsActiveTaskByRequestAndType(
+                        @Param("request") ServiceRequest request,
+                        @Param("taskType") ShipperTask.TaskType taskType);
+
+        // Lấy danh sách task của shipper theo taskType và status
+        @Query("SELECT t FROM ShipperTask t " +
+                        "JOIN FETCH t.request r " +
+                        "JOIN FETCH r.pickupAddress " +
+                        "JOIN FETCH r.deliveryAddress " +
+                        "WHERE t.shipper.shipperId = :shipperId " +
+                        "AND t.taskType = :taskType " +
+                        "AND t.taskStatus = :status")
+        List<ShipperTask> findByShipperAndTypeAndStatus(
+                        @Param("shipperId") Long shipperId,
+                        @Param("taskType") ShipperTask.TaskType taskType,
+                        @Param("status") ShipperTask.TaskStatus status);
+
+        // HOÀN HÀNG
+        // Đếm số lần giao thất bại của một đơn hàng
+        @Query("SELECT COUNT(t) FROM ShipperTask t " +
+                        "WHERE t.request.requestId = :requestId " +
+                        "AND t.taskType = 'delivery' " +
+                        "AND t.taskStatus = 'failed'")
+        long countFailedDeliveryByRequestId(@Param("requestId") Long requestId);
+
+        // Lấy danh sách requestId có >= 3 lần giao thất bại
+        @Query("SELECT t.request.requestId FROM ShipperTask t " +
+                        "WHERE t.taskType = 'delivery' " +
+                        "AND t.taskStatus = 'failed' " +
+                        "GROUP BY t.request.requestId " +
+                        "HAVING COUNT(t) >= 3")
+        List<Long> findRequestIdsWithFailedDeliveries();
+
+        // Tìm tất cả task của một đơn hàng theo requestId
+        List<ShipperTask> findByRequestRequestId(Long requestId);
 }

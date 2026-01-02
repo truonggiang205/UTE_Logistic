@@ -60,6 +60,15 @@ public class CodTransaction {
     @Builder.Default
     private CodStatus status = CodStatus.pending;
 
+    public enum CodType {
+        delivery_cod, return_fee
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type", columnDefinition = "ENUM('delivery_cod','return_fee') DEFAULT 'delivery_cod'")
+    @Builder.Default
+    private CodType codType = CodType.delivery_cod;
+
     @Column(name = "paymentMethod", length = 50)
     private String paymentMethod;
 }

@@ -5,9 +5,6 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,9 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import vn.web.logistic.dto.request.CreateShipperRequest;
+import vn.web.logistic.dto.response.ApiResponse;
 import vn.web.logistic.dto.response.manager.ShipperInfoDTO;
 import vn.web.logistic.entity.User;
-import vn.web.logistic.repository.UserRepository;
+import vn.web.logistic.service.SecurityContextService;
 import vn.web.logistic.service.ShipperManagementService;
 
 @RestController
@@ -34,7 +32,7 @@ public class ShipperManagementController {
     private static final int DEFAULT_PAGE_SIZE = 6;
 
     private final ShipperManagementService shipperManagementService;
-    private final UserRepository userRepository;
+    private final SecurityContextService securityContextService;
 
     // Lấy danh sách shipper với filter, search, phân trang
     @GetMapping
@@ -44,14 +42,14 @@ public class ShipperManagementController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
-        Long hubId = getHubIdFromUser(currentUser);
+        Long hubId = securityContextService.getCurrentHubId();
         if (hubId == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Không tìm thấy Hub"));
+            return ResponseEntity.badRequest().body(ApiResponse.message("Không tìm thấy Hub"));
         }
         if (size <= 0 || size > 50)
             size = DEFAULT_PAGE_SIZE;
@@ -80,14 +78,14 @@ public class ShipperManagementController {
             @PathVariable Long shipperId,
             @RequestBody Map<String, String> request) {
 
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
         String status = request.get("status");
         if (status == null || status.isEmpty()) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Thiếu status"));
+            return ResponseEntity.badRequest().body(ApiResponse.message("Thiếu status"));
         }
 
         var result = shipperManagementService.updateShipperStatus(shipperId, status);
@@ -127,14 +125,14 @@ public class ShipperManagementController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
-        Long hubId = getHubIdFromUser(currentUser);
+        Long hubId = securityContextService.getCurrentHubId();
         if (hubId == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Không tìm thấy Hub"));
+            return ResponseEntity.badRequest().body(ApiResponse.message("Không tìm thấy Hub"));
         }
 
         // Check trùng username/email/phone
@@ -159,7 +157,7 @@ public class ShipperManagementController {
         ShipperInfoDTO newShipper = shipperManagementService.createShipper(request, hubId);
 
         if (newShipper == null) {
-            return ResponseEntity.badRequest().body(createErrorResponse("Không thể tạo shipper. Vui lòng thử lại."));
+            return ResponseEntity.badRequest().body(ApiResponse.message("Không thể tạo shipper. Vui lòng thử lại."));
         }
 
         Map<String, Object> response = new HashMap<>();
@@ -168,31 +166,5 @@ public class ShipperManagementController {
         response.put("data", newShipper);
 
         return ResponseEntity.ok(response);
-    }
-
-    private User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetails) {
-            String username = ((UserDetails) auth.getPrincipal()).getUsername();
-            return userRepository.findByEmail(username).orElse(null);
-        }
-        return null;
-    }
-
-    private Long getHubIdFromUser(User user) {
-        if (user.getStaff() != null && user.getStaff().getHub() != null) {
-            return user.getStaff().getHub().getHubId();
-        }
-        if (user.getShipper() != null && user.getShipper().getHub() != null) {
-            return user.getShipper().getHub().getHubId();
-        }
-        return null;
-    }
-
-    private Map<String, Object> createErrorResponse(String message) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("success", false);
-        error.put("message", message);
-        return error;
     }
 }

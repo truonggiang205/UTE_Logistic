@@ -19,11 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.dto.request.CodSettlementRequest;
+import vn.web.logistic.dto.response.ApiResponse;
 import vn.web.logistic.dto.response.manager.CodSettlementResultDTO;
 import vn.web.logistic.dto.response.manager.ShipperCodSummaryDTO;
 import vn.web.logistic.entity.User;
 import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.CodSettlementService;
+import vn.web.logistic.service.SecurityContextService;
 
 /**
  * REST API Controller cho Quyết toán COD (Manager)
@@ -41,28 +43,26 @@ import vn.web.logistic.service.CodSettlementService;
 public class CodSettlementController {
 
     private final CodSettlementService codSettlementService;
-    private final UserRepository userRepository;
+    private final SecurityContextService securityContextService;
 
-    /**
-     * API lấy danh sách shipper có COD chưa quyết toán trong Hub
-     * GET /api/manager/cod/pending
-     */
+    // Lấy danh sách shipper có COD chưa quyết toán trong Hub
+
     @GetMapping("/pending")
     public ResponseEntity<?> getShippersWithPendingCod() {
         // Lấy user từ SecurityContext
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
             log.warn("COD Settlement: Chưa đăng nhập");
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
         // Lấy hub_id
-        Long hubId = getHubIdFromUser(currentUser);
+        Long hubId = securityContextService.getCurrentHubId();
 
         if (hubId == null) {
             log.warn("COD Settlement: Không tìm thấy Hub cho user {}", currentUser.getUsername());
             return ResponseEntity.badRequest().body(
-                    createErrorResponse("Không tìm thấy thông tin Hub. Bạn cần được gán vào một Hub."));
+                    ApiResponse.message("Không tìm thấy thông tin Hub. Bạn cần được gán vào một Hub."));
         }
 
         List<ShipperCodSummaryDTO> shippers = codSettlementService.getShippersWithPendingCod(hubId);
@@ -82,16 +82,13 @@ public class CodSettlementController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * API lấy chi tiết COD của một shipper
-     * GET /api/manager/cod/shipper/{shipperId}
-     */
+    // Lấy chi tiết COD của một shipper
     @GetMapping("/shipper/{shipperId}")
     public ResponseEntity<?> getShipperCodDetail(@PathVariable Long shipperId) {
         // Kiểm tra đăng nhập
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
         ShipperCodSummaryDTO detail = codSettlementService.getShipperCodDetail(shipperId);
@@ -103,17 +100,14 @@ public class CodSettlementController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * API thực hiện quyết toán COD cho shipper
-     * POST /api/manager/cod/settle
-     */
+    // Thực hiện quyết toán COD cho shipper
     @PostMapping("/settle")
     public ResponseEntity<?> settleCod(@RequestBody CodSettlementRequest request) {
         // Kiểm tra đăng nhập
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
             log.warn("COD Settle: Chưa đăng nhập");
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
         // Lấy tên manager
@@ -136,16 +130,13 @@ public class CodSettlementController {
         }
     }
 
-    /**
-     * API lấy lịch sử quyết toán COD của một shipper
-     * GET /api/manager/cod/history/{shipperId}
-     */
+    // Lấy lịch sử quyết toán COD của một shipper
     @GetMapping("/history/{shipperId}")
     public ResponseEntity<?> getSettlementHistory(@PathVariable Long shipperId) {
         // Kiểm tra đăng nhập
-        User currentUser = getCurrentUser();
+        User currentUser = securityContextService.getCurrentUser();
         if (currentUser == null) {
-            return ResponseEntity.status(401).body(createErrorResponse("Vui lòng đăng nhập"));
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
         }
 
         ShipperCodSummaryDTO history = codSettlementService.getSettlementHistory(shipperId);
@@ -155,50 +146,5 @@ public class CodSettlementController {
         response.put("data", history);
 
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Lấy User từ SecurityContext
-     */
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof UserDetails) {
-            String email = ((UserDetails) principal).getUsername();
-            return userRepository.findByEmail(email).orElse(null);
-        }
-
-        return null;
-    }
-
-    /**
-     * Lấy hub_id từ User (qua Staff hoặc Shipper)
-     */
-    private Long getHubIdFromUser(User user) {
-        // Ưu tiên lấy từ Staff (Manager là staff)
-        if (user.getStaff() != null && user.getStaff().getHub() != null) {
-            return user.getStaff().getHub().getHubId();
-        }
-
-        // Fallback: lấy từ Shipper nếu có
-        if (user.getShipper() != null && user.getShipper().getHub() != null) {
-            return user.getShipper().getHub().getHubId();
-        }
-
-        return null;
-    }
-
-    /**
-     * Tạo response lỗi chuẩn
-     */
-    private Map<String, Object> createErrorResponse(String message) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("success", false);
-        error.put("message", message);
-        return error;
     }
 }

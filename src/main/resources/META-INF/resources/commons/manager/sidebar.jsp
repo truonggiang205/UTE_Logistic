@@ -164,18 +164,13 @@ uri="http://java.sun.com/jsp/jstl/core" %>
         <h6 class="collapse-header">Các đơn lỗi:</h6>
         <a
           class="collapse-item"
-          href="<c:url value='/manager/exception/return-init'/>"
+          href="<c:url value='/manager/lastmile/return-goods'/>"
           >Kích hoạt Hoàn hàng</a
         >
         <a
           class="collapse-item"
-          href="<c:url value='/manager/exception/return-final'/>"
+          href="<c:url value='/manager/lastmile/return-shop'/>"
           >Xác nhận trả Shop</a
-        >
-        <a
-          class="collapse-item"
-          href="<c:url value='/manager/exception/report'/>"
-          >Báo cáo Sự cố/Hư hỏng</a
         >
       </div>
     </div>

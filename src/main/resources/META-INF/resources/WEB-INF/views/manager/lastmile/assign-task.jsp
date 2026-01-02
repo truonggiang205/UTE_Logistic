@@ -1,445 +1,829 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-    <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-        <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phân công Shipper - Manager Portal</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+      rel="stylesheet" />
+    <style>
+      :root {
+        --primary-color: #4f46e5;
+        --primary-light: #6366f1;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --bg-dark: #1e293b;
+        --bg-card: #ffffff;
+        --text-primary: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+      }
 
-            <style>
-                .assign-header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 25px;
-                    border-radius: 15px;
-                    color: #fff;
-                    margin-bottom: 25px;
-                }
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      }
 
-                .step-card {
-                    background: #fff;
-                    border-radius: 15px;
-                    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-                    margin-bottom: 20px;
-                    overflow: hidden;
-                }
+      .main-container {
+        padding: 20px;
+      }
 
-                .step-header {
-                    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-                    color: #fff;
-                    padding: 15px 20px;
-                    display: flex;
-                    align-items: center;
-                }
+      .page-header {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
 
-                .step-number {
-                    width: 35px;
-                    height: 35px;
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: 700;
-                    margin-right: 15px;
-                }
+      .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+      }
 
-                .step-body {
-                    padding: 20px;
-                }
+      .tab-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
 
-                .order-list {
-                    max-height: 400px;
-                    overflow-y: auto;
-                }
+      .nav-tabs {
+        border-bottom: 2px solid var(--border-color);
+        background: #f8fafc;
+        padding: 0 16px;
+      }
 
-                .order-item {
-                    display: flex;
-                    align-items: center;
-                    padding: 12px 15px;
-                    border: 1px solid #e3e6f0;
-                    border-radius: 8px;
-                    margin-bottom: 10px;
-                    transition: all 0.3s;
-                }
+      .nav-tabs .nav-link {
+        border: none;
+        padding: 16px 24px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.3s ease;
+      }
 
-                .order-item:hover {
-                    border-color: #667eea;
-                    background: #f8f9fc;
-                }
+      .nav-tabs .nav-link:hover {
+        color: var(--primary-color);
+        background: rgba(79, 70, 229, 0.05);
+      }
 
-                .order-item.selected {
-                    border-color: #28a745;
-                    background: #e8f5e9;
-                }
+      .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        background: transparent;
+        border-bottom-color: var(--primary-color);
+      }
 
-                .order-checkbox {
-                    margin-right: 15px;
-                    width: 20px;
-                    height: 20px;
-                }
+      .tab-content {
+        padding: 24px;
+      }
 
-                .order-info {
-                    flex: 1;
-                }
+      .order-card {
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+      }
 
-                .order-id {
-                    font-weight: 600;
-                    color: #5a5c69;
-                }
+      .order-card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
 
-                .order-meta {
-                    font-size: 12px;
-                    color: #858796;
-                }
+      .order-id {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
 
-                .shipper-card {
-                    border: 2px solid #e3e6f0;
-                    border-radius: 10px;
-                    padding: 15px;
-                    margin-bottom: 10px;
-                    cursor: pointer;
-                    transition: all 0.3s;
-                }
+      .order-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
 
-                .shipper-card:hover {
-                    border-color: #667eea;
-                    background: #f8f9fc;
-                }
+      .badge-pickup {
+        background: #fef3c7;
+        color: #d97706;
+      }
 
-                .shipper-card.selected {
-                    border-color: #28a745;
-                    background: #e8f5e9;
-                }
+      .badge-delivery {
+        background: #dbeafe;
+        color: #2563eb;
+      }
 
-                .shipper-avatar {
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #fff;
-                    font-weight: 700;
-                    margin-right: 15px;
-                }
+      .order-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
 
-                .shipper-status {
-                    padding: 4px 10px;
-                    border-radius: 15px;
-                    font-size: 11px;
-                    font-weight: 600;
-                }
+      .info-group {
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 8px;
+      }
 
-                .status-active {
-                    background: #d4edda;
-                    color: #155724;
-                }
+      .info-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
 
-                .status-busy {
-                    background: #fff3cd;
-                    color: #856404;
-                }
+      .info-value {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
 
-                .status-inactive {
-                    background: #f8d7da;
-                    color: #721c24;
-                }
+      .cod-amount {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--success-color);
+      }
 
-                .btn-assign {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border: none;
-                    padding: 12px 30px;
-                    border-radius: 25px;
-                    color: #fff;
-                    font-weight: 600;
-                    transition: all 0.3s;
-                }
+      .shipper-select {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px dashed var(--border-color);
+      }
 
-                .btn-assign:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-                    color: #fff;
-                }
+      .shipper-dropdown {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
 
-                .counter-badge {
-                    background: #667eea;
-                    color: #fff;
-                    padding: 5px 12px;
-                    border-radius: 15px;
-                    font-weight: 600;
-                }
-            </style>
+      .shipper-dropdown select {
+        flex: 1;
+        padding: 10px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
 
-            <!-- Header -->
-            <div class="assign-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="mb-1"><i class="fas fa-user-tag mr-2"></i>Phân công Shipper</h4>
-                        <p class="mb-0 opacity-75">Chọn đơn hàng và gán cho Shipper giao hàng</p>
-                    </div>
-                    <div>
-                        <span class="badge badge-light p-2">
-                            <i class="fas fa-calendar-day mr-1"></i>
-                            <fmt:formatDate value="<%=new java.util.Date()%>" pattern="dd/MM/yyyy HH:mm" />
-                        </span>
-                    </div>
-                </div>
+      .shipper-dropdown select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        outline: none;
+      }
+
+      .btn-assign {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--primary-light)
+        );
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-assign:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        color: white;
+      }
+
+      .btn-assign:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+      }
+
+      .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .stats-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .stat-card {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .stat-label {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .loading-overlay.show {
+        display: flex;
+      }
+
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+      }
+
+      @media (max-width: 768px) {
+        .order-info {
+          grid-template-columns: 1fr;
+        }
+
+        .stats-row {
+          flex-wrap: wrap;
+        }
+
+        .stat-card {
+          min-width: 45%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-overlay" id="loadingOverlay">
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"></div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="main-container">
+      <!-- Header -->
+      <div
+        class="page-header d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="page-title">
+            <i class="bi bi-people-fill me-2"></i>Phân công Shipper
+          </h1>
+          <p class="text-muted mb-0">
+            Phân công đơn hàng cho shipper đi lấy/giao
+          </p>
+        </div>
+        <button class="btn btn-outline-primary" onclick="refreshData()">
+          <i class="bi bi-arrow-clockwise me-2"></i>Làm mới
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-number" id="pickupCount">0</div>
+          <div class="stat-label">Đơn cần lấy hàng</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="deliveryCount">0</div>
+          <div class="stat-label">Đơn cần giao hàng</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="shipperCount">0</div>
+          <div class="stat-label">Shipper khả dụng</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-container">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item">
+            <button
+              class="nav-link active"
+              data-bs-toggle="tab"
+              data-bs-target="#pickupTab">
+              <i class="bi bi-box-arrow-in-down me-2"></i>Cần lấy hàng
+              <span class="badge bg-warning ms-2" id="pickupBadge">0</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="nav-link"
+              data-bs-toggle="tab"
+              data-bs-target="#deliveryTab">
+              <i class="bi bi-truck me-2"></i>Cần giao hàng
+              <span class="badge bg-primary ms-2" id="deliveryBadge">0</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- Pickup Tab -->
+          <div class="tab-pane fade show active" id="pickupTab">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <label class="me-2">Hiển thị:</label>
+                <select
+                  id="pickupPageSize"
+                  class="form-select form-select-sm d-inline-block"
+                  style="width: auto"
+                  onchange="changePickupPageSize()">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+                <span class="ms-2">đơn/trang</span>
+              </div>
+              <div class="text-muted" id="pickupPageInfo"></div>
             </div>
+            <div id="pickupOrders"></div>
+            <nav id="pickupPagination" class="mt-3"></nav>
+          </div>
 
-            <div class="row">
-                <!-- Step 1: Chọn Shipper -->
-                <div class="col-lg-4">
-                    <div class="step-card">
-                        <div class="step-header">
-                            <div class="step-number">1</div>
-                            <div>
-                                <h6 class="mb-0">Chọn Shipper</h6>
-                                <small class="opacity-75">Shipper sẵn sàng nhận đơn</small>
-                            </div>
-                        </div>
-                        <div class="step-body">
-                            <div class="mb-3">
-                                <select class="form-control" id="filterShipperStatus">
-                                    <option value="">Tất cả trạng thái</option>
-                                    <option value="active" selected>Đang rảnh (Active)</option>
-                                    <option value="busy">Đang bận (Busy)</option>
-                                </select>
-                            </div>
-                            <div id="shipperList">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                                    <p class="mt-2 text-muted">Đang tải danh sách...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 2: Chọn đơn hàng -->
-                <div class="col-lg-5">
-                    <div class="step-card">
-                        <div class="step-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                            <div class="step-number">2</div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0">Chọn đơn hàng</h6>
-                                <small class="opacity-75">Đơn sẵn sàng giao</small>
-                            </div>
-                            <span class="counter-badge" id="selectedOrderCount">0 đơn</span>
-                        </div>
-                        <div class="step-body">
-                            <div class="d-flex mb-3">
-                                <input type="text" class="form-control mr-2" id="searchOrder"
-                                    placeholder="Tìm mã vận đơn...">
-                                <button class="btn btn-outline-primary" id="selectAllOrders">
-                                    <i class="fas fa-check-double"></i>
-                                </button>
-                            </div>
-                            <div class="order-list" id="orderList">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                                    <p class="mt-2 text-muted">Đang tải danh sách...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Xác nhận -->
-                <div class="col-lg-3">
-                    <div class="step-card">
-                        <div class="step-header" style="background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);">
-                            <div class="step-number">3</div>
-                            <div>
-                                <h6 class="mb-0">Xác nhận</h6>
-                                <small class="opacity-75">Phân công giao hàng</small>
-                            </div>
-                        </div>
-                        <div class="step-body">
-                            <div class="mb-3">
-                                <label class="text-muted small">Shipper được chọn:</label>
-                                <div id="selectedShipperInfo" class="font-weight-bold text-primary">Chưa chọn shipper
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-muted small">Số đơn được chọn:</label>
-                                <div id="selectedOrderInfo" class="font-weight-bold text-success">0 đơn hàng</div>
-                            </div>
-                            <hr>
-                            <button class="btn btn-assign btn-block" id="btnAssign" disabled>
-                                <i class="fas fa-paper-plane mr-2"></i>Phân công
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="step-card">
-                        <div class="step-header" style="background: linear-gradient(135deg, #606c88 0%, #3f4c6b 100%);">
-                            <div class="step-number"><i class="fas fa-history"></i></div>
-                            <div>
-                                <h6 class="mb-0">Phân công gần đây</h6>
-                            </div>
-                        </div>
-                        <div class="step-body" id="recentAssignments">
-                            <p class="text-muted text-center">Chưa có phân công nào</p>
-                        </div>
-                    </div>
-                </div>
+          <!-- Delivery Tab -->
+          <div class="tab-pane fade" id="deliveryTab">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <label class="me-2">Hiển thị:</label>
+                <select
+                  id="deliveryPageSize"
+                  class="form-select form-select-sm d-inline-block"
+                  style="width: auto"
+                  onchange="changeDeliveryPageSize()">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+                <span class="ms-2">đơn/trang</span>
+              </div>
+              <div class="text-muted" id="deliveryPageInfo"></div>
             </div>
+            <div id="deliveryOrders"></div>
+            <nav id="deliveryPagination" class="mt-3"></nav>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <script>
-                var selectedShipperId = null;
-                var selectedShipperName = '';
-                var selectedOrderIds = [];
-                var contextPath = '${pageContext.request.contextPath}';
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let shippers = [];
 
-                // Wait for jQuery to be available
-                function initPage() {
-                    if (typeof jQuery === 'undefined') {
-                        setTimeout(initPage, 50);
-                        return;
-                    }
-                    $(document).ready(function () {
-                        loadShippers();
-                        loadOrders();
+      // Pagination state
+      let pickupState = { page: 0, size: 10, totalPages: 0, totalElements: 0 };
+      let deliveryState = {
+        page: 0,
+        size: 10,
+        totalPages: 0,
+        totalElements: 0,
+      };
 
-                        $('#filterShipperStatus').change(function () {
-                            loadShippers($(this).val());
-                        });
+      // Load data on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        loadShippers();
+        loadPickupOrders();
+        loadDeliveryOrders();
+      });
 
-                        $('#searchOrder').on('input', function () {
-                            var keyword = $(this).val().toLowerCase();
-                            $('.order-item').each(function () {
-                                $(this).toggle($(this).text().toLowerCase().indexOf(keyword) !== -1);
-                            });
-                        });
+      // Load danh sách shipper
+      async function loadShippers() {
+        try {
+          const response = await fetch(
+            "/api/manager/shippers?status=active&size=50"
+          );
+          const data = await response.json();
+          if (data.success) {
+            shippers = data.data || [];
+            document.getElementById("shipperCount").textContent =
+              shippers.length;
+          }
+        } catch (error) {
+          console.error("Error loading shippers:", error);
+        }
+      }
 
-                        $('#selectAllOrders').click(function () {
-                            $('.order-checkbox').prop('checked', true).trigger('change');
-                        });
+      // Load đơn cần pickup với phân trang
+      async function loadPickupOrders(page) {
+        if (page === undefined) page = pickupState.page;
+        showLoading(true);
+        var size = pickupState.size;
+        try {
+          var response = await fetch(
+            "/api/manager/tasks/pending-pickup?page=" + page + "&size=" + size
+          );
+          var data = await response.json();
 
-                        $('#btnAssign').click(assignTask);
-                    });
-                }
+          if (data.success) {
+            pickupState.page = data.page;
+            pickupState.totalPages = data.totalPages;
+            pickupState.totalElements = data.totalElements;
 
-                function loadShippers(status) {
-                    var url = contextPath + '/api/manager/lastmile/shippers' + (status ? '?status=' + status : '');
-                    $.get(url, function (response) {
-                        if (response.success && response.data) renderShippers(response.data);
-                    }).fail(function () {
-                        $('#shipperList').html('<p class="text-danger text-center">Lỗi tải danh sách</p>');
-                    });
-                }
+            renderOrders(data.data, "pickupOrders", "pickup");
+            document.getElementById("pickupCount").textContent =
+              data.totalElements;
+            document.getElementById("pickupBadge").textContent =
+              data.totalElements;
+            updatePageInfo("pickup");
+            renderPagination("pickup");
+          }
+        } catch (error) {
+          showToast("Lỗi tải dữ liệu", "danger");
+        }
+        showLoading(false);
+      }
 
-                function renderShippers(shippers) {
-                    if (shippers.length === 0) {
-                        $('#shipperList').html('<p class="text-muted text-center">Không có shipper nào</p>');
-                        return;
-                    }
-                    var html = '';
-                    shippers.forEach(function (s) {
-                        var initials = s.shipperName ? s.shipperName.charAt(0).toUpperCase() : '?';
-                        var statusText = s.status === 'active' ? 'Rảnh' : s.status === 'busy' ? 'Bận' : 'Nghỉ';
-                        html += '<div class="shipper-card d-flex align-items-center" data-shipper-id="' + s.shipperId + '" data-shipper-name="' + s.shipperName + '">' +
-                            '<div class="shipper-avatar">' + initials + '</div>' +
-                            '<div class="flex-grow-1"><div class="font-weight-bold">' + s.shipperName + '</div>' +
-                            '<small class="text-muted"><i class="fas fa-phone mr-1"></i>' + s.phone + '</small></div>' +
-                            '<span class="shipper-status status-' + s.status + '">' + statusText + '</span></div>';
-                    });
-                    $('#shipperList').html(html);
-                    $('.shipper-card').click(function () {
-                        $('.shipper-card').removeClass('selected');
-                        $(this).addClass('selected');
-                        selectedShipperId = $(this).data('shipper-id');
-                        selectedShipperName = $(this).data('shipper-name');
-                        $('#selectedShipperInfo').text(selectedShipperName);
-                        updateAssignButton();
-                    });
-                }
+      // Load đơn cần delivery với phân trang
+      async function loadDeliveryOrders(page) {
+        if (page === undefined) page = deliveryState.page;
+        var size = deliveryState.size;
+        try {
+          var response = await fetch(
+            "/api/manager/tasks/pending-delivery?page=" + page + "&size=" + size
+          );
+          var data = await response.json();
 
-                function loadOrders() {
-                    $.get(contextPath + '/api/manager/lastmile/orders?status=picked', function (response) {
-                        if (response.success && response.data) renderOrders(response.data);
-                    }).fail(function () {
-                        $('#orderList').html('<p class="text-danger text-center">Lỗi tải danh sách</p>');
-                    });
-                }
+          if (data.success) {
+            deliveryState.page = data.page;
+            deliveryState.totalPages = data.totalPages;
+            deliveryState.totalElements = data.totalElements;
 
-                function renderOrders(orders) {
-                    if (orders.length === 0) {
-                        $('#orderList').html('<p class="text-muted text-center">Không có đơn hàng nào</p>');
-                        return;
-                    }
-                    var html = '';
-                    orders.forEach(function (o) {
-                        html += '<div class="order-item"><input type="checkbox" class="order-checkbox" data-request-id="' + o.requestId + '">' +
-                            '<div class="order-info"><div class="order-id">' + o.trackingCode + '</div>' +
-                            '<div class="order-meta"><i class="fas fa-user mr-1"></i>' + (o.receiverName || 'N/A') + '<br>' +
-                            '<i class="fas fa-map-marker-alt mr-1"></i>' + (o.receiverAddress || 'N/A') + '</div></div>' +
-                            '<div class="text-right"><small class="text-muted">COD</small><br>' +
-                            '<span class="font-weight-bold text-success">' + formatCurrency(o.codAmount || 0) + '</span></div></div>';
-                    });
-                    $('#orderList').html(html);
-                    $('.order-checkbox').change(function () {
-                        var id = $(this).data('request-id');
-                        var $item = $(this).closest('.order-item');
-                        if ($(this).is(':checked')) {
-                            $item.addClass('selected');
-                            if (selectedOrderIds.indexOf(id) === -1) selectedOrderIds.push(id);
-                        } else {
-                            $item.removeClass('selected');
-                            selectedOrderIds = selectedOrderIds.filter(function (x) { return x !== id; });
-                        }
-                        updateOrderCount();
-                        updateAssignButton();
-                    });
-                }
+            renderOrders(data.data, "deliveryOrders", "delivery");
+            document.getElementById("deliveryCount").textContent =
+              data.totalElements;
+            document.getElementById("deliveryBadge").textContent =
+              data.totalElements;
+            updatePageInfo("delivery");
+            renderPagination("delivery");
+          }
+        } catch (error) {
+          showToast("Lỗi tải dữ liệu", "danger");
+        }
+      }
 
-                function updateOrderCount() {
-                    $('#selectedOrderCount').text(selectedOrderIds.length + ' đơn');
-                    $('#selectedOrderInfo').text(selectedOrderIds.length + ' đơn hàng');
-                }
+      // Change page size
+      function changePickupPageSize() {
+        pickupState.size = parseInt(
+          document.getElementById("pickupPageSize").value
+        );
+        pickupState.page = 0;
+        loadPickupOrders();
+      }
 
-                function updateAssignButton() {
-                    $('#btnAssign').prop('disabled', !(selectedShipperId && selectedOrderIds.length > 0));
-                }
+      function changeDeliveryPageSize() {
+        deliveryState.size = parseInt(
+          document.getElementById("deliveryPageSize").value
+        );
+        deliveryState.page = 0;
+        loadDeliveryOrders();
+      }
 
-                function formatCurrency(amount) {
-                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-                }
+      // Go to specific page
+      function goToPickupPage(page) {
+        if (page >= 0 && page < pickupState.totalPages) {
+          loadPickupOrders(page);
+        }
+      }
 
-                function assignTask() {
-                    if (!selectedShipperId || selectedOrderIds.length === 0) {
-                        alert('Vui lòng chọn shipper và ít nhất 1 đơn hàng');
-                        return;
-                    }
-                    $('#btnAssign').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...');
-                    $.ajax({
-                        url: contextPath + '/api/manager/lastmile/assign-task',
-                        method: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ shipperId: selectedShipperId, requestIds: selectedOrderIds }),
-                        success: function (response) {
-                            alert('Phân công thành công ' + response.assignedCount + ' đơn cho ' + response.shipperName);
-                            addRecentAssignment(response);
-                            selectedOrderIds = [];
-                            selectedShipperId = null;
-                            $('.shipper-card').removeClass('selected');
-                            $('#selectedShipperInfo').text('Chưa chọn shipper');
-                            loadShippers($('#filterShipperStatus').val());
-                            loadOrders();
-                            updateOrderCount();
-                        },
-                        error: function (xhr) {
-                            alert('Lỗi: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Có lỗi xảy ra'));
-                        },
-                        complete: function () {
-                            $('#btnAssign').prop('disabled', false).html('<i class="fas fa-paper-plane mr-2"></i>Phân công');
-                        }
-                    });
-                }
+      function goToDeliveryPage(page) {
+        if (page >= 0 && page < deliveryState.totalPages) {
+          loadDeliveryOrders(page);
+        }
+      }
 
-                function addRecentAssignment(response) {
-                    var html = '<div class="border-bottom pb-2 mb-2"><small class="text-muted">' + new Date().toLocaleTimeString('vi-VN') + '</small><br>' +
-                        '<strong>' + response.shipperName + '</strong><br><span class="badge badge-success">' + response.assignedCount + ' đơn</span></div>';
-                    $('#recentAssignments').prepend(html);
-                }
+      // Update page info text
+      function updatePageInfo(type) {
+        var state = type === "pickup" ? pickupState : deliveryState;
+        var start = state.page * state.size + 1;
+        var end = Math.min((state.page + 1) * state.size, state.totalElements);
+        var info =
+          state.totalElements > 0
+            ? "Hiển thị " +
+              start +
+              "-" +
+              end +
+              " / " +
+              state.totalElements +
+              " đơn"
+            : "Không có đơn hàng";
+        document.getElementById(type + "PageInfo").textContent = info;
+      }
 
-                // Start initialization
-                initPage();
-            </script>
+      // Render pagination controls
+      function renderPagination(type) {
+        var state = type === "pickup" ? pickupState : deliveryState;
+        var goToFn = type === "pickup" ? "goToPickupPage" : "goToDeliveryPage";
+        var container = document.getElementById(type + "Pagination");
+
+        if (state.totalPages <= 1) {
+          container.innerHTML = "";
+          return;
+        }
+
+        var html = '<ul class="pagination justify-content-center">';
+
+        // Previous button
+        var prevDisabled = state.page === 0 ? "disabled" : "";
+        html += '<li class="page-item ' + prevDisabled + '">';
+        html +=
+          '<a class="page-link" href="#" onclick="' +
+          goToFn +
+          "(" +
+          (state.page - 1) +
+          '); return false;">«</a>';
+        html += "</li>";
+
+        // Page numbers (show max 5 pages)
+        var startPage = Math.max(0, state.page - 2);
+        var endPage = Math.min(state.totalPages - 1, startPage + 4);
+
+        for (var i = startPage; i <= endPage; i++) {
+          var activeClass = i === state.page ? "active" : "";
+          html += '<li class="page-item ' + activeClass + '">';
+          html +=
+            '<a class="page-link" href="#" onclick="' +
+            goToFn +
+            "(" +
+            i +
+            '); return false;">' +
+            (i + 1) +
+            "</a>";
+          html += "</li>";
+        }
+
+        // Next button
+        var nextDisabled = state.page >= state.totalPages - 1 ? "disabled" : "";
+        html += '<li class="page-item ' + nextDisabled + '">';
+        html +=
+          '<a class="page-link" href="#" onclick="' +
+          goToFn +
+          "(" +
+          (state.page + 1) +
+          '); return false;">»</a>';
+        html += "</li>";
+
+        html += "</ul>";
+        container.innerHTML = html;
+      }
+
+      // Render danh sách đơn hàng
+      function renderOrders(orders, containerId, taskType) {
+        const container = document.getElementById(containerId);
+
+        if (!orders || orders.length === 0) {
+          var emptyMsg = taskType === "pickup" ? "cần lấy" : "cần giao";
+          container.innerHTML =
+            '<div class="empty-state">' +
+            '<i class="bi bi-inbox"></i>' +
+            "<h5>Không có đơn hàng</h5>" +
+            "<p>Chưa có đơn " +
+            emptyMsg +
+            " trong khu vực</p>" +
+            "</div>";
+          return;
+        }
+
+        var html = "";
+        orders.forEach(function (order) {
+          var badgeClass =
+            taskType === "pickup" ? "badge-pickup" : "badge-delivery";
+          var badgeText = taskType === "pickup" ? "Lấy hàng" : "Giao hàng";
+          var addressLabel = taskType === "pickup" ? "lấy" : "giao";
+          var address =
+            taskType === "pickup"
+              ? order.pickupAddress || order.senderAddress || "Chưa có địa chỉ"
+              : order.deliveryAddress ||
+                order.receiverAddress ||
+                "Chưa có địa chỉ";
+          var district =
+            taskType === "pickup"
+              ? order.pickupDistrict || ""
+              : order.deliveryDistrict || "";
+          var contactName =
+            taskType === "pickup"
+              ? order.senderName || "Chưa có tên"
+              : order.receiverName || "Chưa có tên";
+          var contactPhone =
+            taskType === "pickup"
+              ? order.senderPhone || "Chưa có SĐT"
+              : order.receiverPhone || "Chưa có SĐT";
+
+          // Sử dụng receiverPayAmount (tổng tiền người nhận phải trả)
+          var totalAmount = order.receiverPayAmount || 0;
+          var codDisplay =
+            totalAmount > 0
+              ? formatCurrency(totalAmount)
+              : '<span class="text-muted">Không thu tiền</span>';
+
+          var shipperOptions = '<option value="">-- Chọn Shipper --</option>';
+          shippers.forEach(function (s) {
+            shipperOptions +=
+              '<option value="' +
+              s.shipperId +
+              '">' +
+              s.fullName +
+              " - " +
+              s.phone +
+              "</option>";
+          });
+
+          html +=
+            '<div class="order-card" id="order-' +
+            order.requestId +
+            '">' +
+            '<div class="d-flex justify-content-between align-items-start">' +
+            "<div>" +
+            '<span class="order-id">#' +
+            order.requestId +
+            "</span>" +
+            '<span class="order-badge ' +
+            badgeClass +
+            ' ms-2">' +
+            badgeText +
+            "</span>" +
+            "</div>" +
+            '<div class="cod-amount">' +
+            codDisplay +
+            "</div>" +
+            "</div>" +
+            '<div class="order-info">' +
+            '<div class="info-group">' +
+            '<div class="info-label"><i class="bi bi-geo-alt me-1"></i>Địa chỉ ' +
+            addressLabel +
+            "</div>" +
+            '<div class="info-value">' +
+            address +
+            "</div>" +
+            '<div class="text-muted small">' +
+            district +
+            "</div>" +
+            "</div>" +
+            '<div class="info-group">' +
+            '<div class="info-label"><i class="bi bi-person me-1"></i>Liên hệ</div>' +
+            '<div class="info-value">' +
+            contactName +
+            "</div>" +
+            '<div class="text-muted small"><i class="bi bi-telephone me-1"></i>' +
+            contactPhone +
+            "</div>" +
+            "</div>" +
+            "</div>" +
+            '<div class="shipper-select">' +
+            '<div class="shipper-dropdown">' +
+            '<select id="shipper-' +
+            order.requestId +
+            '" class="form-select">' +
+            shipperOptions +
+            "</select>" +
+            '<button class="btn btn-assign" onclick="assignShipper(' +
+            order.requestId +
+            ", '" +
+            taskType +
+            "')\">" +
+            '<i class="bi bi-check2-circle me-1"></i>Phân công' +
+            "</button>" +
+            "</div>" +
+            "</div>" +
+            "</div>";
+        });
+
+        container.innerHTML = html;
+      }
+
+      // Phân công shipper
+      async function assignShipper(requestId, taskType) {
+        const shipperId = document.getElementById("shipper-" + requestId).value;
+
+        if (!shipperId) {
+          showToast("Vui lòng chọn shipper", "warning");
+          return;
+        }
+
+        showLoading(true);
+        try {
+          const response = await fetch("/api/manager/tasks/assign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requestId: requestId,
+              shipperId: parseInt(shipperId),
+              taskType: taskType,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showToast(data.message, "success");
+            // Remove card from UI
+            var card = document.getElementById("order-" + requestId);
+            if (card) card.remove();
+            // Update counts
+            if (taskType === "pickup") {
+              loadPickupOrders();
+            } else {
+              loadDeliveryOrders();
+            }
+          } else {
+            showToast(data.message, "danger");
+          }
+        } catch (error) {
+          showToast("Có lỗi xảy ra", "danger");
+        }
+        showLoading(false);
+      }
+
+      // Refresh all data
+      function refreshData() {
+        loadShippers();
+        loadPickupOrders();
+        loadDeliveryOrders();
+        showToast("Đã làm mới dữ liệu", "success");
+      }
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(amount);
+      }
+
+      // Show/hide loading
+      function showLoading(show) {
+        document
+          .getElementById("loadingOverlay")
+          .classList.toggle("show", show);
+      }
+
+      // Show toast notification
+      function showToast(message, type) {
+        type = type || "info";
+        const container = document.getElementById("toastContainer");
+        const id = "toast-" + Date.now();
+
+        var bgClass = "bg-info";
+        if (type === "success") bgClass = "bg-success";
+        else if (type === "danger") bgClass = "bg-danger";
+        else if (type === "warning") bgClass = "bg-warning";
+
+        container.innerHTML +=
+          '<div id="' +
+          id +
+          '" class="toast align-items-center text-white ' +
+          bgClass +
+          ' border-0" role="alert">' +
+          '<div class="d-flex">' +
+          '<div class="toast-body">' +
+          message +
+          "</div>" +
+          '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
+          "</div>" +
+          "</div>";
+
+        const toastEl = document.getElementById(id);
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+
+        toastEl.addEventListener("hidden.bs.toast", function () {
+          toastEl.remove();
+        });
+      }
+    </script>
+  </body>
+</html>
