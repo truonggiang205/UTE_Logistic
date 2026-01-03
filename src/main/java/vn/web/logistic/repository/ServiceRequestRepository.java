@@ -53,7 +53,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     // 5. Top Hubs hiệu quả nhất (theo số đơn giao thành công)
     @Query("""
                 SELECT
-                    h.id AS id,
+                                        h.hubId AS id,
                     h.hubName AS name,
                     h.address AS extraInfo,
                     SUM(CASE WHEN s.status IN :successStatuses THEN 1 ELSE 0 END) AS successCount,
@@ -61,7 +61,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 
                 FROM ServiceRequest s
                 JOIN s.currentHub h
-                GROUP BY h.id, h.hubName, h.address
+                                GROUP BY h.hubId, h.hubName, h.address
                 ORDER BY successCount DESC
             """)
     List<TopPerformerProjection> getTopHubs(
@@ -113,7 +113,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     long countTodayOrdersByHubId(@Param("hubId") Long hubId,
             @Param("startOfDay") LocalDateTime startOfDay);
 
-<<<<<<< HEAD
     // Lấy danh sách đơn hàng theo Hub và trạng thái (cho KPI click)
     @Query("SELECT s FROM ServiceRequest s " +
             "LEFT JOIN FETCH s.pickupAddress " +
@@ -165,7 +164,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     List<ServiceRequest> findOrdersForConsolidation(
             @Param("statuses") List<ServiceRequest.RequestStatus> statuses,
             @Param("hubId") Long hubId);
-=======
     /* ========================= PHÂN CÔNG SHIPPER =========================== */
 
     // Đơn cần PICKUP: status = pending, pickupAddress thuộc district của Hub
@@ -230,7 +228,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
                     "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'delivery' "
                     +
                     "AND t.taskStatus IN ('assigned', 'in_progress'))")
-    org.springframework.data.domain.Page<ServiceRequest> findPendingDeliveryByHubIdPaged(
+        Page<ServiceRequest> findPendingDeliveryByHubIdPaged(
             @Param("hubId") Long hubId,
             Pageable pageable);
 
@@ -259,5 +257,4 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
             "LEFT JOIN FETCH r.currentHub h " +
             "WHERE r.requestId = :requestId")
     Optional<ServiceRequest> findByIdWithDetails(@Param("requestId") Long requestId);
->>>>>>> refs/heads/fea/test-security
 }

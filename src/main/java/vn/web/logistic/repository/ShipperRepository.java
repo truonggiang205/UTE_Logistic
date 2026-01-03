@@ -19,6 +19,9 @@ public interface ShipperRepository extends JpaRepository<Shipper, Long> {
     // Tìm shipper theo user_id
     Optional<Shipper> findByUserUserId(Long userId);
 
+        // Tìm shipper theo email
+        Optional<Shipper> findByUserEmail(String email);
+
     // Tìm shipper theo hub_id
     List<Shipper> findByHubHubId(Long hubId);
 

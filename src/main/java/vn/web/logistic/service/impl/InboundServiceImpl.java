@@ -196,7 +196,7 @@ public class InboundServiceImpl implements InboundService {
                                         .status(CodTransaction.CodStatus.pending) // Luôn là PENDING khi tạo mới
                                         .paymentMethod(null) // NULL vì chưa giao, chưa biết khách trả bằng gì
                                         .shipper(null) // NULL vì chưa phân công shipper
-                                        .transactionType(CodTransaction.CodType.delivery_cod)
+                                        .codType(CodTransaction.CodType.delivery_cod)
                                         .collectedAt(null) // Chưa thu
                                         .settledAt(null) // Chưa quyết toán
                                         .build();

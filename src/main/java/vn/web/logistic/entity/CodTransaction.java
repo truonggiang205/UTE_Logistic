@@ -31,8 +31,16 @@ import lombok.ToString;
 @EqualsAndHashCode(exclude = { "request", "shipper" })
 public class CodTransaction {
 
+    /**
+     * Trạng thái COD Transaction:
+     * - pending: Chờ thu (shipper chưa giao hàng)
+     * - collected: Đã thu từ khách, shipper đang giữ tiền (chờ Admin duyệt)
+     * - settled: Admin đã xác nhận, hoàn tất
+     */
     public enum CodStatus {
-        collected, settled, pending
+        pending, // Chờ thu
+        collected, // Đã thu, chờ Admin duyệt
+        settled // Đã xác nhận
     }
 
     @Id
@@ -53,10 +61,10 @@ public class CodTransaction {
 
     private LocalDateTime collectedAt;
 
-    private LocalDateTime settledAt;
+    private LocalDateTime settledAt; // Thời gian Admin xác nhận
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('collected','settled','pending') DEFAULT 'pending'")
+    @Column(columnDefinition = "ENUM('pending','collected','settled') DEFAULT 'pending'")
     @Builder.Default
     private CodStatus status = CodStatus.pending;
 
@@ -71,18 +79,4 @@ public class CodTransaction {
 
     @Column(name = "paymentMethod", length = 50)
     private String paymentMethod;
-<<<<<<< HEAD
-
-    // THÊM ENUM NÀY
-    public enum CodType {
-        delivery_cod, return_fee
-    }
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "transaction_type", columnDefinition = "ENUM('delivery_cod','return_fee') DEFAULT 'delivery_cod'")
-    @Builder.Default
-    private CodType transactionType = CodType.delivery_cod;
 }
-=======
-}
->>>>>>> refs/heads/fea/test-security

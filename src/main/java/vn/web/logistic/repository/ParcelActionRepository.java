@@ -14,8 +14,7 @@ import vn.web.logistic.entity.ParcelAction;
 @Repository
 public interface ParcelActionRepository extends JpaRepository<ParcelAction, Long> {
 
-    // Lấy danh sách lịch sử hành động của một đơn hàng, sắp xếp theo thời gian giảm
-    // dần
+    // Lấy danh sách lịch sử hành động của một đơn hàng, sắp xếp theo thời gian giảm dần
     @Query("SELECT pa FROM ParcelAction pa " +
             "LEFT JOIN FETCH pa.actionType " +
             "LEFT JOIN FETCH pa.fromHub " +
@@ -28,22 +27,24 @@ public interface ParcelActionRepository extends JpaRepository<ParcelAction, Long
     // Đếm số hành động của một đơn hàng
     long countByRequestRequestId(Long requestId);
 
-<<<<<<< HEAD
     // Xóa tất cả hành động của một đơn hàng
     void deleteByRequest_RequestId(Long requestId);
 
-    //// [MẶC ĐỊNH] save(ParcelAction entity): Ghi lại một bước di chuyển của đơn
-    //// hàng vào log.
-    ///
-=======
-    // Tìm Hub gốc của đơn hàng (từ action PICKED_UP đầu tiên)
-    // Hub gốc là toHub của action PICKED_UP (hub mà hàng được đưa vào sau khi
-    // pickup)
+    // Tìm tất cả actions của một request, sắp xếp theo thời gian mới nhất
+    List<ParcelAction> findByRequest_RequestIdOrderByActionTimeDesc(Long requestId);
+
+    // Tìm tất cả actions của một request
+    List<ParcelAction> findByRequest_RequestId(Long requestId);
+
+    // Hub gốc của đơn (toHub của action PICKED_UP đầu tiên)
     @Query("SELECT pa.toHub FROM ParcelAction pa " +
             "WHERE pa.request.requestId = :requestId " +
             "AND pa.actionType.actionCode = 'PICKED_UP' " +
-            "ORDER BY pa.actionTime ASC " +
-            "LIMIT 1")
-    Optional<Hub> findOriginHubByRequestId(@Param("requestId") Long requestId);
->>>>>>> refs/heads/fea/test-security
+            "ORDER BY pa.actionTime ASC")
+    List<Hub> findOriginHubCandidatesByRequestId(@Param("requestId") Long requestId);
+
+    default Optional<Hub> findOriginHubByRequestId(Long requestId) {
+        List<Hub> hubs = findOriginHubCandidatesByRequestId(requestId);
+        return hubs == null || hubs.isEmpty() ? Optional.empty() : Optional.ofNullable(hubs.get(0));
+    }
 }

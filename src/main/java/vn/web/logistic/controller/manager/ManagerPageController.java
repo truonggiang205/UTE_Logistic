@@ -178,7 +178,6 @@ public class ManagerPageController {
         return "manager/cod-settlement";
     }
 
-<<<<<<< HEAD
     // ===================== IN TEM VẬN ĐƠN =====================
     /**
      * Trang In Tem Vận Đơn (Print Label) - Khổ A6 cho máy in nhiệt
@@ -232,8 +231,7 @@ public class ManagerPageController {
 
         return "manager/inbound/print-label";
     }
-}
-=======
+
     // ===================== QUẢN LÝ SHIPPER =====================
     /**
      * Trang Quản Lý Shipper
@@ -262,4 +260,3 @@ public class ManagerPageController {
         return "manager/vehicle-management";
     }
 }
->>>>>>> refs/heads/fea/test-security
