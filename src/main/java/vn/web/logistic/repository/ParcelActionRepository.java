@@ -1,12 +1,15 @@
 package vn.web.logistic.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import vn.web.logistic.entity.ParcelAction;
 
-import java.util.List;
+import vn.web.logistic.entity.Hub;
+import vn.web.logistic.entity.ParcelAction;
 
 @Repository
 public interface ParcelActionRepository extends JpaRepository<ParcelAction, Long> {
@@ -25,10 +28,22 @@ public interface ParcelActionRepository extends JpaRepository<ParcelAction, Long
     // Đếm số hành động của một đơn hàng
     long countByRequestRequestId(Long requestId);
 
+<<<<<<< HEAD
     // Xóa tất cả hành động của một đơn hàng
     void deleteByRequest_RequestId(Long requestId);
 
     //// [MẶC ĐỊNH] save(ParcelAction entity): Ghi lại một bước di chuyển của đơn
     //// hàng vào log.
     ///
+=======
+    // Tìm Hub gốc của đơn hàng (từ action PICKED_UP đầu tiên)
+    // Hub gốc là toHub của action PICKED_UP (hub mà hàng được đưa vào sau khi
+    // pickup)
+    @Query("SELECT pa.toHub FROM ParcelAction pa " +
+            "WHERE pa.request.requestId = :requestId " +
+            "AND pa.actionType.actionCode = 'PICKED_UP' " +
+            "ORDER BY pa.actionTime ASC " +
+            "LIMIT 1")
+    Optional<Hub> findOriginHubByRequestId(@Param("requestId") Long requestId);
+>>>>>>> refs/heads/fea/test-security
 }

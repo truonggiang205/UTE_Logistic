@@ -1,14 +1,14 @@
 package vn.web.logistic.dto.response.lastmile;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
-// DTO Response cho chức năng 4: Khách nhận tại quầy (Counter Pickup)
+// DTO Response cho chức năng: Khách nhận tại quầy (Counter Pickup)
 @Data
 @Builder
 @NoArgsConstructor
@@ -23,9 +23,6 @@ public class CounterPickupResponse {
 
     // Trạng thái đơn hàng sau cập nhật
     private String requestStatus;
-
-    // CMND/CCCD khách nhận
-    private String customerIdCard;
 
     // Số tiền COD đã thu tại quầy
     private BigDecimal codAmount;
@@ -44,4 +41,7 @@ public class CounterPickupResponse {
 
     // Thời gian khách nhận
     private LocalDateTime receivedAt;
+
+    // Ghi chú
+    private String note;
 }

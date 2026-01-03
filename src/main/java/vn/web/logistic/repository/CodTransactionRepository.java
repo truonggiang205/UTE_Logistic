@@ -1,5 +1,9 @@
 package vn.web.logistic.repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -8,10 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import vn.web.logistic.dto.response.admin.HighDebtShipperDTO;
 import vn.web.logistic.entity.CodTransaction;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Repository
 public interface CodTransactionRepository extends
@@ -38,7 +38,7 @@ public interface CodTransactionRepository extends
                         "  SUM(t.amount) " +
                         ") " +
                         "FROM CodTransaction t " +
-                        "WHERE t.status = vn.web.logistic.entity.CodTransaction.CodStatus.collected " +
+                        "WHERE t.status = 'collected' " +
                         "AND t.collectedAt < :twoDaysAgo " +
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > :highLimit")
@@ -54,7 +54,7 @@ public interface CodTransactionRepository extends
                         "  SUM(t.amount) " +
                         ") " +
                         "FROM CodTransaction t " +
-                        "WHERE t.status = vn.web.logistic.entity.CodTransaction.CodStatus.collected " +
+                        "WHERE t.status = 'collected' " +
                         "AND t.collectedAt < :threeDaysAgo " +
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > :mediumLimit")
@@ -70,7 +70,7 @@ public interface CodTransactionRepository extends
                         "  SUM(t.amount) " +
                         ") " +
                         "FROM CodTransaction t " +
-                        "WHERE t.status = vn.web.logistic.entity.CodTransaction.CodStatus.collected " +
+                        "WHERE t.status = 'collected' " +
                         "AND t.collectedAt < :sevenDaysAgo " +
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > 0")
@@ -82,20 +82,34 @@ public interface CodTransactionRepository extends
         // Tính tổng tiền COD đang pending theo Hub (Shipper thuộc Hub đó)
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
                         "JOIN c.shipper s " +
-                        "WHERE c.status = vn.web.logistic.entity.CodTransaction.CodStatus.pending " +
+                        "WHERE c.status = 'pending' " +
                         "AND s.hub.hubId = :hubId")
         BigDecimal sumPendingCodByHubId(@Param("hubId") Long hubId);
 
         // Tính tổng tiền COD đã thu (collected) theo Hub
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
                         "JOIN c.shipper s " +
-                        "WHERE c.status = vn.web.logistic.entity.CodTransaction.CodStatus.collected " +
+                        "WHERE c.status = 'collected' " +
                         "AND s.hub.hubId = :hubId")
         BigDecimal sumCollectedCodByHubId(@Param("hubId") Long hubId);
 
+<<<<<<< HEAD
         // Xóa tất cả giao dịch COD của một đơn hàng
         void deleteByRequest_RequestId(Long requestId);
 
         // [MẶC ĐỊNH] save(CodTransaction entity): Lưu giao dịch thu tiền tại quầy hoặc
         // thu tiền hộ.
+=======
+        // Đếm số COD còn pending (chưa thu) của shipper
+        @Query("SELECT COUNT(c) FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = 'pending'")
+        long countPendingByShipperId(@Param("shipperId") Long shipperId);
+
+        // Tính tổng tiền COD còn pending của shipper
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "WHERE c.shipper.shipperId = :shipperId " +
+                        "AND c.status = 'pending'")
+        BigDecimal sumPendingByShipperId(@Param("shipperId") Long shipperId);
+>>>>>>> refs/heads/fea/test-security
 }

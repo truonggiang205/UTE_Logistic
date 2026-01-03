@@ -12,124 +12,61 @@ import vn.web.logistic.entity.CodTransaction;
 import vn.web.logistic.entity.Shipper;
 
 /**
- * Quyết Toán COD của Manager.
+ * Repository cho nghiệp vụ Quyết toán COD
  */
 @Repository
 public interface CodSettlementRepository extends JpaRepository<CodTransaction, Long> {
 
-    // LẤY DANH SÁCH SHIPPER CÓ COD CHỜ QUYẾT TOÁN
+        // Lấy danh sách Shipper có COD chờ quyết toán trong Hub
+        @Query("SELECT DISTINCT c.shipper FROM CodTransaction c WHERE c.status = 'collected' AND c.shipper.hub.hubId = :hubId")
+        List<Shipper> findShippersWithPendingCodByHubId(@Param("hubId") Long hubId);
 
-    /**
-     * Lấy danh sách Shipper có COD đã thu (collected) nhưng chưa quyết toán trong
-     * Hub.
-     * 
-     * @param hubId ID của Hub mà Manager quản lý
-     * @return Danh sách Shipper có COD chờ quyết toán
-     */
-    @Query("SELECT DISTINCT c.shipper FROM CodTransaction c " +
-            "WHERE c.status = 'collected' " +
-            "AND c.shipper.hub.hubId = :hubId")
-    List<Shipper> findShippersWithPendingCodByHubId(@Param("hubId") Long hubId);
+        // Lấy chi tiết COD collected của một Shipper
+        @Query("SELECT c FROM CodTransaction c JOIN FETCH c.request r JOIN FETCH c.shipper s JOIN FETCH s.user u WHERE c.shipper.shipperId = :shipperId AND c.status = 'collected' ORDER BY c.collectedAt ASC")
+        List<CodTransaction> findCollectedByShipperId(@Param("shipperId") Long shipperId);
 
-    // LẤY CHI TIẾT COD CỦA SHIPPER
+        // Tổng tiền COD collected của Shipper
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c WHERE c.shipper.shipperId = :shipperId AND c.status = 'collected'")
+        BigDecimal sumCollectedByShipperId(@Param("shipperId") Long shipperId);
 
-    /**
-     * Lấy danh sách COD đã thu (collected) của một Shipper - sắp xếp theo thời gian
-     * thu.
-     * Dùng để hiển thị chi tiết các đơn COD cần quyết toán.
-     * 
-     * @param shipperId ID của Shipper
-     * @return Danh sách CodTransaction với trạng thái collected
-     */
-    @Query("SELECT c FROM CodTransaction c " +
-            "JOIN FETCH c.request r " +
-            "JOIN FETCH c.shipper s " +
-            "JOIN FETCH s.user u " +
-            "WHERE c.shipper.shipperId = :shipperId " +
-            "AND c.status = 'collected' " +
-            "ORDER BY c.collectedAt ASC")
-    List<CodTransaction> findCollectedByShipperId(@Param("shipperId") Long shipperId);
+        // Đếm số đơn COD collected của Shipper
+        @Query("SELECT COUNT(c) FROM CodTransaction c WHERE c.shipper.shipperId = :shipperId AND c.status = 'collected'")
+        Long countCollectedByShipperId(@Param("shipperId") Long shipperId);
 
-    // ===================== THỐNG KÊ COD CỦA SHIPPER =====================
+        // Lấy lịch sử quyết toán của Shipper
+        @Query("SELECT c FROM CodTransaction c JOIN FETCH c.request r JOIN FETCH c.shipper s WHERE c.shipper.shipperId = :shipperId AND c.status = 'settled' ORDER BY c.settledAt DESC")
+        List<CodTransaction> findSettledByShipperId(@Param("shipperId") Long shipperId);
 
-    /**
-     * Tính tổng tiền COD đã thu (collected) của một Shipper.
-     * 
-     * @param shipperId ID của Shipper
-     * @return Tổng số tiền COD đã thu
-     */
-    @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
-            "WHERE c.shipper.shipperId = :shipperId " +
-            "AND c.status = 'collected'")
-    BigDecimal sumCollectedByShipperId(@Param("shipperId") Long shipperId);
+        // Tổng tiền COD collected trong Hub
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c JOIN c.shipper s WHERE c.status = 'collected' AND s.hub.hubId = :hubId")
+        BigDecimal sumCollectedCodByHubId(@Param("hubId") Long hubId);
 
-    /**
-     * Đếm số đơn COD đã thu (collected) của một Shipper.
-     * 
-     * @param shipperId ID của Shipper
-     * @return Số lượng đơn COD đã thu
-     */
-    @Query("SELECT COUNT(c) FROM CodTransaction c " +
-            "WHERE c.shipper.shipperId = :shipperId " +
-            "AND c.status = 'collected'")
-    Long countCollectedByShipperId(@Param("shipperId") Long shipperId);
+        // Đếm số đơn COD collected trong Hub
+        @Query("SELECT COUNT(c) FROM CodTransaction c JOIN c.shipper s WHERE c.status = 'collected' AND s.hub.hubId = :hubId")
+        Long countCollectedCodByHubId(@Param("hubId") Long hubId);
 
-    // ===================== LỊCH SỬ QUYẾT TOÁN =====================
+        // Tổng tiền quyết toán hôm nay trong Hub (bao gồm cả COD shipper và counter
+        // pickup)
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "LEFT JOIN c.shipper s " +
+                        "LEFT JOIN c.request r " +
+                        "WHERE c.status = 'settled' " +
+                        "AND FUNCTION('DATE', c.settledAt) = CURRENT_DATE " +
+                        "AND (s.hub.hubId = :hubId OR (c.shipper IS NULL AND r.currentHub.hubId = :hubId))")
+        BigDecimal sumSettledTodayByHubId(@Param("hubId") Long hubId);
 
-    /**
-     * Lấy danh sách COD đã quyết toán (settled) của một Shipper - sắp xếp theo thời
-     * gian quyết toán.
-     * Dùng để xem lịch sử quyết toán.
-     * 
-     * @param shipperId ID của Shipper
-     * @return Danh sách CodTransaction đã quyết toán
-     */
-    @Query("SELECT c FROM CodTransaction c " +
-            "JOIN FETCH c.request r " +
-            "JOIN FETCH c.shipper s " +
-            "WHERE c.shipper.shipperId = :shipperId " +
-            "AND c.status = 'settled' " +
-            "ORDER BY c.settledAt DESC")
-    List<CodTransaction> findSettledByShipperId(@Param("shipperId") Long shipperId);
+        // Tổng tiền pending (shipper đang giữ) trong Hub
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c JOIN c.shipper s WHERE c.status = 'pending' AND s.hub.hubId = :hubId")
+        BigDecimal sumPendingCodByHubId(@Param("hubId") Long hubId);
 
-    // ===================== THỐNG KÊ THEO HUB =====================
-
-    /**
-     * Tính tổng tiền COD đã thu (collected) trong Hub - shipper đang nợ.
-     * 
-     * @param hubId ID của Hub
-     * @return Tổng số tiền COD shipper đang giữ
-     */
-    @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
-            "JOIN c.shipper s " +
-            "WHERE c.status = 'collected' " +
-            "AND s.hub.hubId = :hubId")
-    BigDecimal sumCollectedCodByHubId(@Param("hubId") Long hubId);
-
-    /**
-     * Đếm số đơn COD đã thu (collected) trong Hub.
-     * 
-     * @param hubId ID của Hub
-     * @return Số lượng đơn COD shipper đang giữ
-     */
-    @Query("SELECT COUNT(c) FROM CodTransaction c " +
-            "JOIN c.shipper s " +
-            "WHERE c.status = 'collected' " +
-            "AND s.hub.hubId = :hubId")
-    Long countCollectedCodByHubId(@Param("hubId") Long hubId);
-
-    // ===================== THỐNG KÊ QUYẾT TOÁN HÔM NAY =====================
-
-    /**
-     * Tính tổng tiền COD đã quyết toán trong ngày hôm nay của Hub.
-     * 
-     * @param hubId ID của Hub
-     * @return Tổng số tiền COD đã quyết toán hôm nay
-     */
-    @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
-            "JOIN c.shipper s " +
-            "WHERE c.status = 'settled' " +
-            "AND s.hub.hubId = :hubId " +
-            "AND FUNCTION('DATE', c.settledAt) = CURRENT_DATE")
-    BigDecimal sumSettledTodayByHubId(@Param("hubId") Long hubId);
+        // Tổng doanh thu đã settled trong Hub (bao gồm cả COD shipper và COD counter
+        // pickup)
+        // - Shipper COD: shipper IS NOT NULL -> lấy hub từ shipper
+        // - Counter Pickup: shipper IS NULL -> lấy hub từ request.currentHub
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
+                        "LEFT JOIN c.shipper s " +
+                        "LEFT JOIN c.request r " +
+                        "WHERE c.status = 'settled' " +
+                        "AND (s.hub.hubId = :hubId OR (c.shipper IS NULL AND r.currentHub.hubId = :hubId))")
+        BigDecimal sumTotalSettledByHubId(@Param("hubId") Long hubId);
 }

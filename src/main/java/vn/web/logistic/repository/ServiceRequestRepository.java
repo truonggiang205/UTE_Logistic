@@ -1,5 +1,12 @@
 package vn.web.logistic.repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,10 +17,6 @@ import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.ServiceRequest.RequestStatus;
 import vn.web.logistic.repository.projection.RevenueChartProjection;
 import vn.web.logistic.repository.projection.TopPerformerProjection;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
 
 @Repository
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
@@ -110,6 +113,7 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     long countTodayOrdersByHubId(@Param("hubId") Long hubId,
             @Param("startOfDay") LocalDateTime startOfDay);
 
+<<<<<<< HEAD
     // Lấy danh sách đơn hàng theo Hub và trạng thái (cho KPI click)
     @Query("SELECT s FROM ServiceRequest s " +
             "LEFT JOIN FETCH s.pickupAddress " +
@@ -161,4 +165,99 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     List<ServiceRequest> findOrdersForConsolidation(
             @Param("statuses") List<ServiceRequest.RequestStatus> statuses,
             @Param("hubId") Long hubId);
+=======
+    /* ========================= PHÂN CÔNG SHIPPER =========================== */
+
+    // Đơn cần PICKUP: status = pending, pickupAddress thuộc district của Hub
+    // Chỉ loại trừ đơn có task ACTIVE (assigned/in_progress), cho phép phân công
+    // lại khi task failed
+    @Query("SELECT r FROM ServiceRequest r " +
+            "JOIN FETCH r.pickupAddress pa " +
+            "JOIN FETCH r.deliveryAddress da " +
+            "LEFT JOIN FETCH r.customer c " +
+            "WHERE r.status = 'pending' " +
+            "AND pa.district = :district " +
+            "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'pickup' " +
+            "AND t.taskStatus IN ('assigned', 'in_progress'))")
+    List<ServiceRequest> findPendingPickupByDistrict(@Param("district") String district);
+
+    // Đơn cần DELIVERY: status = in_transit, currentHub = hub hiện tại
+    // Chỉ loại trừ đơn có task ACTIVE, cho phép phân công lại khi task failed
+    @Query("SELECT r FROM ServiceRequest r " +
+            "JOIN FETCH r.pickupAddress pa " +
+            "JOIN FETCH r.deliveryAddress da " +
+            "LEFT JOIN FETCH r.customer c " +
+            "WHERE r.status = 'in_transit' " +
+            "AND r.currentHub.hubId = :hubId " +
+            "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'delivery' " +
+            "AND t.taskStatus IN ('assigned', 'in_progress'))")
+    List<ServiceRequest> findPendingDeliveryByHubId(@Param("hubId") Long hubId);
+
+    // PHÂN TRANG PHÂN CÔNG SHIPPER
+
+    // Đơn cần PICKUP với phân trang (cho phép phân công lại khi task failed)
+    @Query(value = "SELECT r FROM ServiceRequest r " +
+            "JOIN FETCH r.pickupAddress pa " +
+            "JOIN FETCH r.deliveryAddress da " +
+            "LEFT JOIN FETCH r.customer c " +
+            "WHERE r.status = 'pending' " +
+            "AND pa.district = :district " +
+            "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'pickup' " +
+            "AND t.taskStatus IN ('assigned', 'in_progress')) " +
+            "ORDER BY r.createdAt DESC", countQuery = "SELECT COUNT(r) FROM ServiceRequest r " +
+                    "JOIN r.pickupAddress pa " +
+                    "WHERE r.status = 'pending' " +
+                    "AND pa.district = :district " +
+                    "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'pickup' "
+                    +
+                    "AND t.taskStatus IN ('assigned', 'in_progress'))")
+    Page<ServiceRequest> findPendingPickupByDistrictPaged(
+            @Param("district") String district,
+            Pageable pageable);
+
+    // Đơn cần DELIVERY với phân trang (cho phép phân công lại khi task failed)
+    @Query(value = "SELECT r FROM ServiceRequest r " +
+            "JOIN FETCH r.pickupAddress pa " +
+            "JOIN FETCH r.deliveryAddress da " +
+            "LEFT JOIN FETCH r.customer c " +
+            "WHERE r.status = 'in_transit' " +
+            "AND r.currentHub.hubId = :hubId " +
+            "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'delivery' " +
+            "AND t.taskStatus IN ('assigned', 'in_progress')) " +
+            "ORDER BY r.createdAt DESC", countQuery = "SELECT COUNT(r) FROM ServiceRequest r " +
+                    "WHERE r.status = 'in_transit' " +
+                    "AND r.currentHub.hubId = :hubId " +
+                    "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'delivery' "
+                    +
+                    "AND t.taskStatus IN ('assigned', 'in_progress'))")
+    org.springframework.data.domain.Page<ServiceRequest> findPendingDeliveryByHubIdPaged(
+            @Param("hubId") Long hubId,
+            Pageable pageable);
+
+    // Đếm tổng đơn cần PICKUP (cho phép phân công lại)
+    @Query("SELECT COUNT(r) FROM ServiceRequest r " +
+            "JOIN r.pickupAddress pa " +
+            "WHERE r.status = 'pending' " +
+            "AND pa.district = :district " +
+            "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'pickup' " +
+            "AND t.taskStatus IN ('assigned', 'in_progress'))")
+    long countPendingPickupByDistrict(@Param("district") String district);
+
+    // Đếm tổng đơn cần DELIVERY (cho phép phân công lại)
+    @Query("SELECT COUNT(r) FROM ServiceRequest r " +
+            "WHERE r.status = 'in_transit' " +
+            "AND r.currentHub.hubId = :hubId " +
+            "AND NOT EXISTS (SELECT t FROM ShipperTask t WHERE t.request = r AND t.taskType = 'delivery' " +
+            "AND t.taskStatus IN ('assigned', 'in_progress'))")
+    long countPendingDeliveryByHubId(@Param("hubId") Long hubId);
+
+    // Tìm đơn theo ID với fetch đầy đủ thông tin
+    @Query("SELECT r FROM ServiceRequest r " +
+            "JOIN FETCH r.pickupAddress pa " +
+            "JOIN FETCH r.deliveryAddress da " +
+            "LEFT JOIN FETCH r.customer c " +
+            "LEFT JOIN FETCH r.currentHub h " +
+            "WHERE r.requestId = :requestId")
+    Optional<ServiceRequest> findByIdWithDetails(@Param("requestId") Long requestId);
+>>>>>>> refs/heads/fea/test-security
 }

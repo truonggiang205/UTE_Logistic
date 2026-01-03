@@ -3,7 +3,9 @@ package vn.web.logistic.service.impl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -254,5 +256,26 @@ public class CodSettlementServiceImpl implements CodSettlementService {
             return tx.getRequest().getDeliveryAddress().getContactName();
         }
         return "N/A";
+    }
+
+    @Override
+    public Map<String, BigDecimal> getHubStatistics(Long hubId) {
+        log.info("Lấy thống kê COD cho Hub: {}", hubId);
+
+        Map<String, BigDecimal> stats = new HashMap<>();
+
+        // Tổng tiền đã quyết toán hôm nay
+        BigDecimal settledToday = codSettlementRepository.sumSettledTodayByHubId(hubId);
+        stats.put("settledToday", settledToday != null ? settledToday : BigDecimal.ZERO);
+
+        // Tổng tiền pending (shipper đang giữ, chưa nộp)
+        BigDecimal pendingTotal = codSettlementRepository.sumPendingCodByHubId(hubId);
+        stats.put("pendingTotal", pendingTotal != null ? pendingTotal : BigDecimal.ZERO);
+
+        // Tổng doanh thu đã settled (tất cả thời gian)
+        BigDecimal totalSettled = codSettlementRepository.sumTotalSettledByHubId(hubId);
+        stats.put("totalSettled", totalSettled != null ? totalSettled : BigDecimal.ZERO);
+
+        return stats;
     }
 }

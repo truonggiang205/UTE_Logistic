@@ -150,6 +150,24 @@ public class ManagerPageController {
         return "manager/resource/resource-management";
     }
 
+    /**
+     * Trang Hoàn Hàng (Return Goods) - Đơn thất bại 3 lần
+     */
+    @GetMapping("/lastmile/return-goods")
+    public String viewLastMileReturnGoods(Model model) {
+        log.info("Truy cập trang Hoàn Hàng");
+        return "manager/lastmile/return-goods";
+    }
+
+    /**
+     * Trang Xác Nhận Trả Shop - Đơn đã hoàn về Hub gốc
+     */
+    @GetMapping("/lastmile/return-shop")
+    public String viewLastMileReturnShop(Model model) {
+        log.info("Truy cập trang Xác Nhận Trả Shop");
+        return "manager/lastmile/return-shop";
+    }
+
     // ===================== COD SETTLEMENT =====================
     /**
      * Trang Quyết Toán COD (đường dẫn /finance/cod-settlement)
@@ -160,6 +178,7 @@ public class ManagerPageController {
         return "manager/cod-settlement";
     }
 
+<<<<<<< HEAD
     // ===================== IN TEM VẬN ĐƠN =====================
     /**
      * Trang In Tem Vận Đơn (Print Label) - Khổ A6 cho máy in nhiệt
@@ -214,3 +233,33 @@ public class ManagerPageController {
         return "manager/inbound/print-label";
     }
 }
+=======
+    // ===================== QUẢN LÝ SHIPPER =====================
+    /**
+     * Trang Quản Lý Shipper
+     */
+    @GetMapping("/shippers")
+    public String viewShipperManagement(Model model) {
+        log.info("Truy cập trang Quản Lý Shipper");
+        return "manager/shipper-management";
+    }
+
+    /**
+     * Trang Quản Lý Tài Xế
+     */
+    @GetMapping("/drivers")
+    public String viewDriverManagement(Model model) {
+        log.info("Truy cập trang Quản Lý Tài Xế");
+        return "manager/driver-management";
+    }
+
+    /**
+     * Trang Quản Lý Phương Tiện
+     */
+    @GetMapping("/vehicles")
+    public String viewVehicleManagement(Model model) {
+        log.info("Truy cập trang Quản Lý Phương Tiện");
+        return "manager/vehicle-management";
+    }
+}
+>>>>>>> refs/heads/fea/test-security
