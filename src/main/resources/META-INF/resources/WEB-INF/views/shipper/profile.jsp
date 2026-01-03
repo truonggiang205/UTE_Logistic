@@ -16,22 +16,32 @@
             <!-- Avatar & Basic Info -->
             <div class="card shadow mb-4">
                 <div class="card-body text-center">
-                    <div class="mb-3">
+                    <div class="mb-3 position-relative d-inline-block">
                         <c:choose>
                             <c:when test="${not empty profile.avatarUrl}">
-                                <img src="${profile.avatarUrl}" alt="Avatar" 
+                                <img src="${profile.avatarUrl}" alt="Avatar" id="profileAvatar"
                                      class="rounded-circle img-thumbnail" 
-                                     style="width: 150px; height: 150px; object-fit: cover;">
+                                     style="width: 150px; height: 150px; object-fit: cover; cursor: pointer;"
+                                     onclick="document.getElementById('avatarInput').click()">
                             </c:when>
                             <c:otherwise>
                                 <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center" 
-                                     style="width: 150px; height: 150px;">
+                                     style="width: 150px; height: 150px; cursor: pointer;"
+                                     onclick="document.getElementById('avatarInput').click()">
                                     <i class="fas fa-user fa-4x text-white"></i>
                                 </div>
                             </c:otherwise>
                         </c:choose>
+                        <!-- Camera icon overlay -->
+                        <div class="position-absolute" style="bottom: 5px; right: 5px;">
+                            <span class="btn btn-sm btn-primary rounded-circle" onclick="document.getElementById('avatarInput').click()">
+                                <i class="fas fa-camera"></i>
+                            </span>
+                        </div>
+                        <!-- Hidden file input -->
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
                     </div>
-                    <h4 class="font-weight-bold mb-1">${profile.fullName}</h4>
+                    <h4 class="font-weight-bold mb-1" id="displayFullName">${profile.fullName}</h4>
                     <p class="text-muted mb-2">@${profile.username}</p>
                     
                     <!-- Status Badge -->
@@ -284,10 +294,7 @@
                     </div>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="#" class="btn btn-outline-primary btn-sm mr-2" onclick="alert('Chức năng đang phát triển!')">
-                        <i class="fas fa-edit"></i> Sửa thông tin
-                    </a>
-                    <a href="#" class="btn btn-outline-warning btn-sm" onclick="alert('Chức năng đang phát triển!')">
+                    <a href="#" class="btn btn-outline-warning btn-sm" data-toggle="modal" data-target="#changePasswordModal">
                         <i class="fas fa-key"></i> Đổi mật khẩu
                     </a>
                 </div>
@@ -295,3 +302,248 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Đổi mật khẩu -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" role="dialog" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="changePasswordModalLabel">
+                    <i class="fas fa-key"></i> Đổi mật khẩu
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            </div>
+                            <input type="password" class="form-control" id="currentPassword" name="currentPassword" 
+                                   placeholder="Nhập mật khẩu hiện tại" required>
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Mật khẩu mới <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                            </div>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword" 
+                                   placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)" required minlength="8">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Mật khẩu phải có ít nhất 8 ký tự</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
+                            </div>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" 
+                                   placeholder="Nhập lại mật khẩu mới" required minlength="8">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmPassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="passwordError" class="alert alert-danger d-none"></div>
+                    <div id="passwordSuccess" class="alert alert-success d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times"></i> Hủy
+                </button>
+                <button type="button" class="btn btn-warning" id="btnChangePassword">
+                    <i class="fas fa-save"></i> Đổi mật khẩu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// Wait for jQuery to be loaded (since scripts_js.jsp loads after this content)
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if jQuery is ready, if not wait for it
+    var checkJQuery = setInterval(function() {
+        if (typeof $ !== 'undefined') {
+            clearInterval(checkJQuery);
+            initChangePassword();
+        }
+    }, 50);
+});
+
+function initChangePassword() {
+    // Toggle password visibility
+    $('.toggle-password').click(function() {
+        var targetId = $(this).data('target');
+        var input = $('#' + targetId);
+        var icon = $(this).find('i');
+        
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+
+    // Xử lý đổi mật khẩu
+    $('#btnChangePassword').click(function() {
+        var currentPassword = $('#currentPassword').val();
+        var newPassword = $('#newPassword').val();
+        var confirmPassword = $('#confirmPassword').val();
+
+        // Reset messages
+        $('#passwordError').addClass('d-none').text('');
+        $('#passwordSuccess').addClass('d-none').text('');
+
+        // Validate
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            $('#passwordError').removeClass('d-none').text('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            $('#passwordError').removeClass('d-none').text('Mật khẩu mới phải có ít nhất 8 ký tự');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            $('#passwordError').removeClass('d-none').text('Mật khẩu mới và xác nhận không khớp');
+            return;
+        }
+
+        // Disable button
+        var btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...');
+
+        // Send AJAX request
+        $.ajax({
+            url: '${pageContext.request.contextPath}/shipper/change-password',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            }),
+            success: function(response) {
+                if (response.success) {
+                    $('#passwordSuccess').removeClass('d-none').text(response.message);
+                    $('#changePasswordForm')[0].reset();
+                    
+                    // Close modal after 2 seconds
+                    setTimeout(function() {
+                        $('#changePasswordModal').modal('hide');
+                        $('#passwordSuccess').addClass('d-none');
+                    }, 2000);
+                } else {
+                    $('#passwordError').removeClass('d-none').text(response.message);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Có lỗi xảy ra. Vui lòng thử lại!';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                $('#passwordError').removeClass('d-none').text(errorMsg);
+            },
+            complete: function() {
+                btn.prop('disabled', false).html('<i class="fas fa-save"></i> Đổi mật khẩu');
+            }
+        });
+    });
+
+    // Reset form when modal is closed
+    $('#changePasswordModal').on('hidden.bs.modal', function() {
+        $('#changePasswordForm')[0].reset();
+        $('#passwordError').addClass('d-none');
+        $('#passwordSuccess').addClass('d-none');
+    });
+
+    // ===== AVATAR UPLOAD =====
+    
+    // Handle avatar upload
+    $('#avatarInput').change(function() {
+        var file = this.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Vui lòng chọn file ảnh (JPG, PNG, GIF)');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Kích thước ảnh không được vượt quá 5MB');
+            return;
+        }
+
+        // Create FormData
+        var formData = new FormData();
+        formData.append('avatar', file);
+
+        // Show loading
+        var avatarContainer = $(this).closest('.mb-3');
+        avatarContainer.css('opacity', '0.5');
+
+        // Send AJAX request
+        $.ajax({
+            url: '${pageContext.request.contextPath}/shipper/update-avatar',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // Update avatar image
+                    var img = $('#profileAvatar');
+                    if (img.length) {
+                        img.attr('src', response.avatarUrl + '?t=' + new Date().getTime());
+                    } else {
+                        // If using placeholder, reload page
+                        location.reload();
+                    }
+                    alert('Cập nhật ảnh đại diện thành công!');
+                } else {
+                    alert('Lỗi: ' + response.message);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Có lỗi xảy ra. Vui lòng thử lại!';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                alert('Lỗi: ' + errorMsg);
+            },
+            complete: function() {
+                avatarContainer.css('opacity', '1');
+            }
+        });
+    });
+}
+</script>
+
+

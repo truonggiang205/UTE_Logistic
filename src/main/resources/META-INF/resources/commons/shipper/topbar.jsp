@@ -117,9 +117,17 @@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
           <sec:authentication property="principal.username" var="username" />
           ${username}
         </span>
-        <img
-          class="img-profile rounded-circle"
-          src="${pageContext.request.contextPath}/static/img/undraw_profile.svg" />
+        <c:choose>
+          <c:when test="${not empty profile.avatarUrl}">
+            <img class="img-profile rounded-circle" 
+                 src="${profile.avatarUrl}"
+                 style="width: 32px; height: 32px; object-fit: cover;">
+          </c:when>
+          <c:otherwise>
+            <img class="img-profile rounded-circle"
+                 src="${pageContext.request.contextPath}/static/img/undraw_profile.svg">
+          </c:otherwise>
+        </c:choose>
       </a>
       <!-- Dropdown - User Information -->
       <div

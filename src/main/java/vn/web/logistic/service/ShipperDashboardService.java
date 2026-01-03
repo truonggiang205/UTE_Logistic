@@ -5,7 +5,10 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
+import vn.web.logistic.dto.request.ChangePasswordRequest;
+import vn.web.logistic.dto.request.UpdateProfileRequest;
 import vn.web.logistic.dto.response.CodHistoryDTO;
 import vn.web.logistic.dto.response.OrderDetailDTO;
 import vn.web.logistic.dto.response.ShipperDashboardDTO;
@@ -58,4 +61,9 @@ public interface ShipperDashboardService {
     // PROFILE MANAGEMENT
 
     ShipperProfileDTO getProfile(String shipperEmail);
+
+    String updateAvatar(String shipperEmail, MultipartFile avatarFile);
+
+    // PASSWORD MANAGEMENT
+    void changePassword(String shipperEmail, ChangePasswordRequest request);
 }

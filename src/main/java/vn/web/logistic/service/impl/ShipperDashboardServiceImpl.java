@@ -12,11 +12,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import vn.web.logistic.dto.request.ChangePasswordRequest;
 import vn.web.logistic.dto.response.CodHistoryDTO;
 import vn.web.logistic.dto.response.EarningHistoryDTO;
 import vn.web.logistic.dto.response.OrderDetailDTO;
@@ -42,6 +45,8 @@ import vn.web.logistic.repository.ParcelActionRepository;
 import vn.web.logistic.repository.ServiceRequestRepository;
 import vn.web.logistic.repository.ShipperRepository;
 import vn.web.logistic.repository.ShipperTaskRepository;
+import vn.web.logistic.repository.UserRepository;
+import vn.web.logistic.service.FileUploadService;
 import vn.web.logistic.service.ShipperDashboardService;
 
 @Slf4j
@@ -56,6 +61,9 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final ActionTypeRepository actionTypeRepository;
     private final ParcelActionRepository parcelActionRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final FileUploadService fileUploadService;
 
     @Override
     public ShipperDashboardDTO getDashboardData(String email) {
@@ -1095,11 +1103,16 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         // Tổng
         BigDecimal totalEarnings = calculateEarnings(completedTasks);
 
-        // Phí trung bình
+        // Đếm số đơn DELIVERY (chỉ delivery mới có thu nhập)
+        long totalDeliveryCount = completedTasks.stream()
+                .filter(t -> t.getTaskType() == TaskType.delivery)
+                .count();
+
+        // Phí trung bình (chia cho số đơn delivery, không phải tổng số task)
         BigDecimal averagePerOrder = BigDecimal.ZERO;
-        if (!completedTasks.isEmpty()) {
+        if (totalDeliveryCount > 0) {
             averagePerOrder = totalEarnings.divide(
-                    BigDecimal.valueOf(completedTasks.size()), 0, RoundingMode.HALF_UP);
+                    BigDecimal.valueOf(totalDeliveryCount), 0, RoundingMode.HALF_UP);
         }
 
         // Tỷ lệ thành công
@@ -1170,10 +1183,12 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 .weeklyEarnings(weeklyEarnings)
                 .monthlyEarnings(monthlyEarnings)
                 .totalEarnings(totalEarnings)
-                .todayOrders(todayCompleted.size())
-                .weeklyOrders(weeklyCompleted.size())
-                .monthlyOrders(monthlyCompleted.size())
-                .totalOrders(completedTasks.size())
+                // Chỉ đếm số đơn DELIVERY (có thu nhập)
+                .todayOrders((int) todayCompleted.stream().filter(t -> t.getTaskType() == TaskType.delivery).count())
+                .weeklyOrders((int) weeklyCompleted.stream().filter(t -> t.getTaskType() == TaskType.delivery).count())
+                .monthlyOrders(
+                        (int) monthlyCompleted.stream().filter(t -> t.getTaskType() == TaskType.delivery).count())
+                .totalOrders((int) totalDeliveryCount)
                 .averagePerOrder(averagePerOrder)
                 .successRate(successRate)
                 .bonusAmount(bonusAmount)
@@ -1261,5 +1276,83 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 .hubName(hub != null ? hub.getHubName() : "Chưa phân bổ")
                 .hubAddress(hub != null ? hub.getAddress() : "N/A")
                 .build();
+    }
+
+    // Change Password
+
+    @Override
+    @Transactional
+    public void changePassword(String shipperEmail, ChangePasswordRequest request) {
+        log.info("Đổi mật khẩu cho shipper: {}", shipperEmail);
+
+        // 1. Tìm shipper theo email
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin shipper"));
+
+        User user = shipper.getUser();
+        if (user == null) {
+            throw new RuntimeException("Không tìm thấy thông tin tài khoản");
+        }
+
+        // 2. Kiểm tra mật khẩu hiện tại
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu hiện tại không đúng");
+        }
+
+        // 3. Kiểm tra mật khẩu mới và xác nhận khớp nhau
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Mật khẩu mới và xác nhận không khớp");
+        }
+
+        // 4. Kiểm tra mật khẩu mới không trùng với mật khẩu cũ
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu mới không được trùng với mật khẩu hiện tại");
+        }
+
+        // 5. Mã hóa và cập nhật mật khẩu mới
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        user.setPasswordHash(encodedPassword);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+        log.info("Đã đổi mật khẩu thành công cho user: {}", user.getUsername());
+    }
+
+    @Override
+    @Transactional
+    public String updateAvatar(String shipperEmail, MultipartFile avatarFile) {
+        log.info("Cập nhật ảnh đại diện cho shipper: {}", shipperEmail);
+
+        // 1. Tìm shipper
+        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin shipper"));
+
+        User user = shipper.getUser();
+        if (user == null) {
+            throw new RuntimeException("Không tìm thấy thông tin tài khoản");
+        }
+
+        // 2. Xóa avatar cũ nếu có
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+            try {
+                // Chỉ xóa nếu là file upload local (không phải URL external)
+                if (user.getAvatarUrl().startsWith("/uploads/shippers/")) {
+                    fileUploadService.deleteImage(user.getAvatarUrl().replace("/uploads/", ""));
+                }
+            } catch (Exception e) {
+                log.warn("Không thể xóa avatar cũ: {}", e.getMessage());
+            }
+        }
+
+        // 3. Upload avatar mới
+        String newAvatarPath = fileUploadService.uploadImage(avatarFile, "shippers");
+
+        // 4. Cập nhật URL trong database
+        user.setAvatarUrl("/uploads/" + newAvatarPath);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        log.info("Đã cập nhật avatar thành công: {}", newAvatarPath);
+        return user.getAvatarUrl();
     }
 }

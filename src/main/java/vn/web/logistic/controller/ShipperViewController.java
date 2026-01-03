@@ -5,22 +5,29 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import lombok.extern.slf4j.Slf4j;
+import vn.web.logistic.dto.request.ChangePasswordRequest;
 import vn.web.logistic.dto.response.ShipperDashboardDTO;
 import vn.web.logistic.service.ShipperDashboardService;
 
@@ -239,7 +246,7 @@ public class ShipperViewController {
             model.addAttribute("deliveryCount", deliveryTasks.size());
 
             // Tính tổng COD cần thu (chỉ từ delivery, không tính pickup)
-            java.math.BigDecimal totalCod = deliveryTasks.stream()
+            BigDecimal totalCod = deliveryTasks.stream()
                     .map(t -> t.getCodAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             model.addAttribute("totalCodInProgress", totalCod);
@@ -382,6 +389,70 @@ public class ShipperViewController {
         }
 
         return "shipper/profile";
+    }
+
+    // Change password
+    @PostMapping("/change-password")
+    @ResponseBody
+    public ResponseEntity<?> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            Principal principal) {
+
+        try {
+            if (principal == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Vui lòng đăng nhập lại"));
+            }
+
+            shipperDashboardService.changePassword(principal.getName(), request);
+            return ResponseEntity.ok()
+                    .body(Map.of("success", true, "message", "Đổi mật khẩu thành công!"));
+
+        } catch (Exception e) {
+            log.error("Lỗi đổi mật khẩu: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    // Update avatar
+    @PostMapping("/update-avatar")
+    @ResponseBody
+    public ResponseEntity<?> updateAvatar(
+            @RequestParam("avatar") MultipartFile avatarFile,
+            Principal principal) {
+
+        try {
+            if (principal == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Vui lòng đăng nhập lại"));
+            }
+
+            String avatarUrl = shipperDashboardService.updateAvatar(principal.getName(), avatarFile);
+            return ResponseEntity.ok()
+                    .body(Map.of(
+                            "success", true,
+                            "message", "Cập nhật ảnh đại diện thành công!",
+                            "avatarUrl", avatarUrl));
+
+        } catch (Exception e) {
+            log.error("Lỗi cập nhật ảnh đại diện: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    // Tự động load profile cho tất cả các trang (hiện avatar trên topbar)
+    @ModelAttribute
+    public void addProfileToModel(Model model, Principal principal) {
+        if (principal != null) {
+            try {
+                var profile = shipperDashboardService.getProfile(principal.getName());
+                model.addAttribute("profile", profile);
+            } catch (Exception e) {
+                log.debug("Không thể load profile cho topbar: {}", e.getMessage());
+            }
+        }
     }
 
     // Helper method để set empty data
