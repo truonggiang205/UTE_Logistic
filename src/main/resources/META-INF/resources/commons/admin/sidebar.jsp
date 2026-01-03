@@ -30,8 +30,8 @@
             </a>
             <div id="collapseNetwork" class="collapse" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" href="##">Quản lý Hub</a>
-                    <a class="collapse-item" href="##">Tuyến vận chuyển</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/hub-management">Quản lý Hub</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/route-management">Tuyến vận chuyển</a>
                 </div>
             </div>
         </li>

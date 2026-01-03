@@ -4,13 +4,11 @@ import java.util.Collection;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * Controller xử lý các trang liên quan đến authentication
  */
-@Controller
 public class LoginController {
 
     /**

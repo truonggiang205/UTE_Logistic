@@ -74,7 +74,7 @@ public class VnpayConfig {
                     hashData.append('=');
                     hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new IllegalStateException("Không thể encode dữ liệu VNPAY cho field: " + fieldName, e);
                 }
                 if (itr.hasNext()) {
                     hashData.append('&');

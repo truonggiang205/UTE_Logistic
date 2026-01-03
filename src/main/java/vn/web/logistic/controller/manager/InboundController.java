@@ -17,9 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/api/manager/inbound")
 @RequiredArgsConstructor
+@Slf4j
 public class InboundController {
 
     private final InboundService inboundService;
@@ -155,9 +158,9 @@ public class InboundController {
     @GetMapping("/available-routes/{hubId}")
     public ResponseEntity<?> getRoutes(@PathVariable Long hubId) {
         try {
-            System.out.println("[DEBUG] Loading routes for hubId: " + hubId);
+            log.debug("Loading routes for hubId={}", hubId);
             List<Route> routes = inboundService.getAvailableRoutes(hubId);
-            System.out.println("[DEBUG] Found " + routes.size() + " routes for hubId: " + hubId);
+            log.debug("Found {} routes for hubId={}", routes.size(), hubId);
 
             // Chuyển sang Map để tránh lỗi Hibernate Proxy
             List<Map<String, Object>> routeDTOs = routes.stream()
@@ -191,7 +194,7 @@ public class InboundController {
 
             return ResponseEntity.ok(routeDTOs);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error loading routes for hubId={}: {}", hubId, e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
                     "message", "Lỗi lấy danh sách tuyến: " + e.getMessage()));

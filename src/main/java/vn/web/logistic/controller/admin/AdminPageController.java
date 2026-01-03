@@ -50,6 +50,20 @@ public class AdminPageController {
         return "admin/reports";
     }
 
+    // ==================== Mạng lưới bưu cục ====================
+
+    @GetMapping("/hub-management")
+    public String viewHubManagement() {
+        // Trả về file: /WEB-INF/views/admin/hub-management.jsp
+        return "admin/hub-management";
+    }
+
+    @GetMapping("/route-management")
+    public String viewRouteManagement() {
+        // Trả về file: /WEB-INF/views/admin/route-management.jsp
+        return "admin/route-management";
+    }
+
     // ==================== Vận tải & Trung chuyển ====================
 
     @GetMapping("/vehicle-management")

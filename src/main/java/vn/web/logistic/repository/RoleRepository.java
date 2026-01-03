@@ -10,6 +10,5 @@ import vn.web.logistic.entity.Role;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
     Optional<Role> findByRoleName(String roleName);
-
     boolean existsByRoleName(String roleName);
 }

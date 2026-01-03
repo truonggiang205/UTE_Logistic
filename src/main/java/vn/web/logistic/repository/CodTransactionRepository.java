@@ -19,10 +19,10 @@ public interface CodTransactionRepository extends
                 JpaRepository<CodTransaction, Long>,
                 JpaSpecificationExecutor<CodTransaction> {
 
-        // 1. Tính tổng tiền Shipper đang giữ (Status = collected)
+        // 1. Tính tổng tiền Shipper đang giữ (Status = pending)
         // Dùng JPQL để tính tổng nhanh DB
         @Query("SELECT SUM(c.amount) FROM CodTransaction c " +
-                        "WHERE c.status = 'collected' " +
+                        "WHERE c.status = 'pending' " +
                         "AND (:shipperId IS NULL OR c.shipper.shipperId = :shipperId)")
         BigDecimal sumHoldingAmountByShipper(@Param("shipperId") Long shipperId);
 
@@ -39,7 +39,7 @@ public interface CodTransactionRepository extends
                         "  SUM(t.amount) " +
                         ") " +
                         "FROM CodTransaction t " +
-                        "WHERE t.status = 'collected' " +
+                        "WHERE t.status = 'pending' " +
                         "AND t.collectedAt < :twoDaysAgo " +
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > :highLimit")
@@ -55,7 +55,7 @@ public interface CodTransactionRepository extends
                         "  SUM(t.amount) " +
                         ") " +
                         "FROM CodTransaction t " +
-                        "WHERE t.status = 'collected' " +
+                        "WHERE t.status = 'pending' " +
                         "AND t.collectedAt < :threeDaysAgo " +
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > :mediumLimit")
@@ -71,7 +71,7 @@ public interface CodTransactionRepository extends
                         "  SUM(t.amount) " +
                         ") " +
                         "FROM CodTransaction t " +
-                        "WHERE t.status = 'collected' " +
+                        "WHERE t.status = 'pending' " +
                         "AND t.collectedAt < :sevenDaysAgo " +
                         "GROUP BY t.shipper.shipperId, t.shipper.user.fullName, t.shipper.user.phone " +
                         "HAVING SUM(t.amount) > 0")
@@ -87,11 +87,14 @@ public interface CodTransactionRepository extends
                         "AND s.hub.hubId = :hubId")
         BigDecimal sumPendingCodByHubId(@Param("hubId") Long hubId);
 
-        // Tính tổng tiền COD đã thu (collected) theo Hub
+        // Tính tổng tiền COD đã thu và đã chốt (settled) theo Hub
+        // - Shipper COD: shipper IS NOT NULL -> lấy hub từ shipper
+        // - Counter Pickup: shipper IS NULL -> lấy hub từ request.currentHub
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
-                        "JOIN c.shipper s " +
-                        "WHERE c.status = 'collected' " +
-                        "AND s.hub.hubId = :hubId")
+                        "LEFT JOIN c.shipper s " +
+                        "LEFT JOIN c.request r " +
+                        "WHERE c.status = 'settled' " +
+                        "AND (s.hub.hubId = :hubId OR (c.shipper IS NULL AND r.currentHub.hubId = :hubId))")
         BigDecimal sumCollectedCodByHubId(@Param("hubId") Long hubId);
 
         // Xóa tất cả giao dịch COD của một đơn hàng

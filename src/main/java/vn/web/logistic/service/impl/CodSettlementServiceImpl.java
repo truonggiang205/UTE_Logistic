@@ -32,7 +32,7 @@ public class CodSettlementServiceImpl implements CodSettlementService {
     public List<ShipperCodSummaryDTO> getShippersWithPendingCod(Long hubId) {
         log.info("Lấy danh sách shipper có COD chưa quyết toán trong Hub: {}", hubId);
 
-        // Lấy danh sách shipper có COD collected trong Hub
+        // Lấy danh sách shipper có COD pending trong Hub (shipper đang giữ tiền)
         List<Shipper> shippers = codSettlementRepository.findShippersWithPendingCodByHubId(hubId);
 
         List<ShipperCodSummaryDTO> result = new ArrayList<>();
@@ -64,7 +64,7 @@ public class CodSettlementServiceImpl implements CodSettlementService {
     public ShipperCodSummaryDTO getShipperCodDetail(Long shipperId) {
         log.info("Lấy chi tiết COD của shipper: {}", shipperId);
 
-        // Lấy danh sách COD collected của shipper
+        // Lấy danh sách COD pending của shipper (shipper đang giữ tiền)
         List<CodTransaction> transactions = codSettlementRepository.findCollectedByShipperId(shipperId);
 
         if (transactions.isEmpty()) {
@@ -128,13 +128,13 @@ public class CodSettlementServiceImpl implements CodSettlementService {
             if (request.getCodTxIds() != null && !request.getCodTxIds().isEmpty()) {
                 // Quyết toán các transaction cụ thể
                 transactions = codSettlementRepository.findAllById(request.getCodTxIds());
-                // Validate: chỉ lấy những transaction thuộc shipper và có status = collected
+                // Validate: chỉ lấy những transaction thuộc shipper và có status = pending
                 transactions = transactions.stream()
                         .filter(tx -> tx.getShipper().getShipperId().equals(request.getShipperId()))
-                        .filter(tx -> tx.getStatus() == CodTransaction.CodStatus.collected)
+                    .filter(tx -> tx.getStatus() == CodTransaction.CodStatus.pending)
                         .collect(Collectors.toList());
             } else {
-                // Quyết toán tất cả COD collected của shipper
+                // Quyết toán tất cả COD pending của shipper
                 transactions = codSettlementRepository.findCollectedByShipperId(request.getShipperId());
             }
 

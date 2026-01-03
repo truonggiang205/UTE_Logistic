@@ -31,4 +31,8 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
     // Fetch eager một Route theo ID để tránh lỗi lazy proxy serialization
     @Query("SELECT r FROM Route r LEFT JOIN FETCH r.fromHub LEFT JOIN FETCH r.toHub WHERE r.routeId = :routeId")
     Optional<Route> findByIdWithHubs(@Param("routeId") Long routeId);
+
+    // Fetch eager toàn bộ tuyến + 2 hub để phục vụ trang admin tuyến vận chuyển
+    @Query("SELECT r FROM Route r LEFT JOIN FETCH r.fromHub LEFT JOIN FETCH r.toHub")
+    List<Route> findAllWithHubs();
 }
