@@ -52,9 +52,9 @@ public class PaymentController {
             }
 
             // 2. Gọi service tạo URL.
-            // Chúng ta truyền "127.0.0.1" vì Service đã tự gán cứng bên trong rồi.
             logger.info("Yêu cầu tạo link VNPAY cho đơn hàng: {}, số tiền: {}", requestId, amount);
-            Map<String, String> paymentData = vnpayService.createPaymentUrl(requestId, amount, "127.0.0.1");
+            String clientIp = resolveClientIp(request);
+            Map<String, String> paymentData = vnpayService.createPaymentUrl(requestId, amount, clientIp);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -134,5 +134,18 @@ public class PaymentController {
             params.put(paramName, request.getParameter(paramName));
         }
         return params;
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            // X-Forwarded-For có thể là danh sách: client, proxy1, proxy2
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp.trim();
+        }
+        return request.getRemoteAddr();
     }
 }

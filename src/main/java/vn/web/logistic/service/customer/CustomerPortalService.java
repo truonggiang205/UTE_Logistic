@@ -6,6 +6,7 @@ import vn.web.logistic.dto.request.customer.CustomerAddressForm;
 import vn.web.logistic.dto.request.customer.CustomerProfileForm;
 import vn.web.logistic.entity.Customer;
 import vn.web.logistic.entity.CustomerAddress;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface CustomerPortalService {
 
@@ -22,4 +23,6 @@ public interface CustomerPortalService {
     void deleteAddress(Long addressId);
 
     void updateProfile(CustomerProfileForm form);
+
+    String updateAvatar(MultipartFile avatarFile);
 }

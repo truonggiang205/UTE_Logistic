@@ -1,10 +1,14 @@
 package vn.web.logistic.config;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -28,6 +32,9 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${app.cors.allowed-origins:http://localhost:9090,http://localhost:3000}")
+    private String allowedOrigins;
 
     // 1. Bean mã hóa mật khẩu
     // Sử dụng BCrypt để băm mật khẩu (hash) trước khi lưu vào DB hoặc khi so sánh
@@ -61,8 +68,8 @@ public class SecurityConfig {
                 // Tắt CSRF vì API dùng Token, không dùng Session Cookie nên không sợ lỗi này
                 .csrf(csrf -> csrf.disable())
 
-                // Quản lý Session: IF_REQUIRED (Tạo session nếu cần, nhưng chủ yếu API sẽ là
-                // Stateless)
+                // API: hỗ trợ cả JWT (stateless) lẫn session (JSP pages gọi AJAX /api/**)
+                // Nếu để STATELESS thì SecurityContext không đọc từ HttpSession => các page sẽ bị 401 khi fetch /api/**
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 // Phân quyền chi tiết cho từng API URL
@@ -154,8 +161,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Cho phép frontend React (3000) và chính nó (9090) gọi
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:9090", "http://localhost:3000"));
+        // Allowed origins cấu hình qua application.properties (comma-separated)
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
+        configuration.setAllowedOrigins(origins);
 
         // Cho phép các method HTTP
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
@@ -166,8 +177,8 @@ public class SecurityConfig {
         // Cho phép client đọc được header Authorization (chứa Token) trả về
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
 
-        // Cho phép gửi kèm Cookie/Credential
-        configuration.setAllowCredentials(true);
+        // API JWT thường không cần cookie; để true có thể gây conflict nếu origins='*'
+        configuration.setAllowCredentials(false);
         configuration.setMaxAge(3600L); // Cache cấu hình này trong 1 giờ
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

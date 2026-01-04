@@ -23,7 +23,14 @@
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                aria-haspopup="true" aria-expanded="false">
                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">Tài khoản</span>
-                <img class="img-profile rounded-circle" src="${pageContext.request.contextPath}/static/img/undraw_profile.svg">
+                <c:choose>
+                    <c:when test="${not empty currentUserAvatarUrl}">
+                        <img class="img-profile rounded-circle" src="${currentUserAvatarUrl}">
+                    </c:when>
+                    <c:otherwise>
+                        <img class="img-profile rounded-circle" src="${pageContext.request.contextPath}/img/undraw_profile.svg">
+                    </c:otherwise>
+                </c:choose>
             </a>
 
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">

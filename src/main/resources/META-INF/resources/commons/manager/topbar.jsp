@@ -36,7 +36,14 @@
                     <sec:authentication property="principal.username" var="username" />
                     ${username}
                 </span>
-                <img class="img-profile rounded-circle" src="${pageContext.request.contextPath}/static/img/undraw_profile.svg">
+                <c:choose>
+                    <c:when test="${not empty currentUserAvatarUrl}">
+                        <img class="img-profile rounded-circle" src="${currentUserAvatarUrl}">
+                    </c:when>
+                    <c:otherwise>
+                        <img class="img-profile rounded-circle" src="${pageContext.request.contextPath}/img/undraw_profile.svg">
+                    </c:otherwise>
+                </c:choose>
             </a>
             <!-- Dropdown - User Information -->
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">

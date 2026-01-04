@@ -12,7 +12,13 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -219,6 +225,22 @@ public class CustomerPageController {
         } catch (Exception ex) {
             model.addAttribute("error", ex.getMessage());
             return "customer/profile";
+        }
+    }
+
+    @PostMapping("/update-avatar")
+    @ResponseBody
+    public ResponseEntity<?> updateAvatar(@RequestParam("avatar") MultipartFile avatarFile) {
+        try {
+            String avatarUrl = customerPortalService.updateAvatar(avatarFile);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Cập nhật ảnh đại diện thành công!",
+                    "avatarUrl", avatarUrl));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", ex.getMessage()));
         }
     }
 }

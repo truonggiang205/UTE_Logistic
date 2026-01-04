@@ -16,7 +16,9 @@ import vn.web.logistic.repository.CustomerAddressRepository;
 import vn.web.logistic.repository.CustomerRepository;
 import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.SecurityContextService;
+import vn.web.logistic.service.FileUploadService;
 import vn.web.logistic.service.customer.CustomerPortalService;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class CustomerPortalServiceImpl implements CustomerPortalService {
     private final CustomerRepository customerRepository;
     private final CustomerAddressRepository customerAddressRepository;
     private final UserRepository userRepository;
+    private final FileUploadService fileUploadService;
 
     @Override
     @Transactional
@@ -136,6 +139,32 @@ public class CustomerPortalServiceImpl implements CustomerPortalService {
             customer.setEmail(form.getEmail());
         }
         customerRepository.save(customer);
+    }
+
+    @Override
+    @Transactional
+    public String updateAvatar(MultipartFile avatarFile) {
+        User user = securityContextService.getCurrentUser();
+        if (user == null) {
+            throw new RuntimeException("Bạn chưa đăng nhập");
+        }
+
+        // Xóa avatar cũ nếu là file upload local
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
+            try {
+                if (user.getAvatarUrl().startsWith("/uploads/customers/")) {
+                    fileUploadService.deleteImage(user.getAvatarUrl().replace("/uploads/", ""));
+                }
+            } catch (Exception ignored) {
+                // Không fail toàn bộ chỉ vì xóa ảnh cũ lỗi
+            }
+        }
+
+        String newAvatarPath = fileUploadService.uploadImage(avatarFile, "customers");
+        user.setAvatarUrl("/uploads/" + newAvatarPath);
+        userRepository.save(user);
+
+        return user.getAvatarUrl();
     }
 
     private void clearDefault(Long customerId) {

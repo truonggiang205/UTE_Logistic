@@ -112,8 +112,8 @@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
                  style="width: 32px; height: 32px; object-fit: cover;">
           </c:when>
           <c:otherwise>
-            <img class="img-profile rounded-circle"
-                 src="${pageContext.request.contextPath}/static/img/undraw_profile.svg">
+              <img class="img-profile rounded-circle"
+                   src="${pageContext.request.contextPath}/img/undraw_profile.svg">
           </c:otherwise>
         </c:choose>
       </a>
