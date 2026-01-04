@@ -1,6 +1,44 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+    <%
+    org.sitemesh.content.Content __smContent = (org.sitemesh.content.Content) request
+        .getAttribute(org.sitemesh.webapp.WebAppContext.CONTENT_KEY);
+    org.sitemesh.content.ContentProperty __smProps = (__smContent != null) ? __smContent.getExtractedProperties()
+        : null;
+    org.sitemesh.content.ContentProperty __smTitle = (__smProps != null && __smProps.hasChild("title"))
+        ? __smProps.getChild("title")
+        : null;
+    org.sitemesh.content.ContentProperty __smHead = (__smProps != null && __smProps.hasChild("head"))
+        ? __smProps.getChild("head")
+        : null;
+    org.sitemesh.content.ContentProperty __smBody = (__smProps != null && __smProps.hasChild("body"))
+        ? __smProps.getChild("body")
+        : null;
+
+    String __smHeadHtml = null;
+    if (__smHead != null && __smHead.hasValue()) {
+        StringBuilder sb = new StringBuilder();
+        __smHead.writeValueTo(sb);
+        __smHeadHtml = sb.toString()
+            .replaceAll("(?is)\\s*<!DOCTYPE[^>]*>", "")
+            .replaceAll("(?is)</?html\\b[^>]*>", "")
+            .replaceAll("(?is)</?head\\b[^>]*>", "")
+            .replaceAll("(?is)<title\\b[^>]*>.*?</title>", "");
+    }
+
+    String __smBodyHtml = null;
+    if (__smBody != null && __smBody.hasValue()) {
+        StringBuilder sb = new StringBuilder();
+        __smBody.writeValueTo(sb);
+        __smBodyHtml = sb.toString()
+            .replaceAll("(?is)\\s*<!DOCTYPE[^>]*>", "")
+            .replaceAll("(?is)</?html\\b[^>]*>", "")
+            .replaceAll("(?is)</?body\\b[^>]*>", "")
+            .replaceAll("(?is)</?head\\b[^>]*>", "");
+    }
+    %>
+
         <!DOCTYPE html>
         <html lang="vi">
 
@@ -11,14 +49,24 @@
             <meta name="description" content="Hệ thống quản lý Logistics">
 
             <title>
-                <sitemesh:write property='title'>Logistics Manager</sitemesh:write>
+                <%
+                    if (__smTitle != null && __smTitle.hasValue()) {
+                        __smTitle.writeValueTo(out);
+                    } else {
+                        out.write("Logistics Manager");
+                    }
+                %>
             </title>
 
             <%-- 1. Nhúng CSS chung --%>
                 <jsp:include page="/commons/manager/head_css.jsp" />
 
                 <%-- 2. Nhúng thẻ head riêng của trang con --%>
-                    <sitemesh:write property='head' />
+                    <%
+                        if (__smHeadHtml != null && !__smHeadHtml.isBlank()) {
+                            out.write(__smHeadHtml);
+                        }
+                    %>
         </head>
 
         <body id="page-top">
@@ -37,7 +85,11 @@
 
                                 <div class="container-fluid">
                                     <%-- 5. NỘI DUNG CHÍNH --%>
-                                        <sitemesh:write property='body' />
+                                        <%
+                                            if (__smBodyHtml != null && !__smBodyHtml.isBlank()) {
+                                                out.write(__smBodyHtml);
+                                            }
+                                        %>
                                 </div>
 
                         </div>

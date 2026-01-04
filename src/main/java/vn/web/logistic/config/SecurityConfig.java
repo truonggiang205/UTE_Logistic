@@ -109,6 +109,7 @@ public class SecurityConfig {
 
                         // Các trang Public
                         .requestMatchers("/", "/home", "/login", "/register", "/error").permitAll()
+                        .requestMatchers("/forgot-password", "/reset-password").permitAll()
                         // VNPAY Payment return page - PHẢI permitAll để VNPAY redirect về
                         .requestMatchers("/payment/**").permitAll()
 

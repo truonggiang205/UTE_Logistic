@@ -1,0 +1,1644 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.9)
+
+2026-01-04T15:20:22.554+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.LogisticApplication      : Starting LogisticApplication using Java 22 with PID 8896 (F:\Nam3_Ky1\LT_WEB\project\logistic\logistic\target\classes started by HA TRUONG GIANG in F:\Nam3_Ky1\LT_WEB\project\logistic\logistic)
+2026-01-04T15:20:22.559+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.LogisticApplication      : No active profile set, falling back to 1 default profile: "default"
+2026-01-04T15:20:22.640+07:00  INFO 8896 --- [logistic] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-01-04T15:20:22.640+07:00  INFO 8896 --- [logistic] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-01-04T15:20:24.189+07:00  INFO 8896 --- [logistic] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-01-04T15:20:24.502+07:00  INFO 8896 --- [logistic] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 300 ms. Found 26 JPA repository interfaces.
+2026-01-04T15:20:25.694+07:00  INFO 8896 --- [logistic] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 9090 (http)
+2026-01-04T15:20:25.724+07:00  INFO 8896 --- [logistic] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-01-04T15:20:25.726+07:00  INFO 8896 --- [logistic] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-01-04T15:20:26.125+07:00  INFO 8896 --- [logistic] [  restartedMain] org.apache.jasper.servlet.TldScanner     : At least one JAR was scanned for TLDs yet contained no TLDs. Enable debug logging for this logger for a complete list of JARs that were scanned but no TLDs were found in them. Skipping unneeded JARs during scanning can improve startup time and JSP compilation time.
+2026-01-04T15:20:26.141+07:00  INFO 8896 --- [logistic] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-01-04T15:20:26.143+07:00  INFO 8896 --- [logistic] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 3500 ms
+2026-01-04T15:20:26.411+07:00  INFO 8896 --- [logistic] [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-01-04T15:20:26.508+07:00  INFO 8896 --- [logistic] [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.39.Final
+2026-01-04T15:20:26.561+07:00  INFO 8896 --- [logistic] [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-01-04T15:20:27.019+07:00  INFO 8896 --- [logistic] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-01-04T15:20:27.067+07:00  INFO 8896 --- [logistic] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-01-04T15:20:27.326+07:00  INFO 8896 --- [logistic] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3a809e49
+2026-01-04T15:20:27.331+07:00  INFO 8896 --- [logistic] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-01-04T15:20:27.413+07:00  WARN 8896 --- [logistic] [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-01-04T15:20:27.437+07:00  INFO 8896 --- [logistic] [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0.44
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-01-04T15:20:29.738+07:00  INFO 8896 --- [logistic] [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    alter table CONTAINERS 
+       modify column weight DECIMAL(10,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column chargeableWeight DECIMAL(10,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column cod_amount DECIMAL(12,2) DEFAULT 0
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column codFee DECIMAL(12,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column height DECIMAL(8,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column insuranceFee DECIMAL(12,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column length DECIMAL(8,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column receiverPayAmount DECIMAL(12,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column shippingFee DECIMAL(12,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column totalPrice DECIMAL(12,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column weight DECIMAL(10,2)
+Hibernate: 
+    alter table SERVICE_REQUESTS 
+       modify column width DECIMAL(8,2)
+Hibernate: 
+    alter table SERVICE_TYPES 
+       modify column base_fee DECIMAL(12,2) DEFAULT 0
+Hibernate: 
+    alter table SERVICE_TYPES 
+       modify column cod_min_fee DECIMAL(12,2) DEFAULT 0
+Hibernate: 
+    alter table SERVICE_TYPES 
+       modify column cod_rate DECIMAL(5,4) DEFAULT 0
+Hibernate: 
+    alter table SERVICE_TYPES 
+       modify column extra_price_per_kg DECIMAL(12,2) DEFAULT 0
+Hibernate: 
+    alter table SERVICE_TYPES 
+       modify column insurance_rate DECIMAL(5,4) DEFAULT 0
+Hibernate: 
+    alter table VEHICLES 
+       modify column load_capacity DECIMAL(10,2)
+Hibernate: 
+    alter table VNPAY_TRANSACTIONS 
+       modify column amount DECIMAL(12,2)
+2026-01-04T15:20:30.661+07:00  INFO 8896 --- [logistic] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-01-04T15:20:31.333+07:00  INFO 8896 --- [logistic] [  restartedMain] o.s.config.ConfigurableSiteMeshFilter    : SiteMesh 3.2.1 initialized with filter name 'sitemesh3'
+2026-01-04T15:20:31.581+07:00  INFO 8896 --- [logistic] [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-01-04T15:20:34.468+07:00  INFO 8896 --- [logistic] [  restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService
+2026-01-04T15:20:35.659+07:00  WARN 8896 --- [logistic] [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-01-04T15:20:37.491+07:00  INFO 8896 --- [logistic] [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-01-04T15:20:37.565+07:00  INFO 8896 --- [logistic] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 9090 (http) with context path '/'
+2026-01-04T15:20:37.577+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.LogisticApplication      : Started LogisticApplication in 15.703 seconds (process running for 16.401)
+2026-01-04T15:20:37.585+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   : === DataInitializer: Ki?m tra và kh?i t?o d? li?u ===
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+2026-01-04T15:20:37.834+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :   ? ??m b?o demo users có password ?úng...
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        r1_0.role_id,
+        r1_0.description,
+        r1_0.role_name,
+        r1_0.status 
+    from
+        ROLES r1_0 
+    where
+        r1_0.role_name=?
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        c1_0.user_id 
+    from
+        CUSTOMERS c1_0 
+    where
+        c1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type 
+    from
+        SHIPPERS s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.staff_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.staff_position,
+        s1_0.status,
+        s1_0.user_id 
+    from
+        STAFF s1_0 
+    where
+        s1_0.user_id=?
+2026-01-04T15:20:38.083+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     DEBUG: rawPassword='admin123', hash='$2a$10$7xsGtPydd3H0x...', matches=true
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type,
+        s2_0.staff_id,
+        s2_0.hub_id,
+        s2_0.joinedAt,
+        s2_0.staff_position,
+        s2_0.status,
+        s2_0.user_id,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    left join
+        CUSTOMERS c1_0 
+            on u1_0.user_id=c1_0.user_id 
+    left join
+        SHIPPERS s1_0 
+            on u1_0.user_id=s1_0.user_id 
+    left join
+        STAFF s2_0 
+            on u1_0.user_id=s2_0.user_id 
+    where
+        u1_0.user_id=?
+Hibernate: 
+    update
+        USERS 
+    set
+        avatar_url=?,
+        email=?,
+        full_name=?,
+        last_login_at=?,
+        password_hash=?,
+        phone=?,
+        status=?,
+        updated_at=?,
+        username=? 
+    where
+        user_id=?
+2026-01-04T15:20:38.200+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     ? ?ã c?p nh?t password cho: admin@logistic.local - password: admin123
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        c1_0.user_id 
+    from
+        CUSTOMERS c1_0 
+    where
+        c1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type 
+    from
+        SHIPPERS s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.staff_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.staff_position,
+        s1_0.status,
+        s1_0.user_id 
+    from
+        STAFF s1_0 
+    where
+        s1_0.user_id=?
+2026-01-04T15:20:38.406+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     DEBUG: rawPassword='staff123', hash='$2a$10$VymtBb.N1QXZF...', matches=true
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type,
+        s2_0.staff_id,
+        s2_0.hub_id,
+        s2_0.joinedAt,
+        s2_0.staff_position,
+        s2_0.status,
+        s2_0.user_id,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    left join
+        CUSTOMERS c1_0 
+            on u1_0.user_id=c1_0.user_id 
+    left join
+        SHIPPERS s1_0 
+            on u1_0.user_id=s1_0.user_id 
+    left join
+        STAFF s2_0 
+            on u1_0.user_id=s2_0.user_id 
+    where
+        u1_0.user_id=?
+Hibernate: 
+    update
+        USERS 
+    set
+        avatar_url=?,
+        email=?,
+        full_name=?,
+        last_login_at=?,
+        password_hash=?,
+        phone=?,
+        status=?,
+        updated_at=?,
+        username=? 
+    where
+        user_id=?
+2026-01-04T15:20:38.426+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     ? ?ã c?p nh?t password cho: staff01@logistic.local - password: staff123
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        c1_0.user_id 
+    from
+        CUSTOMERS c1_0 
+    where
+        c1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type 
+    from
+        SHIPPERS s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.staff_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.staff_position,
+        s1_0.status,
+        s1_0.user_id 
+    from
+        STAFF s1_0 
+    where
+        s1_0.user_id=?
+2026-01-04T15:20:38.632+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     DEBUG: rawPassword='shipper123', hash='$2a$10$/JSXq5MTo97qL...', matches=true
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type,
+        s2_0.staff_id,
+        s2_0.hub_id,
+        s2_0.joinedAt,
+        s2_0.staff_position,
+        s2_0.status,
+        s2_0.user_id,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    left join
+        CUSTOMERS c1_0 
+            on u1_0.user_id=c1_0.user_id 
+    left join
+        SHIPPERS s1_0 
+            on u1_0.user_id=s1_0.user_id 
+    left join
+        STAFF s2_0 
+            on u1_0.user_id=s2_0.user_id 
+    where
+        u1_0.user_id=?
+Hibernate: 
+    update
+        USERS 
+    set
+        avatar_url=?,
+        email=?,
+        full_name=?,
+        last_login_at=?,
+        password_hash=?,
+        phone=?,
+        status=?,
+        updated_at=?,
+        username=? 
+    where
+        user_id=?
+2026-01-04T15:20:38.656+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     ? ?ã c?p nh?t password cho: shipper01@logistic.local - password: shipper123
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        c1_0.user_id 
+    from
+        CUSTOMERS c1_0 
+    where
+        c1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type 
+    from
+        SHIPPERS s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.staff_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.staff_position,
+        s1_0.status,
+        s1_0.user_id 
+    from
+        STAFF s1_0 
+    where
+        s1_0.user_id=?
+2026-01-04T15:20:38.848+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     DEBUG: rawPassword='cust123', hash='$2a$10$/lAu6DEzx1O.....', matches=true
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type,
+        s2_0.staff_id,
+        s2_0.hub_id,
+        s2_0.joinedAt,
+        s2_0.staff_position,
+        s2_0.status,
+        s2_0.user_id,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    left join
+        CUSTOMERS c1_0 
+            on u1_0.user_id=c1_0.user_id 
+    left join
+        SHIPPERS s1_0 
+            on u1_0.user_id=s1_0.user_id 
+    left join
+        STAFF s2_0 
+            on u1_0.user_id=s2_0.user_id 
+    where
+        u1_0.user_id=?
+Hibernate: 
+    update
+        USERS 
+    set
+        avatar_url=?,
+        email=?,
+        full_name=?,
+        last_login_at=?,
+        password_hash=?,
+        phone=?,
+        status=?,
+        updated_at=?,
+        username=? 
+    where
+        user_id=?
+2026-01-04T15:20:38.862+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :     ? ?ã c?p nh?t password cho: cust01@logistic.local - password: cust123
+2026-01-04T15:20:38.863+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   :   ? ?ã ??m b?o 4 demo users
+2026-01-04T15:20:38.863+07:00  INFO 8896 --- [logistic] [  restartedMain] vn.web.logistic.config.DataInitializer   : === DataInitializer: Hoàn t?t ===
+2026-01-04T15:20:45.918+07:00  INFO 8896 --- [logistic] [nio-9090-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-01-04T15:20:45.920+07:00  INFO 8896 --- [logistic] [nio-9090-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-01-04T15:20:45.923+07:00  INFO 8896 --- [logistic] [nio-9090-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        c1_0.user_id 
+    from
+        CUSTOMERS c1_0 
+    where
+        c1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type 
+    from
+        SHIPPERS s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.staff_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.staff_position,
+        s1_0.status,
+        s1_0.user_id 
+    from
+        STAFF s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        r1_0.user_id,
+        r1_1.role_id,
+        r1_1.description,
+        r1_1.role_name,
+        r1_1.status 
+    from
+        USER_ROLES r1_0 
+    join
+        ROLES r1_1 
+            on r1_1.role_id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+Hibernate: 
+    select
+        u1_0.user_id,
+        u1_0.avatar_url,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.last_login_at,
+        u1_0.password_hash,
+        u1_0.phone,
+        u1_0.status,
+        u1_0.updated_at,
+        u1_0.username 
+    from
+        USERS u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        c1_0.customer_id,
+        c1_0.business_name,
+        c1_0.created_at,
+        c1_0.customerType,
+        c1_0.email,
+        c1_0.full_name,
+        c1_0.phone,
+        c1_0.status,
+        c1_0.tax_code,
+        c1_0.user_id 
+    from
+        CUSTOMERS c1_0 
+    where
+        c1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.shipper_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.rating,
+        s1_0.shipperType,
+        s1_0.status,
+        s1_0.user_id,
+        s1_0.vehicle_type 
+    from
+        SHIPPERS s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        s1_0.staff_id,
+        s1_0.hub_id,
+        s1_0.joinedAt,
+        s1_0.staff_position,
+        s1_0.status,
+        s1_0.user_id 
+    from
+        STAFF s1_0 
+    where
+        s1_0.user_id=?
+Hibernate: 
+    select
+        r1_0.user_id,
+        r1_1.role_id,
+        r1_1.description,
+        r1_1.role_name,
+        r1_1.status 
+    from
+        USER_ROLES r1_0 
+    join
+        ROLES r1_1 
+            on r1_1.role_id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2026-01-04T15:21:15.616+07:00  INFO 8896 --- [logistic] [nio-9090-exec-6] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:22:55.461+07:00  INFO 8896 --- [logistic] [nio-9090-exec-8] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:23:03.705+07:00  INFO 8896 --- [logistic] [io-9090-exec-10] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:23:55.286+07:00  INFO 8896 --- [logistic] [nio-9090-exec-2] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:24:10.671+07:00  INFO 8896 --- [logistic] [nio-9090-exec-4] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:24:20.853+07:00  INFO 8896 --- [logistic] [nio-9090-exec-6] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:24:37.012+07:00  INFO 8896 --- [logistic] [nio-9090-exec-8] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+2026-01-04T15:26:52.593+07:00  INFO 8896 --- [logistic] [nio-9090-exec-2] v.w.l.c.manager.ManagerPageController    : Truy c?p trang X?p Bao vào Xe
+Hibernate: 
+    select
+        h1_0.hub_id,
+        h1_0.address,
+        h1_0.contact_phone,
+        h1_0.createdAt,
+        h1_0.district,
+        h1_0.email,
+        h1_0.hubLevel,
+        h1_0.hub_name,
+        h1_0.province,
+        h1_0.status,
+        h1_0.ward 
+    from
+        HUBS h1_0
+Hibernate: 
+    select
+        t1_0.trip_id,
+        t1_0.arrived_at,
+        t1_0.created_at,
+        t1_0.departed_at,
+        t1_0.driver_id,
+        d1_0.driver_id,
+        d1_0.created_at,
+        d1_0.full_name,
+        d1_0.identity_card,
+        d1_0.license_class,
+        d1_0.license_number,
+        d1_0.phone_number,
+        d1_0.status,
+        t1_0.from_hub_id,
+        fh1_0.hub_id,
+        fh1_0.address,
+        fh1_0.contact_phone,
+        fh1_0.createdAt,
+        fh1_0.district,
+        fh1_0.email,
+        fh1_0.hubLevel,
+        fh1_0.hub_name,
+        fh1_0.province,
+        fh1_0.status,
+        fh1_0.ward,
+        t1_0.status,
+        t1_0.to_hub_id,
+        th1_0.hub_id,
+        th1_0.address,
+        th1_0.contact_phone,
+        th1_0.createdAt,
+        th1_0.district,
+        th1_0.email,
+        th1_0.hubLevel,
+        th1_0.hub_name,
+        th1_0.province,
+        th1_0.status,
+        th1_0.ward,
+        t1_0.trip_code,
+        t1_0.vehicle_id,
+        v1_0.vehicle_id,
+        v1_0.created_at,
+        v1_0.current_hub_id,
+        v1_0.load_capacity,
+        v1_0.plate_number,
+        v1_0.status,
+        v1_0.vehicle_type 
+    from
+        TRIPS t1_0 
+    left join
+        VEHICLES v1_0 
+            on v1_0.vehicle_id=t1_0.vehicle_id 
+    left join
+        DRIVERS d1_0 
+            on d1_0.driver_id=t1_0.driver_id 
+    left join
+        HUBS fh1_0 
+            on fh1_0.hub_id=t1_0.from_hub_id 
+    left join
+        HUBS th1_0 
+            on th1_0.hub_id=t1_0.to_hub_id 
+    where
+        (
+            ? is null 
+            or fh1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or th1_0.hub_id=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.status=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at>=?
+        ) 
+        and (
+            ? is null 
+            or t1_0.created_at<=?
+        )
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.5.9:run (default-cli) on project logistic: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

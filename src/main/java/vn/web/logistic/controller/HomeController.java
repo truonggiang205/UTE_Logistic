@@ -20,12 +20,16 @@ public class HomeController {
     @GetMapping("/login")
     public String login(@RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "logout", required = false) String logout,
+            @RequestParam(value = "reset", required = false) String reset,
             Model model) {
         if (error != null) {
             model.addAttribute("error", "Email hoặc mật khẩu không đúng!");
         }
         if (logout != null) {
             model.addAttribute("message", "Đăng xuất thành công!");
+        }
+        if (reset != null) {
+            model.addAttribute("message", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
         }
         return "login";
     }
