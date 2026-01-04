@@ -1,18 +1,41 @@
 package vn.web.logistic.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import vn.web.logistic.entity.*;
-import vn.web.logistic.entity.TrackingCode.TrackingStatus;
-import vn.web.logistic.repository.*;
-import vn.web.logistic.service.InboundService;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import vn.web.logistic.entity.ActionType;
+import vn.web.logistic.entity.CodTransaction;
+import vn.web.logistic.entity.Customer;
+import vn.web.logistic.entity.CustomerAddress;
+import vn.web.logistic.entity.Hub;
+import vn.web.logistic.entity.ParcelAction;
+import vn.web.logistic.entity.ParcelRoute;
+import vn.web.logistic.entity.Route;
+import vn.web.logistic.entity.ServiceRequest;
+import vn.web.logistic.entity.ServiceType;
+import vn.web.logistic.entity.TrackingCode;
+import vn.web.logistic.entity.TrackingCode.TrackingStatus;
+import vn.web.logistic.entity.User;
+import vn.web.logistic.repository.ActionTypeRepository;
+import vn.web.logistic.repository.CodTransactionRepository;
+import vn.web.logistic.repository.CustomerAddressRepository;
+import vn.web.logistic.repository.CustomerRepository;
+import vn.web.logistic.repository.HubRepository;
+import vn.web.logistic.repository.ParcelActionRepository;
+import vn.web.logistic.repository.ParcelRouteRepository;
+import vn.web.logistic.repository.RouteRepository;
+import vn.web.logistic.repository.ServiceRequestRepository;
+import vn.web.logistic.repository.ServiceTypeRepository;
+import vn.web.logistic.repository.TrackingCodeRepository;
+import vn.web.logistic.repository.UserRepository;
+import vn.web.logistic.service.InboundService;
 
 @Service
 @RequiredArgsConstructor
@@ -186,10 +209,10 @@ public class InboundServiceImpl implements InboundService {
                                 .build();
                 actionRepo.save(action);
 
-                // --- BƯỚC 9: TẠO COD_TRANSACTION (CHỈ KHI codAmount > 0) ---
-                // QUAN TRỌNG: COD_TRANSACTIONS chỉ dùng cho TIỀN THU HỘ, không dùng cho phí
-                // ship
-                if (codAmount.compareTo(BigDecimal.ZERO) > 0) {
+                // --- BƯỚC 9: TẠO COD_TRANSACTION (KHI CÓ TIỀN CẦN THU) ---
+                // Tạo COD Transaction khi receiverPayAmount > 0 (bao gồm COD và/hoặc phí ship
+                // nếu chưa thanh toán)
+                if (receiverPayAmount.compareTo(BigDecimal.ZERO) > 0) {
                         CodTransaction codTx = CodTransaction.builder()
                                         .request(savedOrder)
                                         .amount(receiverPayAmount) // = codAmount + phí ship (nếu chưa thanh toán)

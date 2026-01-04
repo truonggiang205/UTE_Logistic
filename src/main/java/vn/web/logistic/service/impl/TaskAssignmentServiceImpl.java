@@ -158,10 +158,10 @@ public class TaskAssignmentServiceImpl implements TaskAssignmentService {
                 shipperTaskRepository.save(task);
 
                 // 8. Cập nhật status shipper nếu cần
-                if (shipper.getStatus() == Shipper.ShipperStatus.active) {
-                        shipper.setStatus(Shipper.ShipperStatus.busy);
-                        shipperRepository.save(shipper);
-                }
+                // if (shipper.getStatus() == Shipper.ShipperStatus.active) {
+                //         shipper.setStatus(Shipper.ShipperStatus.busy);
+                //         shipperRepository.save(shipper);
+                // }
 
                 return UpdateStatusResult.builder()
                                 .success(true)

@@ -17,8 +17,10 @@ import vn.web.logistic.dto.request.CodSettlementRequest;
 import vn.web.logistic.dto.response.manager.CodSettlementResultDTO;
 import vn.web.logistic.dto.response.manager.ShipperCodSummaryDTO;
 import vn.web.logistic.entity.CodTransaction;
+import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.Shipper;
 import vn.web.logistic.repository.CodSettlementRepository;
+import vn.web.logistic.repository.ServiceRequestRepository;
 import vn.web.logistic.service.CodSettlementService;
 
 @Service
@@ -27,6 +29,7 @@ import vn.web.logistic.service.CodSettlementService;
 public class CodSettlementServiceImpl implements CodSettlementService {
 
     private final CodSettlementRepository codSettlementRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
 
     @Override
     public List<ShipperCodSummaryDTO> getShippersWithPendingCod(Long hubId) {
@@ -128,10 +131,11 @@ public class CodSettlementServiceImpl implements CodSettlementService {
             if (request.getCodTxIds() != null && !request.getCodTxIds().isEmpty()) {
                 // Quyết toán các transaction cụ thể
                 transactions = codSettlementRepository.findAllById(request.getCodTxIds());
-                // Validate: chỉ lấy những transaction thuộc shipper và có status = pending
+                // Validate: chỉ lấy những transaction thuộc shipper và có status = collected
+                // (đã nộp, chờ duyệt)
                 transactions = transactions.stream()
                         .filter(tx -> tx.getShipper().getShipperId().equals(request.getShipperId()))
-                    .filter(tx -> tx.getStatus() == CodTransaction.CodStatus.pending)
+                        .filter(tx -> tx.getStatus() == CodTransaction.CodStatus.collected)
                         .collect(Collectors.toList());
             } else {
                 // Quyết toán tất cả COD pending của shipper
@@ -171,9 +175,17 @@ public class CodSettlementServiceImpl implements CodSettlementService {
                 if (shipperName == null && tx.getShipper().getUser() != null) {
                     shipperName = tx.getShipper().getUser().getFullName();
                 }
+
+                // Cập nhật paymentStatus của ServiceRequest thành paid
+                ServiceRequest serviceRequest = tx.getRequest();
+                if (serviceRequest != null) {
+                    serviceRequest.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
+                    serviceRequestRepository.save(serviceRequest);
+                    log.info("Đã cập nhật paymentStatus=paid cho request #{}", serviceRequest.getRequestId());
+                }
             }
 
-            // Lưu vào database
+            // Lưu COD Transactions vào database
             codSettlementRepository.saveAll(transactions);
 
             log.info("Quyết toán thành công {} đơn COD với tổng tiền {} cho shipper {}",

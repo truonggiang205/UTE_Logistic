@@ -515,6 +515,12 @@ public class LastMileServiceImpl implements LastMileService {
                         settledAmount = settledAmount.add(tx.getAmount());
                 }
 
+                // Cập nhật paymentStatus = paid sau khi thu phí hoàn
+                if (!returnFeeTxs.isEmpty()) {
+                        order.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
+                        serviceRequestRepository.save(order);
+                }
+
                 // Ghi log ParcelAction RETURN_COMPLETED
                 ActionType returnCompletedAction = actionTypeRepository
                                 .findByActionCode(ACTION_RETURN_COMPLETED).orElse(null);
@@ -692,22 +698,40 @@ public class LastMileServiceImpl implements LastMileService {
                                 .build();
                 parcelActionRepository.save(action);
 
-                // 7. Tạo CodTransaction nếu có COD
+                // 7. Tạo hoặc cập nhật CodTransaction nếu có COD
                 CodTransaction codTx = null;
                 BigDecimal codCollected = request.getCodCollected();
                 if (codCollected == null) {
                         codCollected = serviceRequest.getReceiverPayAmount();
                 }
                 if (codCollected != null && codCollected.compareTo(BigDecimal.ZERO) > 0) {
-                        codTx = CodTransaction.builder()
-                                        .request(serviceRequest)
-                                        .shipper(task.getShipper())
-                                        .amount(codCollected)
-                                        .collectedAt(now)
-                                        .status(CodStatus.pending) // Shipper đang giữ tiền, chưa nộp về bưu cục
-                                        .paymentMethod("CASH")
-                                        .build();
-                        codTransactionRepository.save(codTx);
+                        // Kiểm tra xem đã có COD Transaction cho đơn này chưa (từ drop-off)
+                        var existingCod = codTransactionRepository.findByRequestId(serviceRequest.getRequestId());
+
+                        if (existingCod.isPresent()) {
+                                // Nếu đã tồn tại, cập nhật shipper và đảm bảo status = pending
+                                codTx = existingCod.get();
+                                if (codTx.getShipper() == null) {
+                                        codTx.setShipper(task.getShipper());
+                                }
+                                codTx.setStatus(CodStatus.pending); // Đảm bảo status là pending
+                                codTransactionRepository.save(codTx);
+                                log.info("Request {} đã có COD Transaction, cập nhật shipper_id = {}",
+                                                serviceRequest.getRequestId(), task.getShipper().getShipperId());
+                        } else {
+                                // Tạo mới COD Transaction
+                                codTx = CodTransaction.builder()
+                                                .request(serviceRequest)
+                                                .shipper(task.getShipper())
+                                                .amount(codCollected)
+                                                .collectedAt(null) // Chưa thu, sẽ set khi shipper nộp tiền
+                                                .status(CodStatus.pending) // Shipper đang giữ tiền, chờ nộp
+                                                .paymentMethod("CASH")
+                                                .build();
+                                codTransactionRepository.save(codTx);
+                                log.info("Tạo mới COD Transaction cho request {}: {}đ, status=pending",
+                                                serviceRequest.getRequestId(), codCollected);
+                        }
                 }
 
                 // 8. Reset shipper status về active nếu không còn task active nào
@@ -885,31 +909,56 @@ public class LastMileServiceImpl implements LastMileService {
                                 .request(serviceRequest)
                                 .actionType(counterReceiveAction)
                                 .fromHub(currentHub)
+                                //
                                 .actor(actor)
                                 .actionTime(now)
                                 .note(note)
                                 .build();
                 parcelActionRepository.save(action);
 
-                // 8. Tạo CodTransaction với status = settled (đã quyết toán ngay)
+                // 8. Tạo hoặc cập nhật CodTransaction với status = settled (đã quyết toán ngay tại quầy)
                 CodTransaction codTx = null;
+                //
                 BigDecimal codCollected = request.getCodCollected();
                 // Nếu không truyền codCollected, dùng receiverPayAmount trên đơn (tổng tiền
                 // người nhận phải trả)
+                //
                 if (codCollected == null) {
                         codCollected = serviceRequest.getReceiverPayAmount();
                 }
                 if (codCollected != null && codCollected.compareTo(BigDecimal.ZERO) > 0) {
-                        codTx = CodTransaction.builder()
-                                        .request(serviceRequest)
-                                        .shipper(null) // Không qua shipper
-                                        .amount(codCollected)
-                                        .collectedAt(now)
-                                        .settledAt(now) // Quyết toán ngay tại quầy
-                                        .status(CodStatus.settled)
-                                        .paymentMethod("CASH")
-                                        .build();
-                        codTransactionRepository.save(codTx);
+                        // Kiểm tra xem đã có COD Transaction cho request này chưa
+                        Optional<CodTransaction> existingCod = codTransactionRepository.findByRequestId(serviceRequest.getRequestId());
+
+                                        
+                        if (existingCod.isPresent()) {
+                                // Nếu đã tồn tại, cập nhật status = settled (thu tiền ngay tại quầy)
+                                codTx = existingCod.get();
+                                codTx.setStatus(CodStatus.settled);
+                                codTx.setCollectedAt(now);
+                                codTx.setSettledAt(now);
+                                codTransactionRepository.save(codTx);
+                                log.info("Request {} đã có COD Transaction, cập nhật status = settled (nhận tại quầy)",
+                                                serviceRequest.getRequestId());
+                        } else {
+                                // Tạo mới COD Transaction với status = settled
+                                codTx = CodTransaction.builder()
+                                                .request(serviceRequest)
+                                                .shipper(null) // Không qua shipper
+                                                .amount(codCollected)
+                                                .collectedAt(now)
+                                                .settledAt(now) // Quyết toán ngay tại quầy
+                                                .status(CodStatus.settled)
+                                                .paymentMethod("CASH")
+                                                .build();
+                                codTransactionRepository.save(codTx);
+                                log.info("Tạo mới COD Transaction cho request {}: {}đ, status=settled (nhận tại quầy)",
+                                                serviceRequest.getRequestId(), codCollected);
+                        }
+                        
+
+                        serviceRequest.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
+                        serviceRequestRepository.save(serviceRequest);
                 }
 
                 log.info("Khách nhận tại quầy thành công. RequestId: {}, COD: {}",

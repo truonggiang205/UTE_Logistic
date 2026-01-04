@@ -150,6 +150,35 @@ public class ManagerPageController {
         return "manager/resource/resource-management";
     }
 
+    // ===================== LAST-MILE OPERATIONS =====================
+
+    /**
+     * Trang Phân Công Shipper (Assign Task)
+     */
+    @GetMapping("/lastmile/assign-task")
+    public String viewLastMileAssignTask(Model model) {
+        log.info("Truy cập trang Phân Công Shipper");
+        return "manager/lastmile/assign-task";
+    }
+
+    /**
+     * Trang Xác Nhận Giao/Nhận (Confirm Delivery)
+     */
+    @GetMapping("/lastmile/confirm-delivery")
+    public String viewLastMileConfirmDelivery(Model model) {
+        log.info("Truy cập trang Xác Nhận Giao/Nhận");
+        return "manager/lastmile/confirm-delivery";
+    }
+
+    /**
+     * Trang Khách Nhận Tại Quầy (Counter Pickup)
+     */
+    @GetMapping("/lastmile/counter-pickup")
+    public String viewLastMileCounterPickup(Model model) {
+        log.info("Truy cập trang Khách Nhận Tại Quầy");
+        return "manager/lastmile/counter-pickup";
+    }
+
     /**
      * Trang Hoàn Hàng (Return Goods) - Đơn thất bại 3 lần
      */

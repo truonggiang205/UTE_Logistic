@@ -452,7 +452,8 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
       .then(function (data) {
         document.getElementById("shipper-list-loading").classList.add("d-none");
 
-        if (data.success && data.data && data.data.length > 0) {
+        // API trả về data mà không có field success, chỉ cần kiểm tra data.data
+        if (data.data && data.data.length > 0) {
           renderShipperList(data.data);
           updateStats(
             data.data,
