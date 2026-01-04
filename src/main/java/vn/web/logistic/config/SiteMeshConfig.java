@@ -63,6 +63,12 @@ public class SiteMeshConfig {
                 // -------------------------------------------------------------
                 builder.addDecoratorPath("/shipper", "shipper-layout.jsp");
                 builder.addDecoratorPath("/shipper/**", "shipper-layout.jsp");
+
+                // -------------------------------------------------------------
+                // 5. KHU VỰC CUSTOMER
+                // -------------------------------------------------------------
+                builder.addDecoratorPath("/customer", "customer-layout.jsp");
+                builder.addDecoratorPath("/customer/**", "customer-layout.jsp");
             }
         });
 
