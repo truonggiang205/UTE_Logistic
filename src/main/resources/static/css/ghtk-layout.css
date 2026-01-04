@@ -1,0 +1,282 @@
+:root {
+    --ghtk-green: #00B14F;
+    --ghtk-orange: #FF4D2D;
+    --header-height: 75px;
+}
+
+/* Reset để các thành phần không bị lệch */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+.ghtk-header {
+    background: #fff;
+    height: var(--header-height);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eeeeee;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* KHUNG CHỨA QUAN TRỌNG: Giúp menu không bị dãn quá rộng */
+.header-container {
+    width: 100%;
+    max-width: 1200px; /* Thu gọn chiều rộng lại giống GHTK */
+    margin: 0 auto;    /* Căn giữa toàn bộ header */
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Đẩy Logo - Menu - Nút ra 3 phần */
+}
+
+/* Khối Logo */
+.logo img {
+    height: 45px; /* Kích thước logo gọn hơn */
+    width: auto;
+    display: block;
+}
+
+/* Menu điều hướng chính */
+.main-nav {
+    flex-grow: 1;      /* Cho phép menu chiếm không gian ở giữa */
+    display: flex;
+    justify-content: center; /* Căn menu vào chính giữa */
+}
+
+.main-nav ul {
+    display: flex;
+    list-style: none;
+    gap: 12px; /* Khoảng cách giữa các chữ khít lại cho gọn */
+}
+
+.main-nav ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 8px;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.main-nav ul li a:hover, 
+.main-nav ul li a.active {
+    color: var(--ghtk-green);
+}
+
+/* Thanh gạch dưới chuẩn GHTK cho mục đang chọn */
+.main-nav ul li a.active {
+    position: relative;
+}
+.main-nav ul li a.active::after {
+    content: "";
+    position: absolute;
+    bottom: -22px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--ghtk-green);
+}
+
+/* Khối bên phải (Language & Button) */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.lang-switch {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-consult {
+    background: var(--ghtk-orange);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap; /* Không cho chữ trong nút xuống dòng */
+}
+
+/* FOOTER STYLE - NGHV LOGISTICS */
+/* Màu sắc chủ đạo */
+:root {
+    --ghtk-green: #00B14F;
+    --footer-bg: linear-gradient(135deg, #e8f9f1 0%, #f4fff9 100%);
+    --text-main: #333;
+    --text-muted: #666;
+}
+
+.ghtk-footer-custom {
+    background: var(--footer-bg);
+    padding: 60px 0 30px;
+    border-top: 1px solid #d1eadd;
+}
+
+.footer-container {
+    max-width: 1200px; /* Khớp với độ rộng của Header NGHV đã làm */
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Hàng đầu tiên */
+.footer-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 177, 79, 0.1);
+}
+
+.footer-logo img { height: 50px; }
+
+.social-links { display: flex; align-items: center; gap: 20px; }
+.social-label { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+.social-icons { display: flex; gap: 15px; }
+.social-icons i {
+    font-size: 24px;
+    color: #555;
+    transition: 0.3s;
+}
+.social-icons i:hover { color: var(--ghtk-green); transform: translateY(-3px); }
+
+/* Thân footer */
+.footer-body {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.footer-col h4 {
+    color: var(--ghtk-green);
+    margin-bottom: 20px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.footer-col ul { list-style: none; }
+.footer-col ul li { margin-bottom: 12px; }
+.footer-col ul li a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 14px;
+    transition: 0.2s;
+}
+.footer-col ul li a:hover { color: var(--ghtk-green); padding-left: 5px; }
+
+/* Thông tin liên hệ */
+.contact-info p { font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.contact-info i { color: var(--ghtk-green); width: 15px; }
+.highlight { font-weight: 700; color: var(--ghtk-green); }
+.highlight-link { font-weight: 700; color: var(--ghtk-green); cursor: pointer; text-decoration: underline; }
+
+/* Phần tải ứng dụng */
+.download-wrapper { display: flex; gap: 15px; align-items: center; }
+.qr-box img { width: 85px; background: #fff; padding: 5px; border: 1px solid #ddd; border-radius: 8px; }
+.store-buttons img { height: 32px; margin-bottom: 8px; display: block; }
+
+/* Phần đáy */
+.footer-bottom {
+    margin-top: 50px;
+    padding-top: 25px;
+    border-top: 1px solid #c8e2d4;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.legal-info { font-size: 12px; color: var(--text-muted); line-height: 1.8; }
+.company-name { font-weight: 700; color: #333; margin-bottom: 5px; }
+.bct-badge img { height: 45px; }
+
+/* ================= CSS CHO TRANG CHỦ ================= */
+
+/* Container chính của phần banner, dùng position relative để làm mốc tọa độ */
+.hero-banner-section {
+    position: relative;
+    width: 100%;
+    /* Giới hạn chiều cao banner, ví dụ 600px để không chiếm hết màn hình */
+    height: 600px; 
+    overflow: hidden; /* Cắt phần ảnh thừa */
+}
+
+/* Ảnh banner */
+.banner-image-container img {
+    width: 100%;
+    height: 100%;
+    /* Quan trọng: cover giúp ảnh 1024x1024 lấp đầy khung 600px mà không bị méo */
+    object-fit: cover; 
+    object-position: center; /* Căn giữa ảnh */
+}
+
+/* Thanh chứa 4 nút chức năng */
+.floating-actions-bar {
+    position: absolute; /* Nằm đè lên banner */
+    bottom: 0;          /* Dính sát đáy banner */
+    left: 0;
+    width: 100%;
+    height: 80px;       /* Chiều cao thanh chức năng */
+    display: flex;      /* Xếp 4 nút nằm ngang */
+    z-index: 10;        /* Đảm bảo nằm trên ảnh */
+}
+
+/* Style chung cho từng nút */
+.action-item {
+    flex: 1; /* Chia đều chiều rộng cho 4 nút */
+    display: flex;
+    justify-content: space-between; /* Chữ bên trái, mũi tên bên phải */
+    align-items: center;
+    padding: 0 30px;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.action-item i {
+    font-size: 18px;
+}
+
+/* Hiệu ứng hover */
+.action-item:hover {
+    padding-right: 20px; /* Hiệu ứng đẩy mũi tên sang phải khi di chuột */
+    filter: brightness(1.1); /* Sáng lên một chút */
+}
+
+/* ================= MÀU GRADIENT CHO 4 NÚT (Từ đậm sang nhạt) ================= */
+/* Bạn có thể điều chỉnh mã màu để khớp hơn với logo NGHV của bạn */
+
+/* Nút 1: Đậm nhất */
+.item-green-1 {
+    background-color: #008b4b; /* Xanh đậm GHTK */
+}
+
+/* Nút 2 */
+.item-green-2 {
+    background-color: #00a157;
+}
+
+/* Nút 3 */
+.item-green-3 {
+    background-color: #0ec26a;
+}
+
+/* Nút 4: Nhạt nhất */
+.item-green-4 {
+    background-color: #26d07c;
+}

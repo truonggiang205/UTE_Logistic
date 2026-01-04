@@ -1,0 +1,60 @@
+:root {
+    --nghv-green: #00B14F;
+    --nghv-green-light: rgba(0, 177, 79, 0.1);
+    --main-font: 'Inter', sans-serif;
+}
+
+body {
+    font-family: var(--main-font);
+}
+
+/* --- TÙY CHỈNH CHUNG --- */
+.nav-icon-btn, .side-icon-btn {
+    @apply transition-all duration-300 ease-in-out cursor-pointer select-none;
+}
+
+/* --- TÙY CHỈNH KHUNG ICON TRÊN HEADER --- */
+.nav-icon-btn {
+    /* Sử dụng w-14 (56px) thường sẽ cân đối hơn w-16 trên header */
+    @apply w-14 h-14 rounded-xl flex items-center justify-center 
+           text-white/60 relative overflow-hidden;
+}
+
+.nav-icon-btn i {
+    @apply text-2xl z-10 transition-transform duration-300;
+}
+
+/* Hiệu ứng Hover & Active cho Header */
+.nav-icon-btn:hover, 
+.nav-icon-btn.active {
+    @apply bg-white text-[var(--nghv-green)] scale-105;
+    /* Đổ bóng mịn hơn (soft shadow) */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Thêm một chấm nhỏ dưới icon khi Active để tinh tế hơn */
+.nav-icon-btn.active::after {
+    content: '';
+    @apply absolute bottom-2 w-1 h-1 rounded-full bg-[var(--nghv-green)];
+}
+
+
+/* --- TÙY CHỈNH SIDEBAR PHẢI --- */
+.side-icon-btn {
+    @apply w-14 h-14 rounded-2xl flex items-center justify-center 
+           text-gray-400 border border-transparent;
+}
+
+/* Hover & Active cho Sidebar */
+.side-icon-btn:hover {
+    @apply bg-green-50 text-[var(--nghv-green)] border-green-100 scale-110;
+}
+
+.side-icon-btn.active {
+    @apply bg-[var(--nghv-green)] text-white shadow-lg shadow-green-200 scale-105;
+}
+
+/* Hiệu ứng lắc nhẹ icon khi hover cho sinh động */
+.side-icon-btn:hover i {
+    transform: translateY(-2px);
+}
