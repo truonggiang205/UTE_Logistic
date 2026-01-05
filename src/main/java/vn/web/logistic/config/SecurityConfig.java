@@ -102,7 +102,7 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+        public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
                 // Áp dụng cho tất cả các URL còn lại
                 .securityMatcher("/**")
