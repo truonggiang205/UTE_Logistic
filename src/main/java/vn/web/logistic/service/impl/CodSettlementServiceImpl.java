@@ -64,6 +64,87 @@ public class CodSettlementServiceImpl implements CodSettlementService {
     }
 
     @Override
+    public List<ShipperCodSummaryDTO> getShippersWithPendingHoldCod(Long hubId) {
+        log.info("Lấy danh sách shipper đang giữ tiền COD (pending) trong Hub: {}", hubId);
+
+        // Lấy danh sách shipper có COD pending trong Hub (shipper đang giữ tiền, chưa
+        // nộp)
+        List<Shipper> shippers = codSettlementRepository.findShippersWithPendingHoldCodByHubId(hubId);
+
+        List<ShipperCodSummaryDTO> result = new ArrayList<>();
+
+        for (Shipper shipper : shippers) {
+            BigDecimal totalAmount = codSettlementRepository.sumPendingByShipperId(shipper.getShipperId());
+            Long totalCount = codSettlementRepository.countPendingByShipperId(shipper.getShipperId());
+
+            ShipperCodSummaryDTO dto = ShipperCodSummaryDTO.builder()
+                    .shipperId(shipper.getShipperId())
+                    .shipperName(shipper.getUser() != null ? shipper.getUser().getFullName() : "N/A")
+                    .shipperPhone(shipper.getUser() != null ? shipper.getUser().getPhone() : "N/A")
+                    .shipperEmail(shipper.getUser() != null ? shipper.getUser().getEmail() : "N/A")
+                    .totalCollectedAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO)
+                    .totalCollectedCount(totalCount != null ? totalCount : 0L)
+                    .build();
+
+            result.add(dto);
+        }
+
+        // Sắp xếp theo tổng tiền giảm dần
+        result.sort((a, b) -> b.getTotalCollectedAmount().compareTo(a.getTotalCollectedAmount()));
+
+        log.info("Tìm thấy {} shipper đang giữ tiền COD", result.size());
+        return result;
+    }
+
+    @Override
+    public ShipperCodSummaryDTO getShipperPendingCodDetail(Long shipperId) {
+        log.info("Lấy chi tiết COD pending của shipper: {}", shipperId);
+
+        // Lấy danh sách COD pending của shipper (shipper đang giữ tiền, chưa nộp)
+        List<CodTransaction> transactions = codSettlementRepository.findPendingByShipperId(shipperId);
+
+        if (transactions.isEmpty()) {
+            return ShipperCodSummaryDTO.builder()
+                    .shipperId(shipperId)
+                    .totalCollectedAmount(BigDecimal.ZERO)
+                    .totalCollectedCount(0L)
+                    .transactions(new ArrayList<>())
+                    .build();
+        }
+
+        // Lấy thông tin shipper từ transaction đầu tiên
+        Shipper shipper = transactions.get(0).getShipper();
+
+        // Map các transaction
+        List<ShipperCodSummaryDTO.CodTransactionDTO> transactionDTOs = transactions.stream()
+                .map(tx -> ShipperCodSummaryDTO.CodTransactionDTO.builder()
+                        .codTxId(tx.getCodTxId())
+                        .requestId(tx.getRequest().getRequestId())
+                        .trackingCode("VN" + String.format("%08d", tx.getRequest().getRequestId()))
+                        .customerName(getCustomerName(tx))
+                        .amount(tx.getAmount())
+                        .collectedAt(tx.getCollectedAt())
+                        .paymentMethod(tx.getPaymentMethod())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Tính tổng
+        BigDecimal totalAmount = transactions.stream()
+                .map(CodTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return ShipperCodSummaryDTO.builder()
+                .shipperId(shipperId)
+                .shipperName(shipper.getUser() != null ? shipper.getUser().getFullName() : "N/A")
+                .shipperPhone(shipper.getUser() != null ? shipper.getUser().getPhone() : "N/A")
+                .shipperEmail(shipper.getUser() != null ? shipper.getUser().getEmail() : "N/A")
+                .totalCollectedAmount(totalAmount)
+                .totalCollectedCount((long) transactions.size())
+                .transactions(transactionDTOs)
+                .build();
+    }
+
+    @Override
     public ShipperCodSummaryDTO getShipperCodDetail(Long shipperId) {
         log.info("Lấy chi tiết COD của shipper: {}", shipperId);
 

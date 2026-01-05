@@ -12,11 +12,41 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   <div>
     <button
       class="btn btn-outline-primary btn-sm"
-      onclick="loadPendingShippers()">
+      onclick="refreshCurrentTab()">
       <i class="fas fa-sync-alt me-1"></i> Làm mới
     </button>
   </div>
 </div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-tabs mb-4" id="codTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link"
+      id="pending-hold-tab"
+      data-bs-toggle="tab"
+      data-bs-target="#pendingHoldTab"
+      type="button"
+      role="tab"
+      onclick="switchTab('pending-hold')">
+      <i class="fas fa-wallet me-1"></i>Shipper đang giữ tiền
+      <span class="badge bg-danger ms-1" id="pendingHoldBadge">0</span>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link active"
+      id="collected-tab"
+      data-bs-toggle="tab"
+      data-bs-target="#collectedTab"
+      type="button"
+      role="tab"
+      onclick="switchTab('collected')">
+      <i class="fas fa-hand-holding-usd me-1"></i>Shipper đã nộp, chờ duyệt
+      <span class="badge bg-warning ms-1" id="collectedBadge">0</span>
+    </button>
+  </li>
+</ul>
 
 <!-- Stats Cards - Hàng 1 -->
 <div class="row mb-2">
@@ -432,14 +462,89 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   var currentShipperId = null;
   var currentShipperData = null;
   var selectedCodTxIds = [];
+  var currentTab = "collected"; // 'collected' hoặc 'pending-hold'
 
   // Load khi trang được mở
   document.addEventListener("DOMContentLoaded", function () {
-    loadPendingShippers();
+    loadCollectedShippers(); // Mặc định load tab "đã nộp, chờ duyệt"
+    loadPendingHoldCount(); // Load số lượng shipper đang giữ tiền
   });
 
-  // Load danh sách shipper có COD chờ quyết toán
-  function loadPendingShippers() {
+  // Chuyển tab
+  function switchTab(tab) {
+    currentTab = tab;
+    resetDetail();
+    if (tab === "pending-hold") {
+      loadPendingHoldShippers();
+    } else {
+      loadCollectedShippers();
+    }
+  }
+
+  // Làm mới tab hiện tại
+  function refreshCurrentTab() {
+    if (currentTab === "pending-hold") {
+      loadPendingHoldShippers();
+    } else {
+      loadCollectedShippers();
+    }
+  }
+
+  // Load số lượng shipper đang giữ tiền (cho badge)
+  function loadPendingHoldCount() {
+    fetch("/api/manager/cod/pending-hold")
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        document.getElementById("pendingHoldBadge").textContent =
+          data.count || 0;
+      })
+      .catch(function (err) {
+        console.error("Error loading pending hold count:", err);
+      });
+  }
+
+  // Load danh sách shipper đang giữ tiền (pending - chưa nộp)
+  function loadPendingHoldShippers() {
+    document.getElementById("shipper-list-loading").classList.remove("d-none");
+    document.getElementById("shipper-list-empty").classList.add("d-none");
+    document.getElementById("shipper-list").innerHTML = "";
+    resetDetail();
+
+    fetch("/api/manager/cod/pending-hold")
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        document.getElementById("shipper-list-loading").classList.add("d-none");
+
+        if (data.data && data.data.length > 0) {
+          renderShipperList(data.data, "pending-hold");
+          document.getElementById("pendingHoldBadge").textContent =
+            data.count || data.data.length;
+        } else {
+          document
+            .getElementById("shipper-list-empty")
+            .classList.remove("d-none");
+          document
+            .getElementById("shipper-list-empty")
+            .querySelector("p").textContent =
+            "Không có shipper nào đang giữ tiền COD";
+        }
+      })
+      .catch(function (err) {
+        console.error("Error loading pending hold shippers:", err);
+        document.getElementById("shipper-list-loading").classList.add("d-none");
+        document.getElementById("shipper-list").innerHTML =
+          '<div class="alert alert-danger">Lỗi tải dữ liệu: ' +
+          err.message +
+          "</div>";
+      });
+  }
+
+  // Load danh sách shipper đã nộp, chờ duyệt (collected)
+  function loadCollectedShippers() {
     document.getElementById("shipper-list-loading").classList.remove("d-none");
     document.getElementById("shipper-list-empty").classList.add("d-none");
     document.getElementById("shipper-list").innerHTML = "";
@@ -452,19 +557,24 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
       .then(function (data) {
         document.getElementById("shipper-list-loading").classList.add("d-none");
 
-        // API trả về data mà không có field success, chỉ cần kiểm tra data.data
         if (data.data && data.data.length > 0) {
-          renderShipperList(data.data);
+          renderShipperList(data.data, "collected");
           updateStats(
             data.data,
             data.settledToday,
             data.pendingTotal,
             data.totalSettled
           );
+          document.getElementById("collectedBadge").textContent =
+            data.count || data.data.length;
         } else {
           document
             .getElementById("shipper-list-empty")
             .classList.remove("d-none");
+          document
+            .getElementById("shipper-list-empty")
+            .querySelector("p").textContent =
+            "Không có shipper nào cần quyết toán COD";
           updateStats(
             [],
             data.settledToday,
@@ -474,7 +584,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
         }
       })
       .catch(function (err) {
-        console.error("Error loading shippers:", err);
+        console.error("Error loading collected shippers:", err);
         document.getElementById("shipper-list-loading").classList.add("d-none");
         document.getElementById("shipper-list").innerHTML =
           '<div class="alert alert-danger">Lỗi tải dữ liệu: ' +
@@ -483,10 +593,17 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
       });
   }
 
+  // Alias cũ để tương thích
+  function loadPendingShippers() {
+    loadCollectedShippers();
+  }
+
   // Render danh sách shipper
-  function renderShipperList(shippers) {
+  function renderShipperList(shippers, tabType) {
     var container = document.getElementById("shipper-list");
     var html = "";
+    var badgeClass = tabType === "pending-hold" ? "bg-danger" : "bg-warning";
+    var statusText = tabType === "pending-hold" ? "đang giữ" : "chờ duyệt";
 
     for (var i = 0; i < shippers.length; i++) {
       var s = shippers[i];
@@ -494,9 +611,15 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
         '<a href="javascript:void(0)" class="list-group-item list-group-item-action shipper-item" ' +
         'data-shipper-id="' +
         s.shipperId +
-        '" onclick="selectShipper(' +
+        '" ' +
+        'data-tab-type="' +
+        tabType +
+        '" ' +
+        'onclick="selectShipper(' +
         s.shipperId +
-        ', this)">' +
+        ", this, '" +
+        tabType +
+        "')\">" +
         '<div class="d-flex justify-content-between align-items-center">' +
         "<div>" +
         '<h6 class="mb-1">' +
@@ -510,9 +633,13 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
         '<div class="h6 mb-0 text-success">' +
         formatCurrency(s.totalCollectedAmount) +
         "</div>" +
-        '<span class="badge bg-primary">' +
+        '<span class="badge ' +
+        badgeClass +
+        '">' +
         s.totalCollectedCount +
-        " đơn</span>" +
+        " đơn - " +
+        statusText +
+        "</span>" +
         "</div>" +
         "</div>" +
         "</a>";
@@ -547,7 +674,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   }
 
   // Chọn shipper để xem chi tiết
-  function selectShipper(shipperId, element) {
+  function selectShipper(shipperId, element, tabType) {
     // Update UI
     var items = document.querySelectorAll(".shipper-item");
     for (var i = 0; i < items.length; i++) {
@@ -556,16 +683,32 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
     element.classList.add("active");
 
     currentShipperId = shipperId;
-    loadShipperDetail(shipperId);
+    loadShipperDetail(shipperId, tabType || currentTab);
   }
 
   // Load chi tiết COD của shipper
-  function loadShipperDetail(shipperId) {
+  function loadShipperDetail(shipperId, tabType) {
     document.getElementById("detail-placeholder").classList.add("d-none");
     document.getElementById("detail-loading").classList.remove("d-none");
     document.getElementById("detail-content").classList.add("d-none");
 
-    fetch("/api/manager/cod/shipper/" + shipperId)
+    // Chọn API endpoint dựa vào tab type
+    var apiUrl;
+    if (tabType === "pending-hold") {
+      apiUrl = "/api/manager/cod/shipper/" + shipperId + "/pending";
+      // Ẩn nút quyết toán cho tab pending-hold (shipper chưa nộp tiền)
+      document.getElementById("btn-settle-all").classList.add("d-none");
+      document.getElementById("btn-settle-selected").classList.add("d-none");
+      document.getElementById("detail-title").innerHTML =
+        '<i class="fas fa-wallet me-2 text-danger"></i>COD Shipper đang giữ (chưa nộp)';
+    } else {
+      apiUrl = "/api/manager/cod/shipper/" + shipperId;
+      // Hiển thị nút quyết toán cho tab collected
+      document.getElementById("detail-title").innerHTML =
+        '<i class="fas fa-list-alt me-2"></i>Chi Tiết COD (chờ duyệt)';
+    }
+
+    fetch(apiUrl)
       .then(function (res) {
         return res.json();
       })
@@ -589,10 +732,14 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
   // Render chi tiết COD
   function renderShipperDetail(data) {
     document.getElementById("detail-content").classList.remove("d-none");
-    document.getElementById("btn-settle-all").classList.remove("d-none");
 
-    document.getElementById("detail-title").textContent =
-      "Chi Tiết COD - " + (data.shipperName || "N/A");
+    // Chỉ hiển thị nút quyết toán khi tab = collected (đã nộp, chờ duyệt)
+    if (currentTab === "collected") {
+      document.getElementById("btn-settle-all").classList.remove("d-none");
+    } else {
+      document.getElementById("btn-settle-all").classList.add("d-none");
+    }
+
     document.getElementById("detail-shipper-name").textContent =
       data.shipperName || "N/A";
     document.getElementById("detail-shipper-phone").textContent =

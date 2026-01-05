@@ -78,7 +78,57 @@ public class CodSettlementController {
         return ResponseEntity.ok(response);
     }
 
-    // Lấy chi tiết COD của một shipper
+    // Lấy danh sách shipper đang giữ tiền COD (pending - chưa nộp về Hub)
+    @GetMapping("/pending-hold")
+    public ResponseEntity<?> getShippersWithPendingHoldCod() {
+        // Lấy user từ SecurityContext
+        User currentUser = securityContextService.getCurrentUser();
+        if (currentUser == null) {
+            log.warn("COD Settlement: Chưa đăng nhập");
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
+        }
+
+        // Lấy hub_id
+        Long hubId = securityContextService.getCurrentHubId();
+
+        if (hubId == null) {
+            log.warn("COD Settlement: Không tìm thấy Hub cho user {}", currentUser.getUsername());
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.message("Không tìm thấy thông tin Hub. Bạn cần được gán vào một Hub."));
+        }
+
+        List<ShipperCodSummaryDTO> shippers = codSettlementService.getShippersWithPendingHoldCod(hubId);
+
+        // Lấy thống kê từ Service
+        Map<String, BigDecimal> stats = codSettlementService.getHubStatistics(hubId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", shippers);
+        response.put("count", shippers.size());
+        response.put("pendingTotal", stats.get("pendingTotal"));
+
+        return ResponseEntity.ok(response);
+    }
+
+    // Lấy chi tiết COD pending của một shipper (đang giữ tiền, chưa nộp)
+    @GetMapping("/shipper/{shipperId}/pending")
+    public ResponseEntity<?> getShipperPendingCodDetail(@PathVariable Long shipperId) {
+        // Kiểm tra đăng nhập
+        User currentUser = securityContextService.getCurrentUser();
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(ApiResponse.message("Vui lòng đăng nhập"));
+        }
+
+        ShipperCodSummaryDTO detail = codSettlementService.getShipperPendingCodDetail(shipperId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", detail);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // Lấy chi tiết COD của một shipper (đã nộp, chờ duyệt)
     @GetMapping("/shipper/{shipperId}")
     public ResponseEntity<?> getShipperCodDetail(@PathVariable Long shipperId) {
         // Kiểm tra đăng nhập
