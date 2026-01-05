@@ -42,7 +42,7 @@ public class TaskAssignmentController {
             return ResponseEntity.badRequest().body(ApiResponse.message("Không tìm thấy Hub"));
         }
 
-        Page<OrderForAssignDTO> ordersPage = taskAssignmentService.getPendingPickupOrdersPaged(hub.getDistrict(), page,
+        Page<OrderForAssignDTO> ordersPage = taskAssignmentService.getPendingPickupOrdersPaged(hub.getHubId(), page,
                 size);
 
         Map<String, Object> response = new HashMap<>();

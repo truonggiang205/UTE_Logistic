@@ -31,8 +31,8 @@ public class TaskAssignmentServiceImpl implements TaskAssignmentService {
         private final ShipperTaskRepository shipperTaskRepository;
 
         @Override
-        public List<OrderForAssignDTO> getPendingPickupOrders(String district) {
-                List<ServiceRequest> requests = serviceRequestRepository.findPendingPickupByDistrict(district);
+        public List<OrderForAssignDTO> getPendingPickupOrders(Long hubId) {
+                List<ServiceRequest> requests = serviceRequestRepository.findPendingPickupByHubId(hubId);
                 return requests.stream()
                                 .map(r -> mapToDTO(r, "pickup"))
                                 .collect(Collectors.toList());
@@ -47,9 +47,9 @@ public class TaskAssignmentServiceImpl implements TaskAssignmentService {
         }
 
         @Override
-        public Page<OrderForAssignDTO> getPendingPickupOrdersPaged(String district, int page, int size) {
+        public Page<OrderForAssignDTO> getPendingPickupOrdersPaged(Long hubId, int page, int size) {
                 Pageable pageable = PageRequest.of(page, size);
-                Page<ServiceRequest> requestPage = serviceRequestRepository.findPendingPickupByDistrictPaged(district,
+                Page<ServiceRequest> requestPage = serviceRequestRepository.findPendingPickupByHubIdPaged(hubId,
                                 pageable);
                 return requestPage.map(r -> mapToDTO(r, "pickup"));
         }
@@ -63,8 +63,8 @@ public class TaskAssignmentServiceImpl implements TaskAssignmentService {
         }
 
         @Override
-        public long countPendingPickupOrders(String district) {
-                return serviceRequestRepository.countPendingPickupByDistrict(district);
+        public long countPendingPickupOrders(Long hubId) {
+                return serviceRequestRepository.countPendingPickupByHubId(hubId);
         }
 
         @Override
@@ -159,8 +159,8 @@ public class TaskAssignmentServiceImpl implements TaskAssignmentService {
 
                 // 8. Cập nhật status shipper nếu cần
                 // if (shipper.getStatus() == Shipper.ShipperStatus.active) {
-                //         shipper.setStatus(Shipper.ShipperStatus.busy);
-                //         shipperRepository.save(shipper);
+                // shipper.setStatus(Shipper.ShipperStatus.busy);
+                // shipperRepository.save(shipper);
                 // }
 
                 return UpdateStatusResult.builder()

@@ -1,5 +1,8 @@
 package vn.web.logistic.controller.manager;
 
+import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,9 +15,6 @@ import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.TrackingCode;
 import vn.web.logistic.entity.Trip;
 import vn.web.logistic.service.ManagerPageService;
-
-import java.time.format.DateTimeFormatter;
-import java.math.BigDecimal;
 
 /**
  * Controller để render các trang JSP cho Manager
@@ -206,26 +206,6 @@ public class ManagerPageController {
         return "manager/lastmile/return-shop";
     }
 
-    // ===================== LASTMILE (PAGES) =====================
-
-    @GetMapping("/lastmile/assign-task")
-    public String viewLastMileAssignTask() {
-        log.info("Truy cập trang Phân công Shipper");
-        return "manager/lastmile/assign-task";
-    }
-
-    @GetMapping("/lastmile/confirm-delivery")
-    public String viewLastMileConfirmDelivery() {
-        log.info("Truy cập trang Cập nhật kết quả giao");
-        return "manager/lastmile/confirm-delivery";
-    }
-
-    @GetMapping("/lastmile/counter-pickup")
-    public String viewLastMileCounterPickup() {
-        log.info("Truy cập trang Khách nhận tại quầy");
-        return "manager/lastmile/counter-pickup";
-    }
-
     // ===================== COD SETTLEMENT =====================
     /**
      * Trang Quyết Toán COD (đường dẫn /finance/cod-settlement)
@@ -300,21 +280,13 @@ public class ManagerPageController {
         return "manager/shipper-management";
     }
 
+    // ===================== THÔNG BÁO =====================
     /**
-     * Trang Quản Lý Tài Xế
+     * Trang Thông Báo
      */
-    @GetMapping("/drivers")
-    public String viewDriverManagement(Model model) {
-        log.info("Truy cập trang Quản Lý Tài Xế");
-        return "manager/driver-management";
-    }
-
-    /**
-     * Trang Quản Lý Phương Tiện
-     */
-    @GetMapping("/vehicles")
-    public String viewVehicleManagement(Model model) {
-        log.info("Truy cập trang Quản Lý Phương Tiện");
-        return "manager/vehicle-management";
+    @GetMapping("/notifications")
+    public String viewNotifications() {
+        log.info("Truy cập trang Thông Báo");
+        return "manager/notifications";
     }
 }

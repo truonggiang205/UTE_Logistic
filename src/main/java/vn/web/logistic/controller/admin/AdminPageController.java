@@ -67,6 +67,11 @@ public class AdminPageController {
         return "admin/notifications";
     }
 
+    @GetMapping("/customer-management")
+    public String viewCustomerManagement() {
+        return "admin/customer-management";
+    }
+
     // ==================== Mạng lưới bưu cục ====================
 
     @GetMapping("/hub-management")

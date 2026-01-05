@@ -1,13 +1,16 @@
 package vn.web.logistic.repository;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import vn.web.logistic.entity.Route;
 
-import java.util.List;
-import java.util.Optional;
+import vn.web.logistic.entity.Route;
 
 @Repository
 public interface RouteRepository extends JpaRepository<Route, Long> {
@@ -35,4 +38,26 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
     // Fetch eager toàn bộ tuyến + 2 hub để phục vụ trang admin tuyến vận chuyển
     @Query("SELECT r FROM Route r LEFT JOIN FETCH r.fromHub LEFT JOIN FETCH r.toHub")
     List<Route> findAllWithHubs();
+
+    // =============== CRUD Methods ===============
+
+    // Kiểm tra trùng lặp tuyến (cùng fromHub và toHub)
+    @Query("SELECT r FROM Route r WHERE r.fromHub.hubId = :fromHubId AND r.toHub.hubId = :toHubId")
+    Optional<Route> findByFromHubIdAndToHubId(@Param("fromHubId") Long fromHubId, @Param("toHubId") Long toHubId);
+
+    // Tìm kiếm với filter và phân trang
+    @Query("SELECT r FROM Route r LEFT JOIN FETCH r.fromHub LEFT JOIN FETCH r.toHub WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR " +
+            " LOWER(r.fromHub.hubName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            " LOWER(r.toHub.hubName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            " LOWER(r.fromHub.province) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            " LOWER(r.toHub.province) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            " LOWER(r.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Route> findWithFilters(@Param("keyword") String keyword, Pageable pageable);
+
+    // Đếm tuyến theo Hub nguồn
+    long countByFromHub_HubId(Long hubId);
+
+    // Đếm tuyến theo Hub đích
+    long countByToHub_HubId(Long hubId);
 }
