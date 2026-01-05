@@ -54,7 +54,8 @@ Dự án được xây dựng theo mô hình **MVC** với **Kiến trúc 3 tầ
 
 ## 🗂 Thiết kế Hệ thống (System Design)
 * **Mô hình dữ liệu:**
-  <img width="2782" height="2471" alt="Untitled" src="https://github.com/user-attachments/assets/39449121-be00-459e-a7af-a6bd98d8d708" />
+  <img width="2782" height="2409" alt="Untitled" src="https://github.com/user-attachments/assets/c6e12b46-f365-4304-a7d4-706b1cb0f392" />
+
 
 * **Kiến trúc:** Mô hình MVC kết hợp RESTful API cho giao tiếp mobile/client.
 
