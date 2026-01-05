@@ -154,17 +154,17 @@ public class ShipperManagementController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        ShipperInfoDTO newShipper = shipperManagementService.createShipper(request, hubId);
+        try {
+            ShipperInfoDTO newShipper = shipperManagementService.createShipper(request, hubId);
 
-        if (newShipper == null) {
-            return ResponseEntity.badRequest().body(ApiResponse.message("Không thể tạo shipper. Vui lòng thử lại."));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tạo shipper thành công! Thông tin đăng nhập: " + request.getUsername());
+            response.put("data", newShipper);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.message(e.getMessage()));
         }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Tạo shipper thành công! Thông tin đăng nhập: " + request.getUsername());
-        response.put("data", newShipper);
-
-        return ResponseEntity.ok(response);
     }
 }

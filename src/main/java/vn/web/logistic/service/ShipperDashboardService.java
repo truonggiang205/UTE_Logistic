@@ -54,6 +54,8 @@ public interface ShipperDashboardService {
 
     List<CodHistoryDTO> getCodHistory(String shipperEmail);
 
+    Page<CodHistoryDTO> getCodHistoryPaged(String shipperEmail, Pageable pageable);
+
     // EARNINGS MANAGEMENT
 
     ShipperEarningsDTO getEarningsData(String shipperEmail);

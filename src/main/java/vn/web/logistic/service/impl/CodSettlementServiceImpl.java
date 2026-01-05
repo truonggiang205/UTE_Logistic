@@ -17,8 +17,10 @@ import vn.web.logistic.dto.request.CodSettlementRequest;
 import vn.web.logistic.dto.response.manager.CodSettlementResultDTO;
 import vn.web.logistic.dto.response.manager.ShipperCodSummaryDTO;
 import vn.web.logistic.entity.CodTransaction;
+import vn.web.logistic.entity.ServiceRequest;
 import vn.web.logistic.entity.Shipper;
 import vn.web.logistic.repository.CodSettlementRepository;
+import vn.web.logistic.repository.ServiceRequestRepository;
 import vn.web.logistic.service.CodSettlementService;
 
 @Service
@@ -27,6 +29,7 @@ import vn.web.logistic.service.CodSettlementService;
 public class CodSettlementServiceImpl implements CodSettlementService {
 
     private final CodSettlementRepository codSettlementRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
 
     @Override
     public List<ShipperCodSummaryDTO> getShippersWithPendingCod(Long hubId) {
@@ -58,6 +61,87 @@ public class CodSettlementServiceImpl implements CodSettlementService {
 
         log.info("Tìm thấy {} shipper có COD chưa quyết toán", result.size());
         return result;
+    }
+
+    @Override
+    public List<ShipperCodSummaryDTO> getShippersWithPendingHoldCod(Long hubId) {
+        log.info("Lấy danh sách shipper đang giữ tiền COD (pending) trong Hub: {}", hubId);
+
+        // Lấy danh sách shipper có COD pending trong Hub (shipper đang giữ tiền, chưa
+        // nộp)
+        List<Shipper> shippers = codSettlementRepository.findShippersWithPendingHoldCodByHubId(hubId);
+
+        List<ShipperCodSummaryDTO> result = new ArrayList<>();
+
+        for (Shipper shipper : shippers) {
+            BigDecimal totalAmount = codSettlementRepository.sumPendingByShipperId(shipper.getShipperId());
+            Long totalCount = codSettlementRepository.countPendingByShipperId(shipper.getShipperId());
+
+            ShipperCodSummaryDTO dto = ShipperCodSummaryDTO.builder()
+                    .shipperId(shipper.getShipperId())
+                    .shipperName(shipper.getUser() != null ? shipper.getUser().getFullName() : "N/A")
+                    .shipperPhone(shipper.getUser() != null ? shipper.getUser().getPhone() : "N/A")
+                    .shipperEmail(shipper.getUser() != null ? shipper.getUser().getEmail() : "N/A")
+                    .totalCollectedAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO)
+                    .totalCollectedCount(totalCount != null ? totalCount : 0L)
+                    .build();
+
+            result.add(dto);
+        }
+
+        // Sắp xếp theo tổng tiền giảm dần
+        result.sort((a, b) -> b.getTotalCollectedAmount().compareTo(a.getTotalCollectedAmount()));
+
+        log.info("Tìm thấy {} shipper đang giữ tiền COD", result.size());
+        return result;
+    }
+
+    @Override
+    public ShipperCodSummaryDTO getShipperPendingCodDetail(Long shipperId) {
+        log.info("Lấy chi tiết COD pending của shipper: {}", shipperId);
+
+        // Lấy danh sách COD pending của shipper (shipper đang giữ tiền, chưa nộp)
+        List<CodTransaction> transactions = codSettlementRepository.findPendingByShipperId(shipperId);
+
+        if (transactions.isEmpty()) {
+            return ShipperCodSummaryDTO.builder()
+                    .shipperId(shipperId)
+                    .totalCollectedAmount(BigDecimal.ZERO)
+                    .totalCollectedCount(0L)
+                    .transactions(new ArrayList<>())
+                    .build();
+        }
+
+        // Lấy thông tin shipper từ transaction đầu tiên
+        Shipper shipper = transactions.get(0).getShipper();
+
+        // Map các transaction
+        List<ShipperCodSummaryDTO.CodTransactionDTO> transactionDTOs = transactions.stream()
+                .map(tx -> ShipperCodSummaryDTO.CodTransactionDTO.builder()
+                        .codTxId(tx.getCodTxId())
+                        .requestId(tx.getRequest().getRequestId())
+                        .trackingCode("VN" + String.format("%08d", tx.getRequest().getRequestId()))
+                        .customerName(getCustomerName(tx))
+                        .amount(tx.getAmount())
+                        .collectedAt(tx.getCollectedAt())
+                        .paymentMethod(tx.getPaymentMethod())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Tính tổng
+        BigDecimal totalAmount = transactions.stream()
+                .map(CodTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return ShipperCodSummaryDTO.builder()
+                .shipperId(shipperId)
+                .shipperName(shipper.getUser() != null ? shipper.getUser().getFullName() : "N/A")
+                .shipperPhone(shipper.getUser() != null ? shipper.getUser().getPhone() : "N/A")
+                .shipperEmail(shipper.getUser() != null ? shipper.getUser().getEmail() : "N/A")
+                .totalCollectedAmount(totalAmount)
+                .totalCollectedCount((long) transactions.size())
+                .transactions(transactionDTOs)
+                .build();
     }
 
     @Override
@@ -128,10 +212,11 @@ public class CodSettlementServiceImpl implements CodSettlementService {
             if (request.getCodTxIds() != null && !request.getCodTxIds().isEmpty()) {
                 // Quyết toán các transaction cụ thể
                 transactions = codSettlementRepository.findAllById(request.getCodTxIds());
-                // Validate: chỉ lấy những transaction thuộc shipper và có status = pending
+                // Validate: chỉ lấy những transaction thuộc shipper và có status = collected
+                // (đã nộp, chờ duyệt)
                 transactions = transactions.stream()
                         .filter(tx -> tx.getShipper().getShipperId().equals(request.getShipperId()))
-                    .filter(tx -> tx.getStatus() == CodTransaction.CodStatus.pending)
+                        .filter(tx -> tx.getStatus() == CodTransaction.CodStatus.collected)
                         .collect(Collectors.toList());
             } else {
                 // Quyết toán tất cả COD pending của shipper
@@ -171,9 +256,17 @@ public class CodSettlementServiceImpl implements CodSettlementService {
                 if (shipperName == null && tx.getShipper().getUser() != null) {
                     shipperName = tx.getShipper().getUser().getFullName();
                 }
+
+                // Cập nhật paymentStatus của ServiceRequest thành paid
+                ServiceRequest serviceRequest = tx.getRequest();
+                if (serviceRequest != null) {
+                    serviceRequest.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
+                    serviceRequestRepository.save(serviceRequest);
+                    log.info("Đã cập nhật paymentStatus=paid cho request #{}", serviceRequest.getRequestId());
+                }
             }
 
-            // Lưu vào database
+            // Lưu COD Transactions vào database
             codSettlementRepository.saveAll(transactions);
 
             log.info("Quyết toán thành công {} đơn COD với tổng tiền {} cho shipper {}",

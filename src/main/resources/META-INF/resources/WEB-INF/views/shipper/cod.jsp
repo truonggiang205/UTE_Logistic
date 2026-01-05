@@ -146,10 +146,13 @@
 
     <!-- COD History -->
     <div class="card shadow mb-4">
-        <div class="card-header py-3 bg-success text-white">
+        <div class="card-header py-3 bg-success text-white d-flex justify-content-between align-items-center">
             <h6 class="m-0 font-weight-bold">
                 <i class="fas fa-history"></i> Lịch sử nộp COD
             </h6>
+            <span class="badge badge-light">
+                Tổng: ${historyTotalElements != null ? historyTotalElements : 0} giao dịch
+            </span>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -202,6 +205,41 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Phân trang lịch sử -->
+            <c:if test="${historyTotalPages > 1}">
+                <nav aria-label="Phân trang lịch sử COD">
+                    <ul class="pagination justify-content-center mb-0">
+                        <!-- Previous -->
+                        <li class="page-item ${historyPage == 0 ? 'disabled' : ''}">
+                            <a class="page-link" href="${pageContext.request.contextPath}/shipper/cod?page=${historyPage - 1}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Page numbers -->
+                        <c:forEach begin="0" end="${historyTotalPages - 1}" var="i">
+                            <c:if test="${i >= historyPage - 2 && i <= historyPage + 2}">
+                                <li class="page-item ${i == historyPage ? 'active' : ''}">
+                                    <a class="page-link" href="${pageContext.request.contextPath}/shipper/cod?page=${i}">
+                                        ${i + 1}
+                                    </a>
+                                </li>
+                            </c:if>
+                        </c:forEach>
+                        
+                        <!-- Next -->
+                        <li class="page-item ${historyPage >= historyTotalPages - 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="${pageContext.request.contextPath}/shipper/cod?page=${historyPage + 1}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <p class="text-center text-muted small mt-2 mb-0">
+                    Trang ${historyPage + 1} / ${historyTotalPages}
+                </p>
+            </c:if>
         </div>
     </div>
 </div>

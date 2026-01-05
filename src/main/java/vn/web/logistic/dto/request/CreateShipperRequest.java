@@ -20,7 +20,7 @@ public class CreateShipperRequest {
     private String username;
 
     @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, max = 100, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    @Size(min = 8, max = 100, message = "Mật khẩu phải có ít nhất 8 ký tự")
     private String password;
 
     @NotBlank(message = "Email không được để trống")

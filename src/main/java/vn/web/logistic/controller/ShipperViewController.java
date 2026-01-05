@@ -2,6 +2,7 @@ package vn.web.logistic.controller;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -257,8 +258,8 @@ public class ShipperViewController {
 
     @GetMapping("/history")
     public String history(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate toDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(required = false, defaultValue = "") String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size,
@@ -301,15 +302,19 @@ public class ShipperViewController {
     }
 
     @GetMapping("/cod")
-    public String cod(Model model, Principal principal) {
+    public String cod(
+            @RequestParam(defaultValue = "0") int page,
+            Model model, Principal principal) {
         model.addAttribute("currentPage", "cod");
+
+        final int HISTORY_PAGE_SIZE = 6; // 6 items/trang cho lịch sử
 
         if (principal != null) {
             log.info("=== DEBUG COD PAGE cho user: {} ===", principal.getName());
 
             // Lấy danh sách COD chưa nộp
             var unpaidOrders = shipperDashboardService.getUnpaidCodOrders(principal.getName());
-            log.info("Số lượng COD chưa nộp (collected): {}", unpaidOrders.size());
+            log.info("Số lượng COD chưa nộp (pending): {}", unpaidOrders.size());
             model.addAttribute("unpaidOrders", unpaidOrders);
             model.addAttribute("unpaidOrdersCount", unpaidOrders.size());
 
@@ -317,9 +322,13 @@ public class ShipperViewController {
             var totalUnpaidCod = shipperDashboardService.getTotalUnpaidCod(principal.getName());
             model.addAttribute("totalUnpaidCod", totalUnpaidCod);
 
-            // Lịch sử nộp COD
-            var codHistory = shipperDashboardService.getCodHistory(principal.getName());
-            model.addAttribute("codHistory", codHistory);
+            // Lịch sử nộp COD với phân trang
+            Pageable pageable = PageRequest.of(page, HISTORY_PAGE_SIZE);
+            var codHistoryPage = shipperDashboardService.getCodHistoryPaged(principal.getName(), pageable);
+            model.addAttribute("codHistory", codHistoryPage.getContent());
+            model.addAttribute("historyPage", page);
+            model.addAttribute("historyTotalPages", codHistoryPage.getTotalPages());
+            model.addAttribute("historyTotalElements", codHistoryPage.getTotalElements());
 
             // Tổng đã nộp hôm nay (tạm thời = 0, có thể tính sau)
             model.addAttribute("todayPaidCod", 0);
@@ -327,6 +336,10 @@ public class ShipperViewController {
             model.addAttribute("totalUnpaidCod", 0);
             model.addAttribute("todayPaidCod", 0);
             model.addAttribute("unpaidOrdersCount", 0);
+            model.addAttribute("codHistory", java.util.List.of());
+            model.addAttribute("historyPage", 0);
+            model.addAttribute("historyTotalPages", 0);
+            model.addAttribute("historyTotalElements", 0);
         }
 
         return "shipper/cod";

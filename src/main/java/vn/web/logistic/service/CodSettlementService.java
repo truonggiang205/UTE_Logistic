@@ -12,6 +12,12 @@ public interface CodSettlementService {
 
     List<ShipperCodSummaryDTO> getShippersWithPendingCod(Long hubId);
 
+    // Danh sách shipper đang giữ tiền COD (pending - chưa nộp về Hub)
+    List<ShipperCodSummaryDTO> getShippersWithPendingHoldCod(Long hubId);
+
+    // Chi tiết COD pending của một shipper
+    ShipperCodSummaryDTO getShipperPendingCodDetail(Long shipperId);
+
     // Chi tiết COD của một shipper
     ShipperCodSummaryDTO getShipperCodDetail(Long shipperId);
 
