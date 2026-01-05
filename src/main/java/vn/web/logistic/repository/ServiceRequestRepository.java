@@ -21,6 +21,21 @@ import vn.web.logistic.repository.projection.TopPerformerProjection;
 @Repository
 public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, Long> {
 
+        /* ========================= CUSTOMER PORTAL =========================== */
+
+        @Query("SELECT s FROM ServiceRequest s " +
+                        "LEFT JOIN FETCH s.pickupAddress " +
+                        "LEFT JOIN FETCH s.deliveryAddress " +
+                        "LEFT JOIN FETCH s.serviceType " +
+                        "LEFT JOIN FETCH s.currentHub " +
+                        "WHERE s.customer.customerId = :customerId " +
+                        "ORDER BY s.createdAt DESC")
+        List<ServiceRequest> findByCustomerIdWithDetails(@Param("customerId") Long customerId);
+
+        long countByCustomerCustomerId(Long customerId);
+
+        long countByCustomerCustomerIdAndStatus(Long customerId, RequestStatus status);
+
     /* =========================DASHBOARD=========================== */
     // Thẻ KPI
     // 1. Đếm theo Enum (Đếm số lượng đơn mới, hoàn thành)(2 thẻ KPI)

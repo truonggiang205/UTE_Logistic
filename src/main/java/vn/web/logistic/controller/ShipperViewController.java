@@ -404,6 +404,12 @@ public class ShipperViewController {
         return "shipper/profile";
     }
 
+    @GetMapping("/notifications")
+    public String notifications(Model model) {
+        model.addAttribute("currentPage", "notifications");
+        return "shipper/notifications";
+    }
+
     // Change password
     @PostMapping("/change-password")
     @ResponseBody
