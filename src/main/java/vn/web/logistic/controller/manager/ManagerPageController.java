@@ -75,6 +75,15 @@ public class ManagerPageController {
         return "manager/inbound/shipper-in";
     }
 
+    /**
+     * Trang Quét nhập kho (Inbound - Scan)
+     */
+    @GetMapping("/inbound/scan-in")
+    public String viewInboundScanIn() {
+        log.info("Truy cập trang Quét nhập kho");
+        return "manager/inbound/scan-in";
+    }
+
     // ===================== OUTBOUND =====================
 
     /**
@@ -166,6 +175,26 @@ public class ManagerPageController {
     public String viewLastMileReturnShop(Model model) {
         log.info("Truy cập trang Xác Nhận Trả Shop");
         return "manager/lastmile/return-shop";
+    }
+
+    // ===================== LASTMILE (PAGES) =====================
+
+    @GetMapping("/lastmile/assign-task")
+    public String viewLastMileAssignTask() {
+        log.info("Truy cập trang Phân công Shipper");
+        return "manager/lastmile/assign-task";
+    }
+
+    @GetMapping("/lastmile/confirm-delivery")
+    public String viewLastMileConfirmDelivery() {
+        log.info("Truy cập trang Cập nhật kết quả giao");
+        return "manager/lastmile/confirm-delivery";
+    }
+
+    @GetMapping("/lastmile/counter-pickup")
+    public String viewLastMileCounterPickup() {
+        log.info("Truy cập trang Khách nhận tại quầy");
+        return "manager/lastmile/counter-pickup";
     }
 
     // ===================== COD SETTLEMENT =====================

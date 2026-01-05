@@ -50,6 +50,23 @@ public class AdminPageController {
         return "admin/reports";
     }
 
+    // ==================== Nhân sự & Quyền ====================
+
+    @GetMapping("/staff-accounts")
+    public String viewStaffAccounts() {
+        return "admin/staff-accounts";
+    }
+
+    @GetMapping("/role-management")
+    public String viewRoleManagement() {
+        return "admin/role-management";
+    }
+
+    @GetMapping("/notifications")
+    public String viewNotifications() {
+        return "admin/notifications";
+    }
+
     // ==================== Mạng lưới bưu cục ====================
 
     @GetMapping("/hub-management")
@@ -88,5 +105,12 @@ public class AdminPageController {
     public String viewContainerManagement() {
         // Trả về file: /WEB-INF/views/admin/container-management.jsp
         return "admin/container-management";
+    }
+
+    // ==================== Cấu hình chung ====================
+
+    @GetMapping("/order-status-config")
+    public String viewOrderStatusConfig() {
+        return "admin/order-status-config";
     }
 }

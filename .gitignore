@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Runtime / local data ###
+run.pid
+uploads/
+*.log
+
+### Local config (do not commit secrets) ###
+src/main/resources/application-dev-local.properties

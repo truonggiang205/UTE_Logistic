@@ -24,12 +24,15 @@ public class SiteMeshConfig {
                 // -------------------------------------------------------------
                 // 1. LOẠI TRỪ (EXCLUDE): Các file không cần giao diện
                 // -------------------------------------------------------------
-                builder.addExcludedPath("/static/*");
-                builder.addExcludedPath("/resources/*");
-                builder.addExcludedPath("/css/*");
-                builder.addExcludedPath("/js/*");
-                builder.addExcludedPath("/images/*");
-                builder.addExcludedPath("/vendor/*");
+                builder.addExcludedPath("/static/**");
+                builder.addExcludedPath("/resources/**");
+                builder.addExcludedPath("/css/**");
+                builder.addExcludedPath("/js/**");
+                builder.addExcludedPath("/images/**");
+                builder.addExcludedPath("/img/**");
+                builder.addExcludedPath("/vendor/**");
+                builder.addExcludedPath("/webjars/**");
+                builder.addExcludedPath("/favicon.ico");
                 builder.addExcludedPath("/api/*"); // API trả về JSON
                 builder.addExcludedPath("/manager/inbound/print-label/*"); // Trang in tem - không dùng layout
                 builder.addExcludedPath("/login");
@@ -63,6 +66,12 @@ public class SiteMeshConfig {
                 // -------------------------------------------------------------
                 builder.addDecoratorPath("/shipper", "shipper-layout.jsp");
                 builder.addDecoratorPath("/shipper/**", "shipper-layout.jsp");
+
+                // -------------------------------------------------------------
+                // 5. KHU VỰC CUSTOMER
+                // -------------------------------------------------------------
+                builder.addDecoratorPath("/customer", "customer-layout.jsp");
+                builder.addDecoratorPath("/customer/**", "customer-layout.jsp");
             }
         });
 

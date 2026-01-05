@@ -60,9 +60,9 @@
             </a>
             <div id="collapseUsers" class="collapse" data-parent="#accordionSidebar">
                 <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" href="##">Tài khoản nhân viên</a>
-                    <a class="collapse-item" href="##">Phân quyền Role</a>
-                    <a class="collapse-item" href="##">Gửi thông báo</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/staff-accounts">Tài khoản nhân viên</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/role-management">Phân quyền Role</a>
+                    <a class="collapse-item" href="${pageContext.request.contextPath}/admin/notifications">Gửi thông báo</a>
                 </div>
             </div>
         </li>

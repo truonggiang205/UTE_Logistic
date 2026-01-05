@@ -352,7 +352,7 @@
                   <input class="form-check-input" type="checkbox" id="remember" name="remember" />
                   <label class="form-check-label" for="remember">Ghi nhớ đăng nhập</label>
                 </div>
-                <a href="#">Quên mật khẩu?</a>
+                <a href="${pageContext.request.contextPath}/forgot-password">Quên mật khẩu?</a>
               </div>
 
               <button type="submit" class="btn-login">

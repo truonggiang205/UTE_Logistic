@@ -8,6 +8,8 @@ import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -19,8 +21,10 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
@@ -33,9 +37,24 @@ public class JwtTokenProvider {
 
     private SecretKey key; // Đối tượng Key chuẩn dùng để ký và xác thực
 
+    private final Environment environment;
+
     @PostConstruct
     public void init() {
-        // Chuyển chuỗi bí mật thành Key thuật toán HMAC-SHA ngay khi ứng dụng chạy
+        boolean isProd = environment.acceptsProfiles(Profiles.of("prod"));
+        boolean hasSecret = jwtSecret != null && !jwtSecret.isBlank();
+
+        if (!hasSecret) {
+            if (isProd) {
+                throw new IllegalStateException("JWT secret is required in prod (set env var JWT_SECRET)");
+            }
+
+            logger.warn("JWT_SECRET is empty. Generating a temporary dev key; tokens will be invalid after restart.");
+            this.key = Jwts.SIG.HS256.key().build();
+            return;
+        }
+
+        // Chuyển chuỗi bí mật thành Key thuật toán HMAC-SHA (>= 256 bits cho HS256)
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
