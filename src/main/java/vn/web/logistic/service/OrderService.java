@@ -8,8 +8,12 @@ public interface OrderService {
     ServiceRequest createNewOrder(ServiceRequest request, Map<String, String> recipientInfo);
     
     // Tính toán toàn bộ phí (Ship, COD, Bảo hiểm) trước khi lưu
-    ServiceRequest calculateAllFees(ServiceRequest request, boolean isHighValue);
+    ServiceRequest calculateAllFees(ServiceRequest request);
     
  // Thêm vào file OrderService.java
     void updatePaymentStatus(String orderId, String status);
+    
+    void createCodTransaction(ServiceRequest request, String paymentMethod);
+    
+    void createVnpayTransaction(ServiceRequest request);
 }

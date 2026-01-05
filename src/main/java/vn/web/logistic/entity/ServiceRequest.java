@@ -54,6 +54,9 @@ public class ServiceRequest {
 
     @Column(columnDefinition = "DECIMAL(10,2)")
     private BigDecimal weight;
+    
+    @Column(name = "quantity")
+    private Integer quantity;
 
     @Column(columnDefinition = "DECIMAL(8,2)")
     private BigDecimal length;

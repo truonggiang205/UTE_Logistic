@@ -13,6 +13,7 @@ import vn.web.logistic.enums.RequestStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,4 +65,6 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
 	        @Param("startDate") LocalDateTime startDate,
 	        @Param("endDate") LocalDateTime endDate
 	    );
+
+	Collection<Object[]> findByCustomerAndPaymentStatus(Customer customer, PaymentStatus unpaid);
 }

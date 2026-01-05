@@ -361,7 +361,7 @@
 					</div>
 
 					<div class="flex justify-between items-center">
-						<span>Hình thức thanh toán</span> <select name="paymentMethod"
+						<span>Hình thức thanh toán</span> <select name="paymentMethod" id="paymentMethodSelect"
 							class="bg-gray-100 border-none rounded-lg py-1 px-2 text-[10px] font-bold focus:ring-0 cursor-pointer">
 							<option value="PREPAID">Tiền hàng trả trước</option>
 							<option value="COD">Thanh toán khi nhận (COD)</option>
@@ -891,11 +891,11 @@ window.addEventListener('click', function(e) {
 
 //--- BỔ SUNG HOẶC THAY THẾ TOÀN BỘ LOGIC TÍNH PHÍ VÀ DROPDOWN KL ---
 
-// 1. Bảng giá chuẩn
+// Bảng giá mới cập nhật theo hình ảnh dịch vụ
 const SHIPPING_RATES = {
-    "1": { base: 20000, extra: 5000 }, // Standard
-    "2": { base: 35000, extra: 7000 }, // Express
-    "3": { base: 150000, extra: 3000 } // BBS
+    "1": { base: 20000, extra: 5000 }, // Standard (STD)
+    "2": { base: 35000, extra: 7000 }, // Express (EXP)
+    "3": { base: 150000, extra: 3000 } // BBS Bulky (BBS)
 };
 
 function calculateOrderFees() {
@@ -904,13 +904,11 @@ function calculateOrderFees() {
     
     const rate = SHIPPING_RATES[serviceRadio.value];
     
-    // Lấy dữ liệu
     const weight = parseFloat(document.getElementById('weightInput').value) || 0;
     const quantity = parseInt(document.getElementById('quantityInput').value) || 1;
-    const itemValue = parseFloat(document.getElementById('itemValueInput').value) || 0;
     const codAmount = parseFloat(document.getElementById('codInput').value) || 0;
     
-    // LOGIC 1: Phí vận chuyển
+    // 1. Phí vận chuyển: Tính theo từng KG tiếp theo
     const totalWeight = weight * quantity;
     document.getElementById('displayTotalKL').innerText = totalWeight.toFixed(1);
 
@@ -919,37 +917,28 @@ function calculateOrderFees() {
         shippingFee += Math.ceil(totalWeight - 1) * rate.extra;
     }
 
-    // LOGIC 2: Phí bảo hiểm (0.5% nếu >= 1 triệu)
-    let insuranceFee = (itemValue >= 1000000) ? Math.round(itemValue * 0.005) : 0;
+    // 2. Phí bảo hiểm: Đã loại bỏ (luôn bằng 0)
+    let insuranceFee = 0;
+    const insuranceEl = document.getElementById('displayInsuranceFee');
+    if (insuranceEl) insuranceEl.innerText = "0";
 
-    // LOGIC 3: Phí dịch vụ COD (5.000đ khi có thu hộ)
-    let codServiceFee = (codAmount > 0) ? 5000 : 0;
+    // 3. Phí dịch vụ COD (0.5%)
+    let codServiceFee = Math.round(codAmount * 0.005);
 
-    // LOGIC 4: Tổng chi phí dịch vụ
+    // 4. Tổng chi phí dịch vụ
     const totalFee = shippingFee + insuranceFee + codServiceFee;
 
     const formatter = new Intl.NumberFormat('vi-VN');
-    
-    // Cập nhật giao diện phí lẻ
     document.getElementById('displayShippingFee').innerText = formatter.format(shippingFee);
-    const insuranceEl = document.getElementById('displayInsuranceFee');
-    if (insuranceEl) insuranceEl.innerText = formatter.format(insuranceFee);
     document.getElementById('displayTotalPrice').innerText = formatter.format(totalFee);
 
-    // --- LOGIC QUAN TRỌNG: SỐ TIỀN SHIPPER THU HỘ ---
+    // Tính số tiền Shipper sẽ thu
     const paymentSelect = document.querySelector('select[name="paymentMethod"]');
-    if (paymentSelect) {
-        const paymentType = paymentSelect.value;
-        let amountToCollect = codAmount; // Mặc định luôn thu tiền hàng (COD)
-
-        // Nếu chọn "Thanh toán khi nhận" (COD), cộng thêm phí dịch vụ vào tiền thu khách
-        if (paymentType === "COD") { 
-            amountToCollect += totalFee;
-        }
-
-        const collectEl = document.getElementById('displayAmountToCollect');
-        if (collectEl) collectEl.innerText = formatter.format(amountToCollect);
+    let amountToCollect = codAmount;
+    if (paymentSelect && paymentSelect.value === "COD") { 
+        amountToCollect += totalFee;
     }
+    document.getElementById('displayAmountToCollect').innerText = formatter.format(amountToCollect);
 }
 
 // 2. Khởi tạo sự kiện
@@ -1009,56 +998,72 @@ function showInvoiceModal() {
     document.getElementById('invoiceModal').classList.remove('hidden');
 }
 
-//--- HÀM XỬ LÝ THANH TOÁN 2 BƯỚC HOÀN CHỈNH ---
+//--- HÀM XỬ LÝ THANH TOÁN 2 BƯỚC HOÀN CHỈNH (ĐÃ FIX LƯU DATA) ---
 async function handlePaymentStep() {
     const paymentMethod = document.querySelector('select[name="paymentMethod"]').value;
-    const totalFeeStr = document.getElementById('displayTotalPrice').innerText;
+    const form = document.getElementById('orderForm');
     
-    // Làm sạch số tiền (giữ lại 129000 từ chuỗi 129.000đ)
-    const amount = parseInt(totalFeeStr.replace(/\D/g, ''));
-
-    if (isNaN(amount) || amount <= 0) {
-        Swal.fire('Lỗi', 'Số tiền thanh toán không hợp lệ!', 'error');
+    // Kiểm tra tính hợp lệ cơ bản của form trước khi xử lý
+    if (!form.checkValidity()) {
+        form.reportValidity();
         return;
     }
 
     if (paymentMethod === 'COD') {
+        // TRƯỜNG HỢP 1: THANH TOÁN KHI NHẬN (Lưu đơn và chuyển hướng trực tiếp)
         Swal.fire({
             title: 'Xác nhận đơn hàng',
             text: "Tạo đơn hàng hình thức Thu hộ (COD).",
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Đồng ý'
+            confirmButtonColor: '#00B14F',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Quay lại'
         }).then((result) => {
-            if (result.isConfirmed) document.getElementById('orderForm').submit();
+            if (result.isConfirmed) form.submit();
         });
     } else {
-        // TRƯỜNG HỢP VNPAY: CHUYỂN HƯỚNG TRỰC TIẾP
+        // TRƯỜNG HỢP 2: THANH TOÁN VNPAY (Lưu đơn nháp -> Lấy URL thanh toán)
         document.getElementById('invoiceModal').classList.add('hidden');
         
         Swal.fire({ 
-            title: 'Đang chuyển hướng...', 
-            text: 'Vui lòng chờ trong giây lát để kết nối cổng VNPay',
+            title: 'Đang khởi tạo đơn hàng...', 
+            text: 'Dữ liệu đang được lưu vào hệ thống',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading() 
         });
 
         try {
-            const tempOrderId = "NGHV" + Date.now();
-            // Sử dụng phép cộng chuỗi để tránh xung đột JSP EL
-            const apiUrl = "/customer/api/payment/create-vnpay?amount=" + amount + "&orderId=" + tempOrderId;
+            // Lấy toàn bộ dữ liệu từ Form (bao gồm cả Image file)
+            const formData = new FormData(form);
+
+            // Gửi dữ liệu qua POST để Controller lưu vào db service_request
+            const response = await fetch('/customer/api/payment/create-vnpay', {
+                method: 'POST',
+                body: formData
+            });
             
-            const response = await fetch(apiUrl);
-            if (!response.ok) throw new Error("Lỗi khởi tạo thanh toán");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Lỗi lưu đơn hàng");
+            }
             
             const data = await response.json();
 
-            // THAY THẾ IFRAME BẰNG CHUYỂN HƯỚNG
-            // data.url là link Sandbox đã được Backend băm chữ ký bảo mật
-            window.location.href = data.url; 
+            // data.url là link thanh toán được tạo dựa trên ID đơn hàng vừa lưu
+            if (data.url) {
+                window.location.href = data.url; 
+            } else {
+                throw new Error("Không nhận được liên kết thanh toán");
+            }
 
         } catch (err) {
-            Swal.fire('Lỗi kết nối', 'Không thể mở cổng thanh toán. Vui lòng thử lại!', 'error');
+            console.error("Lỗi:", err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi khởi tạo',
+                text: err.message || 'Không thể kết nối với cổng thanh toán. Vui lòng thử lại!'
+            });
         }
     }
 }
@@ -1075,4 +1080,26 @@ function completeOrderWithPayment() {
 
 function closeInvoice() { document.getElementById('invoiceModal').classList.add('hidden'); }
 function closeVNPay() { document.getElementById('vnpayModal').classList.add('hidden'); }
+
+document.addEventListener("DOMContentLoaded", function () {
+    const paymentSelect = document.getElementById("paymentMethodSelect");
+    const codInput = document.getElementById("codInput");
+
+    function toggleCodInput() {
+        if (paymentSelect.value === "PREPAID") {
+            codInput.value = 0;
+            codInput.setAttribute("readonly", true);
+            codInput.classList.add("text-gray-400", "cursor-not-allowed");
+        } else {
+            codInput.removeAttribute("readonly");
+            codInput.classList.remove("text-gray-400", "cursor-not-allowed");
+        }
+    }
+
+    // Khi load trang
+    toggleCodInput();
+
+    // Khi đổi hình thức thanh toán
+    paymentSelect.addEventListener("change", toggleCodInput);
+});
 </script>

@@ -1,11 +1,14 @@
 package vn.web.logistic.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.web.logistic.entity.*;
+import vn.web.logistic.enums.CodStatus;
 import vn.web.logistic.enums.PaymentStatus;
 import vn.web.logistic.enums.RequestStatus;
+import vn.web.logistic.enums.VnpayPaymentStatus;
 import vn.web.logistic.repository.*;
 import vn.web.logistic.service.OrderService;
 
@@ -19,6 +22,8 @@ public class OrderServiceImpl implements OrderService {
     @Autowired private ServiceRequestRepository requestRepository;
     @Autowired private CustomerAddressRepository addressRepository;
     @Autowired private ServiceRequestRepository orderRepository;
+    @Autowired private CodTransactionRepository codTransactionRepository;
+    @Autowired private VnpayTransactionRepository vnpayTransactionRepository;
 
     @Override
     @Transactional
@@ -48,9 +53,8 @@ public class OrderServiceImpl implements OrderService {
         // Gán địa chỉ đã xử lý vào đơn hàng
         request.setDeliveryAddress(deliveryAddress);
         
-        // 2. TÍNH TOÁN PHÍ & TỔNG TIỀN
-        boolean isHighValue = "true".equals(recipientInfo.get("isHighValue"));
-        request = calculateAllFees(request, isHighValue);
+     // 2. TÍNH TOÁN PHÍ DỊCH VỤ (Đã loại bỏ isHighValue)
+        request = calculateAllFees(request);
         
         // 3. THIẾT LẬP TRẠNG THÁI MẶC ĐỊNH
         request.setStatus(RequestStatus.pending);
@@ -61,29 +65,48 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public ServiceRequest calculateAllFees(ServiceRequest request, boolean isHighValue) {
-        // Giả sử logic tính phí dựa trên mẫu ảnh:
+    public ServiceRequest calculateAllFees(ServiceRequest request) {
+        // Lấy ID loại dịch vụ: 1-Standard, 2-Express, 3-BBS
+        Long serviceTypeId = request.getServiceType().getServiceTypeId();
         
-        // A. Phí Ship: Express (<20kg) mặc định 22k, BBS (>=20kg) mặc định 50k
-        BigDecimal shipFee = request.getWeight().compareTo(new BigDecimal("20")) < 0 
-                             ? new BigDecimal("22000") : new BigDecimal("50000");
-        request.setShippingFee(shipFee);
+        BigDecimal basePrice;
+        BigDecimal extraPrice;
+        
+        // A. Cấu hình bảng giá dựa trên hình ảnh
+        if (serviceTypeId == 2) { // EXPRESS
+            basePrice = new BigDecimal("35000");
+            extraPrice = new BigDecimal("7000");
+        } else if (serviceTypeId == 3) { // BBS BULKY
+            basePrice = new BigDecimal("150000");
+            extraPrice = new BigDecimal("3000");
+        } else { // Mặc định là STANDARD (ID=1)
+            basePrice = new BigDecimal("20000");
+            extraPrice = new BigDecimal("5000");
+        }
 
-        // B. Phí COD: Thường là 0.5% số tiền thu hộ (nếu có)
+        // B. Logic tính phí vận chuyển theo công thức:
+        // ShippingFee = BasePrice + (ceil(TotalWeight - 1) * ExtraPrice)
+        double totalWeight = request.getWeight().doubleValue() * request.getQuantity();
+        BigDecimal shippingFee = basePrice;
+        
+        if (totalWeight > 1) {
+            BigDecimal extraWeight = new BigDecimal(Math.ceil(totalWeight - 1));
+            shippingFee = shippingFee.add(extraWeight.multiply(extraPrice));
+        }
+        request.setShippingFee(shippingFee);
+
+        // C. Loại bỏ phí bảo hiểm hàng giá trị cao theo yêu cầu
+        request.setInsuranceFee(BigDecimal.ZERO);
+
+        // D. Phí COD: Giữ nguyên 0.5% số tiền thu hộ
         BigDecimal codFee = request.getCodAmount().multiply(new BigDecimal("0.005"));
         request.setCodFee(codFee);
 
-        // C. Phí bảo hiểm: Nếu là hàng giá trị cao (>= 1,000,000đ)
-        BigDecimal insurance = isHighValue 
-                               ? request.getCodAmount().multiply(new BigDecimal("0.01")) 
-                               : BigDecimal.ZERO;
-        request.setInsuranceFee(insurance);
-
-        // D. Tổng Price = Ship + COD fee + Insurance
-        BigDecimal total = shipFee.add(codFee).add(insurance);
+        // E. Tổng phí = Phí Ship + Phí COD (Bảo hiểm đã bằng 0)
+        BigDecimal total = shippingFee.add(codFee);
         request.setTotalPrice(total);
         
-        // E. Tiền người nhận phải trả (Tổng COD + Ship nếu khách trả ship)
+        // F. Tiền thu người nhận = COD + Tổng phí
         request.setReceiverPayAmount(request.getCodAmount().add(total));
 
         return request;
@@ -108,5 +131,35 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orderRepository.save(order);
+    }
+    
+    @Override
+    @Transactional
+    public void createCodTransaction(ServiceRequest request, String paymentMethod) {
+        if (request.getCodAmount() != null && request.getCodAmount().compareTo(BigDecimal.ZERO) > 0) {
+            CodTransaction codTxn = CodTransaction.builder()
+                    .request(request)
+                    .amount(request.getCodAmount())
+                    // Sửa: Sử dụng CodStatus thay vì TransactionStatus
+                    .status(CodStatus.pending) 
+                    .paymentMethod(paymentMethod) 
+                    .collectedAt(LocalDateTime.now())
+                    .build();
+            codTransactionRepository.save(codTxn);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void createVnpayTransaction(ServiceRequest request) {
+        VnpayTransaction vnpayTxn = VnpayTransaction.builder()
+                .request(request)
+                .amount(request.getTotalPrice())
+                // Sửa: Sử dụng VnpayPaymentStatus thay vì PaymentStatus
+                // Lưu ý: Tên hằng số có thể là Success hoặc Paid tùy bạn định nghĩa trong Enum
+                .paymentStatus(VnpayPaymentStatus.success) 
+                .createdAt(LocalDateTime.now())
+                .build();
+        vnpayTransactionRepository.save(vnpayTxn);
     }
 }

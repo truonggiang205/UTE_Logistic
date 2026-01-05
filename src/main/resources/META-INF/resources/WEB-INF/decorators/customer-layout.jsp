@@ -94,13 +94,7 @@
 
 					<!-- ===== WALLET / SHOP ===== -->
 					<div class="py-4">
-						<div
-							class="px-6 text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">
-							Số dư ví</div>
-
-						<div class="px-6 py-4 bg-green-50 mx-3 rounded-2xl mb-3">
-							<p class="font-black text-2xl text-nghv-green">1.250.000 đ</p>
-						</div> <a href="/customer/profile"
+						<a href="/customer/profile"
 							class="px-6 py-3 hover:bg-gray-50 flex items-center text-sm font-bold">
 							<i class="fa-solid fa-id-card-clip mr-4 text-gray-400 w-5"></i>
 							Hồ sơ Shop

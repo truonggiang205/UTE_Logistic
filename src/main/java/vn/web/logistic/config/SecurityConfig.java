@@ -100,7 +100,9 @@ public class SecurityConfig {
                     "/", 
                     "/error", 
                     "/favicon.ico",
-                    "/access-denied" // Phải permitAll trang này
+                    "/access-denied", // Phải permitAll trang này
+                    "/payment-success/**",
+                    "/payment-failure/**"
                 ).permitAll();
 
                 // 4. Bảo vệ vùng Dashboard

@@ -25,6 +25,9 @@ public class SiteMeshConfig {
                        .addExcludedPath("/images/*")
                        .addExcludedPath("/auth/request-otp") // Không bọc layout vào kết quả trả về của OTP
                        .addExcludedPath("/auth/verify-otp")
+                       .addExcludedPath("/payment-success*")
+                       .addExcludedPath("/payment-failure*")
+                       .addExcludedPath("/api/payment/vnpay-return*")
                        .addExcludedPath("/error");
 
                 builder.addDecoratorPath("/customer/*", "/customer-layout.jsp")
