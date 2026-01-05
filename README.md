@@ -53,12 +53,15 @@ Dự án được xây dựng theo mô hình **MVC** với **Kiến trúc 3 tầ
 * **UI Framework:** Bootstrap CSS
 
 ## 🗂 Thiết kế Hệ thống (System Design)
-* **Mô hình dữ liệu:** !"Ảnh ERD"
+* **Mô hình dữ liệu:**
+  <img width="2782" height="2471" alt="Untitled" src="https://github.com/user-attachments/assets/39449121-be00-459e-a7af-a6bd98d8d708" />
+
 * **Kiến trúc:** Mô hình MVC kết hợp RESTful API cho giao tiếp mobile/client.
 
 ## 👨‍💻 Tác giả
+* Dự án Đồ án Lập trình Web - HCMUTE
 * **Le Huu Van**
 * **Phan Phuc Hau**
 * **Pham Hoai Nam**
 * **Ha Truong Giang**
-* Dự án Đồ án Lập trình Web - HCMUTE
+
