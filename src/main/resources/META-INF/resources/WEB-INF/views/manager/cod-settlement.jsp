@@ -699,13 +699,13 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
       // Ẩn nút quyết toán cho tab pending-hold (shipper chưa nộp tiền)
       document.getElementById("btn-settle-all").classList.add("d-none");
       document.getElementById("btn-settle-selected").classList.add("d-none");
-      document.getElementById("detail-title").innerHTML =
-        '<i class="fas fa-wallet me-2 text-danger"></i>COD Shipper đang giữ (chưa nộp)';
+      document.getElementById("detail-title").textContent =
+        "COD Shipper đang giữ (chưa nộp)";
     } else {
       apiUrl = "/api/manager/cod/shipper/" + shipperId;
       // Hiển thị nút quyết toán cho tab collected
-      document.getElementById("detail-title").innerHTML =
-        '<i class="fas fa-list-alt me-2"></i>Chi Tiết COD (chờ duyệt)';
+      document.getElementById("detail-title").textContent =
+        "Chi Tiết COD (chờ duyệt)";
     }
 
     fetch(apiUrl)
