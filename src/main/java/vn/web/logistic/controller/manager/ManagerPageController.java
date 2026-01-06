@@ -159,6 +159,35 @@ public class ManagerPageController {
         return "manager/resource/resource-management";
     }
 
+    // ===================== LAST-MILE OPERATIONS =====================
+
+    /**
+     * Trang Phân Công Shipper (Assign Task)
+     */
+    @GetMapping("/lastmile/assign-task")
+    public String viewLastMileAssignTask(Model model) {
+        log.info("Truy cập trang Phân Công Shipper");
+        return "manager/lastmile/assign-task";
+    }
+
+    /**
+     * Trang Xác Nhận Giao/Nhận (Confirm Delivery)
+     */
+    @GetMapping("/lastmile/confirm-delivery")
+    public String viewLastMileConfirmDelivery(Model model) {
+        log.info("Truy cập trang Xác Nhận Giao/Nhận");
+        return "manager/lastmile/confirm-delivery";
+    }
+
+    /**
+     * Trang Khách Nhận Tại Quầy (Counter Pickup)
+     */
+    @GetMapping("/lastmile/counter-pickup")
+    public String viewLastMileCounterPickup(Model model) {
+        log.info("Truy cập trang Khách Nhận Tại Quầy");
+        return "manager/lastmile/counter-pickup";
+    }
+
     /**
      * Trang Hoàn Hàng (Return Goods) - Đơn thất bại 3 lần
      */
@@ -175,26 +204,6 @@ public class ManagerPageController {
     public String viewLastMileReturnShop(Model model) {
         log.info("Truy cập trang Xác Nhận Trả Shop");
         return "manager/lastmile/return-shop";
-    }
-
-    // ===================== LASTMILE (PAGES) =====================
-
-    @GetMapping("/lastmile/assign-task")
-    public String viewLastMileAssignTask() {
-        log.info("Truy cập trang Phân công Shipper");
-        return "manager/lastmile/assign-task";
-    }
-
-    @GetMapping("/lastmile/confirm-delivery")
-    public String viewLastMileConfirmDelivery() {
-        log.info("Truy cập trang Cập nhật kết quả giao");
-        return "manager/lastmile/confirm-delivery";
-    }
-
-    @GetMapping("/lastmile/counter-pickup")
-    public String viewLastMileCounterPickup() {
-        log.info("Truy cập trang Khách nhận tại quầy");
-        return "manager/lastmile/counter-pickup";
     }
 
     // ===================== COD SETTLEMENT =====================

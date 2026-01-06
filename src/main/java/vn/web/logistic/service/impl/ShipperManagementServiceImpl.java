@@ -214,65 +214,75 @@ public class ShipperManagementServiceImpl implements ShipperManagementService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = RuntimeException.class)
     public ShipperInfoDTO createShipper(CreateShipperRequest request, Long hubId) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            return null;
+            throw new RuntimeException("Tên đăng nhập đã tồn tại");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            return null;
+            throw new RuntimeException("Email đã được sử dụng");
         }
 
-        try {
-            // 1. Tạo User
-            User user = User.builder()
-                    .username(request.getUsername())
-                    .passwordHash(passwordEncoder.encode(request.getPassword()))
-                    .email(request.getEmail())
-                    .phone(request.getPhone())
-                    .fullName(request.getFullName())
-                    .status(User.UserStatus.active)
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            // 2. Gán role SHIPPER
-            Role shipperRole = roleRepository.findByRoleName("SHIPPER")
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy role SHIPPER"));
-            Set<Role> roles = new HashSet<>();
-            roles.add(shipperRole);
-            user.setRoles(roles);
-
-            user = userRepository.save(user);
-
-            // 3. Lấy Hub
-            Hub hub = null;
-            if (hubId != null) {
-                hub = hubRepository.findById(hubId).orElse(null);
-            }
-
-            // 4. Tạo Shipper
-            Shipper.ShipperType type = Shipper.ShipperType.fulltime;
-            if ("parttime".equalsIgnoreCase(request.getShipperType())) {
-                type = Shipper.ShipperType.parttime;
-            }
-
-            Shipper shipper = Shipper.builder()
-                    .user(user)
-                    .hub(hub)
-                    .shipperType(type)
-                    .vehicleType(request.getVehicleType())
-                    .status(Shipper.ShipperStatus.active)
-                    .joinedAt(LocalDateTime.now())
-                    .rating(BigDecimal.ZERO)
-                    .build();
-
-            shipper = shipperRepository.save(shipper);
-
-            return mapToDTO(shipper);
-
-        } catch (Exception e) {
-            return null;
+        // 1. Kiểm tra role SHIPPER trước
+        Role shipperRole = roleRepository.findByRoleName("SHIPPER").orElse(null);
+        if (shipperRole == null) {
+            throw new RuntimeException("Không tìm thấy role SHIPPER trong database. Vui lòng thêm role này.");
         }
+
+        // 2. Validate password
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new RuntimeException("Mật khẩu không được để trống");
+        }
+
+        // 3. Encode password
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        if (encodedPassword == null || encodedPassword.isEmpty()) {
+            throw new RuntimeException("Lỗi mã hóa mật khẩu");
+        }
+
+        // 4. Tạo User
+        User user = User.builder()
+                .username(request.getUsername())
+                .passwordHash(encodedPassword)
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .fullName(request.getFullName())
+                .status(User.UserStatus.active)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // 3. Gán role SHIPPER
+        Set<Role> roles = new HashSet<>();
+        roles.add(shipperRole);
+        user.setRoles(roles);
+
+        user = userRepository.save(user);
+
+        // 4. Lấy Hub
+        Hub hub = null;
+        if (hubId != null) {
+            hub = hubRepository.findById(hubId).orElse(null);
+        }
+
+        // 5. Tạo Shipper
+        Shipper.ShipperType type = Shipper.ShipperType.fulltime;
+        if ("parttime".equalsIgnoreCase(request.getShipperType())) {
+            type = Shipper.ShipperType.parttime;
+        }
+
+        Shipper shipper = Shipper.builder()
+                .user(user)
+                .hub(hub)
+                .shipperType(type)
+                .vehicleType(request.getVehicleType())
+                .status(Shipper.ShipperStatus.active)
+                .joinedAt(LocalDateTime.now())
+                .rating(BigDecimal.ZERO)
+                .build();
+
+        shipper = shipperRepository.save(shipper);
+
+        return mapToDTO(shipper);
     }
 
     @Override

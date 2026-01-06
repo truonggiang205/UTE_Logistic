@@ -17,6 +17,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     // (Dùng cho logic 1.1)
     Optional<Customer> findByPhone(String phone);
 
+    // Nếu dữ liệu đã lỡ có trùng SĐT, lấy bản ghi "đầu tiên" để dùng ổn định
+    Optional<Customer> findFirstByPhoneOrderByCustomerIdAsc(String phone);
+
     // Tìm Customer theo email
     Optional<Customer> findByEmail(String email);
 

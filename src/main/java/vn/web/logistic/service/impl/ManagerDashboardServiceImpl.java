@@ -29,6 +29,7 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
     private final ParcelActionRepository parcelActionRepository;
     private final TrackingCodeRepository trackingCodeRepository;
     private final HubRepository hubRepository;
+    private final RouteRepository routeRepository;
 
     @Override
     public ManagerDashboardStatsResponse getManagerStats(Long hubId) {
@@ -166,9 +167,31 @@ public class ManagerDashboardServiceImpl implements vn.web.logistic.service.Mana
                 .currentHubName(currentHubName)
                 .createdAt(request.getCreatedAt())
                 .expectedPickupTime(request.getExpectedPickupTime())
+                .estimatedDeliveryTime(computeEta(request))
                 .note(request.getNote())
                 .actionHistory(actionHistory)
                 .build();
+    }
+
+    private LocalDateTime computeEta(ServiceRequest request) {
+        if (request == null) {
+            return null;
+        }
+        if (request.getCurrentHub() == null || request.getDeliveryAddress() == null) {
+            return null;
+        }
+
+        String sourceProvince = request.getCurrentHub().getProvince();
+        String destProvince = request.getDeliveryAddress().getProvince();
+
+        if (sourceProvince == null || sourceProvince.isBlank() || destProvince == null || destProvince.isBlank()) {
+            return null;
+        }
+
+        return routeRepository.findActiveRouteByProvinces(sourceProvince.trim(), destProvince.trim())
+                .filter(r -> r.getEstimatedTime() != null && r.getEstimatedTime() > 0)
+                .map(r -> LocalDateTime.now().plusHours(r.getEstimatedTime()))
+                .orElse(null);
     }
 
     /**

@@ -50,7 +50,3 @@ public class Staff {
 
     private LocalDateTime joinedAt;
 }
-
-enum StaffStatus {
-    active, inactive
-}

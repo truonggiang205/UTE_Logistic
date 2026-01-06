@@ -93,6 +93,9 @@ public class OrderTrackingResponse {
     // Thời gian dự kiến lấy hàng
     private LocalDateTime expectedPickupTime;
 
+    // ETA dự kiến giao/đến (tính theo Route lead time)
+    private LocalDateTime estimatedDeliveryTime;
+
     // Loại dịch vụ
     private String serviceTypeName;
 

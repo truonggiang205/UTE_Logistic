@@ -18,8 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import vn.web.logistic.dto.request.customer.CustomerAddressForm;

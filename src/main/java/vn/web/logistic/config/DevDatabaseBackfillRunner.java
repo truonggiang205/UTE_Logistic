@@ -53,9 +53,9 @@ public class DevDatabaseBackfillRunner implements ApplicationRunner {
         }
 
         int updated = jdbcTemplate.update(
-                "UPDATE " + table + " " +
-                "SET " + targetColumn + " = " + sourceColumn + " " +
-                "WHERE " + targetColumn + " IS NULL AND " + sourceColumn + " IS NOT NULL");
+                "UPDATE `" + table + "` " +
+                "SET `" + targetColumn + "` = `" + sourceColumn + "` " +
+                "WHERE `" + targetColumn + "` IS NULL AND `" + sourceColumn + "` IS NOT NULL");
 
         if (updated > 0) {
             logger.warn("Dev DB backfill: updated {} {}.{} from {}", updated, table, targetColumn, sourceColumn);
@@ -65,7 +65,9 @@ public class DevDatabaseBackfillRunner implements ApplicationRunner {
     private boolean columnExists(String table, String column) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.COLUMNS " +
-                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                "WHERE TABLE_SCHEMA = DATABASE() " +
+                "  AND LOWER(TABLE_NAME) = LOWER(?) " +
+                "  AND LOWER(COLUMN_NAME) = LOWER(?)",
                 Integer.class,
                 table,
                 column);

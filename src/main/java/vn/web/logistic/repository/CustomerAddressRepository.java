@@ -1,6 +1,9 @@
 package vn.web.logistic.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import vn.web.logistic.entity.Customer;
@@ -24,6 +27,27 @@ public interface CustomerAddressRepository extends JpaRepository<CustomerAddress
     // trùng địa chỉ cũ
     Optional<CustomerAddress> findByCustomerAndAddressDetailAndWardAndDistrictAndProvince(
             Customer customer, String addressDetail, String ward, String district, String province);
+
+        // Phiên bản "chịu được" dữ liệu NULL/blank, tránh tạo địa chỉ trùng do khác biệt NULL vs ""
+        @Query("""
+            SELECT a
+            FROM CustomerAddress a
+            WHERE a.customer = :customer
+              AND COALESCE(TRIM(a.addressDetail), '') = COALESCE(TRIM(:addressDetail), '')
+              AND COALESCE(TRIM(a.ward), '') = COALESCE(TRIM(:ward), '')
+              AND COALESCE(TRIM(a.district), '') = COALESCE(TRIM(:district), '')
+              AND COALESCE(TRIM(a.province), '') = COALESCE(TRIM(:province), '')
+            """)
+        Optional<CustomerAddress> findDuplicateAddress(
+            @Param("customer") Customer customer,
+            @Param("addressDetail") String addressDetail,
+            @Param("ward") String ward,
+            @Param("district") String district,
+            @Param("province") String province);
+
+        @Modifying
+        @Query("UPDATE CustomerAddress a SET a.isDefault = false WHERE a.customer.customerId = :customerId AND a.isDefault = true")
+        int clearDefaultForCustomer(@Param("customerId") Long customerId);
 
     /**
      * Lấy danh sách địa chỉ của một khách hàng

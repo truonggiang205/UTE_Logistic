@@ -13,4 +13,5 @@ public class RouteAdminResponse {
     private String toHubName;
     private Integer estimatedTime;
     private String description;
+    private String status;
 }

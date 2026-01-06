@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.web.logistic.entity.Route;
+import vn.web.logistic.entity.RouteStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,17 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
     // Tìm tuyến đường dựa trên Tỉnh/Thành phố gửi và nhận
     // Query theo province của Hub nguồn và Hub đích
     Optional<Route> findTopByFromHub_ProvinceAndToHub_Province(String sourceProvince, String destProvince);
+
+        @org.springframework.data.jpa.repository.Query(
+            "SELECT r FROM Route r " +
+            "LEFT JOIN FETCH r.fromHub " +
+            "LEFT JOIN FETCH r.toHub " +
+            "WHERE r.fromHub.province = :sourceProvince " +
+            "AND r.toHub.province = :destProvince " +
+            "AND r.status = 'active'")
+        Optional<Route> findActiveRouteByProvinces(
+            @Param("sourceProvince") String sourceProvince,
+            @Param("destProvince") String destProvince);
 
     // Lấy danh sách tuyến đường xuất phát từ Hub (dùng cho Manager chọn tuyến)
     List<Route> findByFromHub_HubId(Long hubId);

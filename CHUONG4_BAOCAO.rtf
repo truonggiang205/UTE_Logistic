@@ -1,0 +1,366 @@
+{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Times New Roman;}}\\fs26 # CH??NG 4: X?Y D?NG V? C?I ??T CH??NG TR?NH\\par
+\\par
+## 4.1. T? ch?c c?u tr?c d? ?n (Project Structure)\\par
+\\par
+D? ?n ???c t? ch?c theo m? h?nh Spring Boot MVC (JSP View) k?t h?p REST API.\\par
+\\par
+- `src/main/java/vn/web/logistic/`\\par
+  - `controller/`\\par
+    - `admin/` (c?c trang/qu?n tr? v? REST API ph?a Admin)\\par
+      - `AdminPageController` (?i?u h??ng trang JSP Admin)\\par
+      - `HubController` (REST CRUD Hub + lock/unlock)\\par
+      - `RouteController` (REST CRUD Route + activate/deactivate)\\par
+      - `ActionTypeAdminController` (REST CRUD ActionType)\\par
+      - `AdminUserRestController` (REST qu?n l? User/Staff + lock/unlock + reset password)\\par
+      - `AdminRoleRestController` (REST CRUD Role + activate/deactivate + delete guard)\\par
+      - `AdminBroadcastController` (REST broadcast email async)\\par
+      - `AdminRiskAlertDetailController` (trang chi ti?t ??n t? Risk Alerts)\\par
+    - `manager/` (REST API ph?a Manager)\\par
+      - `ManagerDashboardController` (tracking + order detail)\\par
+  - `service/` v? `service/impl/` (x? l? nghi?p v?)\\par
+    - `ManagerDashboardServiceImpl` (map d? li?u tracking + ETA)\\par
+    - `BroadcastEmailService`, `BroadcastEmailAsyncSender` (g?i email async + log)\\par
+  - `repository/` (Spring Data JPA)\\par
+    - `UserRepository` (truy v?n user theo role/hub ?? broadcast)\\par
+    - `RouteRepository` (tuy?n active ph?c v? t?nh ETA)\\par
+    - `ParcelActionRepository` (l?ch s? h?nh tr?nh)\\par
+  - `entity/` (JPA Entities)\\par
+    - `Hub`, `Route`, `ActionType`, `User`, `Role`, `Staff`, ...\\par
+    - `HubStatus`, `RouteStatus`, `StaffStatus` (enum t?ch file public)\\par
+\\par
+- `src/main/resources/`\\par
+  - `application*.properties` (c?u h?nh theo m?i tr??ng)\\par
+  - `META-INF/resources/WEB-INF/views/`\\par
+    - `admin/`\\par
+      - `hub-management.jsp`, `route-management.jsp`, `role-management.jsp`, ...\\par
+      - `risk-alerts.jsp` (danh s?ch c?nh b?o)\\par
+      - `risk-alert-detail.jsp` (chi ti?t ??n h?ng t? c?nh b?o)\\par
+\\par
+Ghi ch? c?i ??t:\\par
+- Ch?y b?ng Maven Wrapper: `mvnw.cmd spring-boot:run` (Windows)\\par
+- Java 17, Spring Boot.\\par
+\\par
+---\\par
+\\par
+## 4.2. Ph?n t?ch ch?c n?ng\\par
+\\par
+### 4.2.2. Ph?a Guest\\par
+\\par
+**B?ng 26: C?c ch?c n?ng v? m? t? ch?c n?ng c?a role Guest**\\par
+\\par
+| STT | Ch?c n?ng | M? t? |\\par
+|-----|----------|-------|\\par
+|     |          |       |\\par
+|     |          |       |\\par
+|     |          |       |\\par
+\\par
+### 4.2.2. Ph?a Manager\\par
+\\par
+**B?ng 27: C?c ch?c n?ng v? m? t? ch?c n?ng c?a role Manager**\\par
+\\par
+| STT | Ch?c n?ng | M? t? |\\par
+|-----|----------|-------|\\par
+| 1 | Tra c?u/Tracking ??n h?ng + ETA | Manager tra c?u ??n theo m? v?n ??n / requestId / S?T ng??i g?i; h? th?ng tr? v? chi ti?t ??n + l?ch s? h?nh tr?nh v? hi?n th? ETA d? ki?n d?a tr?n tuy?n Route (estimatedTime) t??ng ?ng. |\\par
+\\par
+### 4.2.3. Ph?a Customer\\par
+\\par
+**B?ng 28: C?c ch?c n?ng v? m? t? ch?c n?ng c?a role Customer**\\par
+\\par
+| STT | Ch?c n?ng | M? t? |\\par
+|-----|----------|-------|\\par
+|     |          |       |\\par
+|     |          |       |\\par
+|     |          |       |\\par
+\\par
+### 4.2.4. Ph?a Shipper\\par
+\\par
+**B?ng 29: C?c ch?c n?ng v? m? t? ch?c n?ng c?a role Shipper**\\par
+\\par
+| STT | Ch?c n?ng | M? t? |\\par
+|-----|----------|-------|\\par
+|     |          |       |\\par
+|     |          |       |\\par
+|     |          |       |\\par
+\\par
+### 4.2.5. Ph?a Admin\\par
+\\par
+**B?ng 30: C?c ch?c n?ng v? m? t? ch?c n?ng c?a role Admin**\\par
+\\par
+| STT | Ch?c n?ng | M? t? |\\par
+|-----|----------|-------|\\par
+| 1 | Qu?n l? Hub (CRUD + kh?a/m?) | Admin th?m/s?a danh s?ch hub; kh?a hub ?? ng?n s? d?ng trong t?o/c?p nh?t tuy?n; m? kh?a ?? ho?t ??ng l?i. |\\par
+| 2 | Qu?n l? Route (CRUD + active/inactive) | Admin t?o/s?a tuy?n t? hub A ??n hub B; b?t/t?t tuy?n (active/inactive); ch? cho ph?p t?o/s?a tuy?n khi hub li?n quan ?ang active. |\\par
+| 3 | Qu?n l? ActionType (CRUD + r?ng bu?c x?a) | Admin t?o/s?a/x?a lo?i h?nh ??ng d?ng cho l?ch s? ??n; ch?n x?a n?u ?? ph?t sinh `ParcelAction` tham chi?u. |\\par
+| 4 | Qu?n l? User/Staff (CRUD + kh?a/m? + reset m?t kh?u) | Admin t?o/s?a t?i kho?n, g?n role; kh?a/m? user; reset m?t kh?u (c? th? t?o m?t kh?u ng?u nhi?n). |\\par
+| 5 | Qu?n l? Role (CRUD + activate/deactivate + delete guard) | Admin t?o/s?a role; b?t/t?t role; ch?n x?a role n?u ?? ???c g?n cho b?t k? user n?o. |\\par
+| 6 | Broadcast Email (Async) | Admin g?i email broadcast t?i nh?m Managers (ho?c theo hub). G?i b?t ??ng b?; n?u ch?a c?u h?nh SMTP th? h? th?ng kh?ng crash v? ghi log. |\\par
+| 7 | C?nh b?o r?i ro ? xem chi ti?t ??n (con m?t) | T? trang Risk Alerts, admin b?m icon ?con m?t? ?? m? trang chi ti?t ??n (th?ng tin + timeline). |\\par
+\\par
+---\\par
+\\par
+## 4.3. C?c ch?c n?ng chi ti?t c?a Guest\\par
+\\par
+### 4.3.1. Ch?c n?ng ????..\\par
+\\par
+(Ph?n kh?ng thu?c ph?m vi ch?nh s?a c?a t?i ? gi? tr?ng theo y?u c?u)\\par
+\\par
+---\\par
+\\par
+## 4.4. C?c ch?c n?ng chi ti?t c?a Manger\\par
+\\par
+### 4.4.1. Ch?c n?ng Tra c?u/Tracking ??n h?ng + ETA\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | Track order (Manager) |\\par
+| Goal | Tra c?u chi ti?t ??n h?ng v? l?ch s? h?nh tr?nh; hi?n th? ETA d? ki?n |\\par
+| Actors | Manager |\\par
+| Pre-conditions | Manager ?? ??ng nh?p v? c? quy?n truy c?p trang/REST API Manager |\\par
+| Post-conditions | - N?u t?m th?y: tr? v? chi ti?t ??n + timeline + ETA d? ki?n\\\\n- N?u kh?ng t?m th?y: tr? th?ng b?o kh?ng t?m th?y |\\par
+| Main Flow | 1) Manager nh?p keyword (trackingCode ho?c requestId ho?c S?T ng??i g?i)\\\\n2) H? th?ng g?i API tracking\\\\n3) H? th?ng truy v?n ??n h?ng v? l?ch s? ParcelAction\\\\n4) T?nh ETA: l?y tuy?n active theo t?nh/TP hub hi?n t?i ? t?nh/TP ??a ch? giao; c?ng lead time (estimatedTime)\\\\n5) Tr? v? d? li?u chi ti?t ?? hi?n th? |\\par
+| Alternative | 2a) N?u keyword l? trackingCode: ?u ti?n t?m theo tracking code; n?u kh?ng c? th? fallback theo requestId/S?T |\\par
+| Exception | 1a) Keyword r?ng: b?o l?i y?u c?u nh?p keyword\\\\n3a) Kh?ng t?m th?y ??n: tr? 404/ th?ng b?o\\\\n4a) Kh?ng c? tuy?n active ph? h?p: ETA ?? tr?ng |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Manager ? Nh?p keyword ? G?i request t?i `/api/manager/tracking` ho?c `/api/manager/tracking/\\{requestId\\}`\\par
+- Server ? L?y `ServiceRequest` + `ParcelAction` (timeline) ? T?nh ETA t? `Route.estimatedTime` ? Tr? JSON\\par
+- UI ? Render th?ng tin ??n + timeline + ETA\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Text | Nh?p keyword (tracking code / m? ??n / S?T ng??i g?i) |\\par
+| 2 | Button | Th?c hi?n tra c?u |\\par
+| 3 | Text/Label | Hi?n th? tr?ng th?i ??n, hub hi?n t?i, th?ng tin ng??i g?i/nh?n |\\par
+| 4 | Text/Label | Hi?n th? ETA d? ki?n (n?u t?nh ???c) |\\par
+| 5 | Table | Hi?n th? l?ch s? h?nh tr?nh (timeline ParcelAction) |\\par
+\\par
+---\\par
+\\par
+## 4.5. C?c ch?c n?ng chi ti?t c?a Customer\\par
+\\par
+### 4.5.1. Ch?c n?ng ????..\\par
+\\par
+(Ph?n kh?ng thu?c ph?m vi ch?nh s?a c?a t?i ? gi? tr?ng theo y?u c?u)\\par
+\\par
+---\\par
+\\par
+## 4.6. C?c ch?c n?ng chi ti?t c?a Shipper\\par
+\\par
+### 4.6.1. Ch?c n?ng ????..\\par
+\\par
+(Ph?n kh?ng thu?c ph?m vi ch?nh s?a c?a t?i ? gi? tr?ng theo y?u c?u)\\par
+\\par
+---\\par
+\\par
+## 4.7. C?c ch?c n?ng chi ti?t c?a Admin\\par
+\\par
+### 4.7.1. Ch?c n?ng Qu?n l? Hub (CRUD + kh?a/m?)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | Hub management |\\par
+| Goal | Qu?n l? danh m?c hub v? tr?ng th?i ho?t ??ng (active/inactive) |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p |\\par
+| Post-conditions | - Hub ???c t?o/s?a th?nh c?ng\\\\n- Hub c? th? kh?a/m?; hub b? kh?a s? b? ch?n khi d?ng t?o/s?a route |\\par
+| Main Flow | 1) Admin m? trang qu?n l? hub\\\\n2) Ch?n th?m/s?a hub\\\\n3) G?i d? li?u t?i API `/api/admin/hubs`\\\\n4) H? th?ng validate v? l?u DB\\\\n5) Hi?n th? l?i danh s?ch |\\par
+| Alternative | 2a) Kh?a hub: g?i `/api/admin/hubs/\\{hubId\\}/lock`\\\\n2b) M? kh?a hub: g?i `/api/admin/hubs/\\{hubId\\}/unlock` |\\par
+| Exception | 3a) D? li?u thi?u/kh?ng h?p l?: tr? l?i validation |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Admin ? Form Hub ? REST API ? DB (Hub) ? refresh danh s?ch\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Table | Danh s?ch hub |\\par
+| 2 | Button | Th?m hub |\\par
+| 3 | Button | S?a hub |\\par
+| 4 | Button | Kh?a/M? hub |\\par
+\\par
+---\\par
+\\par
+### 4.7.2. Ch?c n?ng Qu?n l? Route (CRUD + active/inactive)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | Route management |\\par
+| Goal | Qu?n l? tuy?n v?n chuy?n gi?a c?c hub v? b?t/t?t tuy?n |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p; hub tham gia tuy?n ph?i active |\\par
+| Post-conditions | - T?o/s?a route th?nh c?ng\\\\n- C? th? activate/deactivate route |\\par
+| Main Flow | 1) Admin v?o trang qu?n l? route\\\\n2) Ch?n t?o/s?a route (fromHub, toHub, estimatedTime, ...)\\\\n3) H? th?ng validate hub active\\\\n4) L?u route\\\\n5) Hi?n th? danh s?ch |\\par
+| Alternative | 2a) Deactivate: `/api/admin/routes/\\{routeId\\}/deactivate`\\\\n2b) Activate: `/api/admin/routes/\\{routeId\\}/activate` |\\par
+| Exception | 3a) Hub b? kh?a: ch?n t?o/s?a route |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Admin ? Form Route ? Validate hub status ? L?u DB ? refresh danh s?ch\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Table | Danh s?ch route |\\par
+| 2 | Button | Th?m/S?a route |\\par
+| 3 | Button | Activate/Deactivate route |\\par
+\\par
+---\\par
+\\par
+### 4.7.3. Ch?c n?ng Qu?n l? ActionType (CRUD + r?ng bu?c x?a)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | ActionType management |\\par
+| Goal | Qu?n l? lo?i h?nh ??ng d?ng trong timeline ??n h?ng |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p |\\par
+| Post-conditions | - T?o/s?a action type th?nh c?ng\\\\n- Ch? x?a ???c n?u ch?a ph?t sinh h?nh ??ng l?ch s? |\\par
+| Main Flow | 1) Admin m? c?u h?nh action types\\\\n2) Th?m/s?a actionCode, actionName\\\\n3) L?u qua API\\\\n4) Refresh danh s?ch |\\par
+| Alternative | X?a: g?i DELETE `/api/admin/action-types/\\{id\\}` (n?u kh?ng b? r?ng bu?c) |\\par
+| Exception | N?u action type ?? ???c d?ng: h? th?ng ch?n x?a v? tr? th?ng b?o |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Admin ? CRUD ActionType ? Ki?m tra c? `ParcelAction` tham chi?u ? Cho ph?p/Ch?n x?a\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Table | Danh s?ch action types |\\par
+| 2 | Button | Th?m/S?a |\\par
+| 3 | Button | X?a (n?u h?p l?) |\\par
+\\par
+---\\par
+\\par
+### 4.7.4. Ch?c n?ng Qu?n l? User/Staff (CRUD + lock/unlock + reset password)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | User & Staff management |\\par
+| Goal | Qu?n l? t?i kho?n n?i b?, g?n role, kh?a/m?, reset m?t kh?u |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p |\\par
+| Post-conditions | - User ???c t?o/s?a\\\\n- User c? th? lock/unlock\\\\n- Reset m?t kh?u th?nh c?ng |\\par
+| Main Flow | 1) Admin v?o qu?n l? nh?n s?\\\\n2) T?o/s?a user (username/email/phone/fullName/roles...)\\\\n3) L?u qua API\\\\n4) Th?c hi?n lock/unlock ho?c reset password khi c?n |\\par
+| Alternative | Reset password c? th? nh?p m?t kh?u m?i ho?c ?? h? th?ng t?o ng?u nhi?n |\\par
+| Exception | Role kh?ng t?n t?i ho?c role inactive: ch?n g?n role |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Admin ? Form User ? Validate role ? L?u DB ? (Lock/Unlock/Reset password)\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Table | Danh s?ch user |\\par
+| 2 | Button | Th?m/S?a user |\\par
+| 3 | Button | Kh?a/M? user |\\par
+| 4 | Button | Reset m?t kh?u |\\par
+\\par
+---\\par
+\\par
+### 4.7.5. Ch?c n?ng Qu?n l? Role (CRUD + activate/deactivate + delete guard)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | Role management |\\par
+| Goal | Qu?n tr? vai tr? v? tr?ng th?i role |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p |\\par
+| Post-conditions | - Role ???c t?o/s?a\\\\n- Role c? th? activate/deactivate\\\\n- Ch?n x?a role n?u ?? g?n user |\\par
+| Main Flow | 1) Admin m? trang qu?n l? role\\\\n2) T?o/s?a roleName, description\\\\n3) Activate/Deactivate role\\\\n4) X?a role n?u kh?ng b? g?n cho user |\\par
+| Exception | N?u role ?? ???c g?n: h? th?ng ch?n x?a |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Admin ? CRUD Role ? Ki?m tra `User.roles` ? Cho ph?p/Ch?n x?a\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Table | Danh s?ch roles |\\par
+| 2 | Button | Th?m/S?a |\\par
+| 3 | Button | Activate/Deactivate |\\par
+| 4 | Button | X?a (n?u h?p l?) |\\par
+\\par
+---\\par
+\\par
+### 4.7.6. Ch?c n?ng Broadcast Email (Async)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | Broadcast email |\\par
+| Goal | G?i email th?ng b?o h?ng lo?t cho nh?m Managers (ho?c theo hub) |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p |\\par
+| Post-conditions | - Email ???c x?p h?ng g?i async\\\\n- N?u thi?u c?u h?nh SMTP: h? th?ng kh?ng crash, ghi log v? skip g?i |\\par
+| Main Flow | 1) Admin g?i request broadcast email\\\\n2) H? th?ng truy v?n danh s?ch email theo role (MANAGER, fallback STAFF)\\\\n3) Ghi `SystemLog` tr?ng th?i QUEUED\\\\n4) Async sender g?i t?ng email v? ghi `SystemLog` DONE/ SKIPPED |\\par
+| Alternative | Target `HUB_MANAGERS`: l?c theo `Staff.hubId` |\\par
+| Exception | Thi?u `hubId` khi target HUB_MANAGERS: tr? l?i; thi?u SMTP: skip g?i |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- Admin ? POST `/api/admin/broadcast/email` ? Service resolve recipients ? enqueue async ? sender g?i mail ? log\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Select | Ch?n target (ALL_MANAGERS / HUB_MANAGERS) |\\par
+| 2 | Select/Text | Ch?n hub (n?u HUB_MANAGERS) |\\par
+| 3 | Text | Nh?p subject |\\par
+| 4 | Textarea | Nh?p n?i dung |\\par
+| 5 | Button | G?i broadcast |\\par
+\\par
+---\\par
+\\par
+### 4.7.7. Ch?c n?ng C?nh b?o r?i ro ? Xem chi ti?t ??n (con m?t)\\par
+\\par
+**a. M? t? ch?c n?ng**\\par
+\\par
+| Thu?c t?nh | N?i dung |\\par
+|---|---|\\par
+| Name | Risk alerts ? view order detail |\\par
+| Goal | T? danh s?ch ??n b? treo, m? trang chi ti?t ??n ?? x? l? |\\par
+| Actors | Admin |\\par
+| Pre-conditions | Admin ?? ??ng nh?p; trang risk alerts hi?n th? danh s?ch stuck orders |\\par
+| Post-conditions | M? trang chi ti?t ??n v? xem timeline h?nh tr?nh |\\par
+| Main Flow | 1) Admin v?o `/admin/risk-alerts`\\\\n2) B?m icon ?con m?t? t?i d?ng ??n\\\\n3) ?i?u h??ng t?i `/admin/risk-alerts/\\{requestId\\}`\\\\n4) Server l?y chi ti?t ??n + timeline v? render JSP |\\par
+| Exception | Kh?ng t?m th?y ??n: hi?n th? th?ng b?o l?i tr?n trang chi ti?t |\\par
+\\par
+**b. L??c ?? ch?c n?ng (m? t? lu?ng)**\\par
+\\par
+- UI Risk Alerts ? click con m?t ? GET trang chi ti?t ? load d? li?u tracking ? render chi ti?t\\par
+\\par
+**c. Thi?t k? giao di?n (b?ng n?t/ch?c n?ng)**\\par
+\\par
+| STT | D?ng | M?c ??ch |\\par
+|---|---|---|\\par
+| 1 | Table | Danh s?ch stuck orders |\\par
+| 2 | Icon Button (Eye) | M? trang chi ti?t ??n |\\par
+| 3 | Button | Quay l?i danh s?ch |\\par
+| 4 | Table | Timeline h?nh tr?nh (ActionHistory) |\\par
+}

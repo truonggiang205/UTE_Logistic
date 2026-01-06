@@ -3,6 +3,7 @@ package vn.web.logistic.repository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -125,8 +126,11 @@ public interface CodTransactionRepository extends
                         "HAVING SUM(t.amount) > :debtLimit")
         List<HighDebtShipperDTO> findHighDebtShippers(@Param("debtLimit") BigDecimal debtLimit);
 
-        /* ========================= SHIPPER DASHBOARD STATISTICS =========================== */
-        // Tính tổng tiền COD chưa nộp của shipper (status = collected)
+        /*
+         * ========================= SHIPPER DASHBOARD STATISTICS
+         * ===========================
+         */
+        // Tính tổng tiền COD theo shipper và status (dùng chung cho nhiều mục đích)
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM CodTransaction c " +
                         "WHERE c.shipper.shipperId = :shipperId " +
                         "AND c.status = :status")
@@ -151,7 +155,8 @@ public interface CodTransactionRepository extends
         Long countCodByShipperAndStatus(@Param("shipperId") Long shipperId,
                         @Param("status") CodStatus status);
 
-        // Lấy danh sách COD transactions chưa nộp (collected) của shipper
+        // Lấy danh sách COD transactions theo shipper và status (pending = chưa nộp,
+        // settled = đã nộp)
         @Query("SELECT c FROM CodTransaction c " +
                         "WHERE c.shipper.shipperId = :shipperId " +
                         "AND c.status = :status " +
@@ -165,4 +170,8 @@ public interface CodTransactionRepository extends
                         "AND c.status = 'settled' " +
                         "ORDER BY c.settledAt DESC")
         List<CodTransaction> findSettledByShipperId(@Param("shipperId") Long shipperId);
+
+        // Tìm COD Transaction theo request_id (dùng để kiểm tra duplicate)
+        @Query("SELECT c FROM CodTransaction c WHERE c.request.requestId = :requestId")
+        Optional<CodTransaction> findByRequestId(@Param("requestId") Long requestId);
 }

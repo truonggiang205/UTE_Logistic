@@ -373,7 +373,7 @@ uri="http://java.sun.com/jsp/jstl/fmt" %>
                   type="password"
                   class="form-control"
                   id="new-password"
-                  placeholder="Tối thiểu 6 ký tự"
+                  placeholder="Tối thiểu 8 ký tự"
                   required />
                 <div class="invalid-feedback" id="error-password"></div>
               </div>

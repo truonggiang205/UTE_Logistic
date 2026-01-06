@@ -51,29 +51,30 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         Customer sender = getOrCreateSenderCustomer();
 
         // Receiver: tạo customer vãng lai theo SĐT (để tái sử dụng địa chỉ)
-        Customer receiver = customerRepository.findByPhone(form.getReceiverPhone())
+        String receiverPhone = normalizePhone(form.getReceiverPhone());
+        Customer receiver = customerRepository.findFirstByPhoneOrderByCustomerIdAsc(receiverPhone)
                 .orElseGet(() -> customerRepository.save(Customer.builder()
-                        .phone(form.getReceiverPhone())
-                        .fullName(form.getReceiverName())
+                .phone(receiverPhone)
+                .fullName(emptyToNull(form.getReceiverName()))
                         .customerType(Customer.CustomerType.individual)
                         .status(Customer.CustomerStatus.active)
                         .createdAt(LocalDateTime.now())
                         .build()));
 
         CustomerAddress pickupAddress = validateAndSaveAddress(sender, CustomerAddress.builder()
-                .contactName(form.getSenderName())
-                .contactPhone(form.getSenderPhone())
-                .addressDetail(form.getPickupAddressDetail())
-                .ward(emptyToNull(form.getPickupWard()))
-                .district(emptyToNull(form.getPickupDistrict()))
-                .province(emptyToNull(form.getPickupProvince()))
+            .contactName(emptyToNull(form.getSenderName()))
+            .contactPhone(normalizePhone(form.getSenderPhone()))
+            .addressDetail(emptyToNull(form.getPickupAddressDetail()))
+            .ward(emptyToNull(form.getPickupWard()))
+            .district(emptyToNull(form.getPickupDistrict()))
+            .province(emptyToNull(form.getPickupProvince()))
                 .isDefault(false)
                 .build());
 
         CustomerAddress deliveryAddress = validateAndSaveAddress(receiver, CustomerAddress.builder()
-                .contactName(form.getReceiverName())
-                .contactPhone(form.getReceiverPhone())
-                .addressDetail(form.getDeliveryAddressDetail())
+            .contactName(emptyToNull(form.getReceiverName()))
+            .contactPhone(receiverPhone)
+            .addressDetail(emptyToNull(form.getDeliveryAddressDetail()))
                 .ward(emptyToNull(form.getDeliveryWard()))
                 .district(emptyToNull(form.getDeliveryDistrict()))
                 .province(emptyToNull(form.getDeliveryProvince()))
@@ -264,27 +265,36 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
             throw new RuntimeException("Địa chỉ không được để trống");
         }
 
-        String addressDetail = address.getAddressDetail() != null ? address.getAddressDetail() : "";
-        String ward = address.getWard() != null ? address.getWard() : "";
-        String district = address.getDistrict() != null ? address.getDistrict() : "";
-        String province = address.getProvince() != null ? address.getProvince() : "";
+        String addressDetail = emptyToNull(address.getAddressDetail());
+        String ward = emptyToNull(address.getWard());
+        String district = emptyToNull(address.getDistrict());
+        String province = emptyToNull(address.getProvince());
 
-        return customerAddressRepository.findByCustomerAndAddressDetailAndWardAndDistrictAndProvince(
-                customer, addressDetail, ward, district, province)
+        return customerAddressRepository.findDuplicateAddress(customer, addressDetail, ward, district, province)
                 .orElseGet(() -> {
                     address.setCustomer(customer);
                     address.setIsDefault(false);
-                    address.setContactName(address.getContactName() != null ? address.getContactName()
-                            : customer.getFullName());
-                    address.setContactPhone(address.getContactPhone() != null ? address.getContactPhone()
-                            : customer.getPhone());
-                    address.setAddressDetail(addressDetail);
-                    address.setWard(ward);
-                    address.setDistrict(district);
-                    address.setProvince(province);
+                address.setContactName(emptyToNull(address.getContactName()) != null
+                    ? emptyToNull(address.getContactName())
+                    : customer.getFullName());
+                address.setContactPhone(normalizePhone(emptyToNull(address.getContactPhone()) != null
+                    ? address.getContactPhone()
+                    : customer.getPhone()));
+                address.setAddressDetail(addressDetail);
+                address.setWard(ward);
+                address.setDistrict(district);
+                address.setProvince(province);
                     return customerAddressRepository.save(address);
                 });
     }
+
+        private String normalizePhone(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        String trimmed = phone.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+        }
 
     private BigDecimal calculateShippingFee(ServiceType st, BigDecimal weight) {
         BigDecimal fee = st.getBaseFee() != null ? st.getBaseFee() : BigDecimal.ZERO;

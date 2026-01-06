@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +20,6 @@ import vn.web.logistic.dto.response.ApiResponse;
 import vn.web.logistic.dto.response.manager.CodSettlementResultDTO;
 import vn.web.logistic.dto.response.manager.ShipperCodSummaryDTO;
 import vn.web.logistic.entity.User;
-import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.CodSettlementService;
 import vn.web.logistic.service.SecurityContextService;
 

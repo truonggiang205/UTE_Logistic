@@ -74,13 +74,13 @@ public class CustomerPortalServiceImpl implements CustomerPortalService {
 
         CustomerAddress address = CustomerAddress.builder()
                 .customer(customer)
-                .contactName(form.getContactName())
-                .contactPhone(form.getContactPhone())
-                .addressDetail(form.getAddressDetail())
-                .ward(form.getWard())
-                .district(form.getDistrict())
-                .province(form.getProvince())
-                .note(form.getNote())
+            .contactName(emptyToNull(form.getContactName()))
+            .contactPhone(emptyToNull(form.getContactPhone()))
+            .addressDetail(emptyToNull(form.getAddressDetail()))
+            .ward(emptyToNull(form.getWard()))
+            .district(emptyToNull(form.getDistrict()))
+            .province(emptyToNull(form.getProvince()))
+            .note(emptyToNull(form.getNote()))
                 .isDefault(form.isMakeDefault())
                 .build();
 
@@ -153,7 +153,8 @@ public class CustomerPortalServiceImpl implements CustomerPortalService {
         if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
             try {
                 if (user.getAvatarUrl().startsWith("/uploads/customers/")) {
-                    fileUploadService.deleteImage(user.getAvatarUrl().replace("/uploads/", ""));
+                    String relativePath = user.getAvatarUrl().replaceFirst("^/uploads/", "");
+                    fileUploadService.deleteImage(relativePath);
                 }
             } catch (Exception ignored) {
                 // Không fail toàn bộ chỉ vì xóa ảnh cũ lỗi
@@ -168,11 +169,14 @@ public class CustomerPortalServiceImpl implements CustomerPortalService {
     }
 
     private void clearDefault(Long customerId) {
-        customerAddressRepository.findByCustomerCustomerId(customerId).forEach(a -> {
-            if (Boolean.TRUE.equals(a.getIsDefault())) {
-                a.setIsDefault(false);
-                customerAddressRepository.save(a);
-            }
-        });
+        customerAddressRepository.clearDefaultForCustomer(customerId);
+    }
+
+    private String emptyToNull(String s) {
+        if (s == null) {
+            return null;
+        }
+        String trimmed = s.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

@@ -31,5 +31,10 @@ public class Route {
 
     private Integer estimatedTime;
 
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "ENUM('active','inactive') DEFAULT 'active'")
+    @Builder.Default
+    private RouteStatus status = RouteStatus.active;
+
     private String description;
 }

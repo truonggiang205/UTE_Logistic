@@ -33,7 +33,7 @@ public class CodTransaction {
 
     /**
      * Trạng thái COD Transaction:
-     * - pending: Chờ thu (shipper chưa giao hàng)
+     * - pending: Chờ thu (shipper đã giao hàng)
      * - collected: Đã thu từ khách, shipper đang giữ tiền (chờ Admin duyệt)
      * - settled: Admin đã xác nhận, hoàn tất
      */

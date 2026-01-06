@@ -404,9 +404,8 @@
                 }
 
                 function viewOrderDetail(requestId) {
-                    // Chuyển đến trang chi tiết đơn hàng (có thể customize theo route của bạn)
-                    alert('Xem chi tiết đơn #' + requestId + '\n(Chức năng đang phát triển)');
-                    // window.location.href = '/admin/orders/' + requestId;
+                    // Chuyển đến trang chi tiết đơn hàng
+                    window.location.href = '${pageContext.request.contextPath}/admin/risk-alerts/' + requestId;
                 }
 
                 function contactShipper(phone) {

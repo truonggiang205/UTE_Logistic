@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -104,9 +105,9 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         Long completedCount = shipperTaskRepository.countCompletedTodayByShipper(
                 shipperId, TaskStatus.completed, startOfDay, endOfDay);
 
-        // Tổng tiền COD cần nộp
+        // Tổng tiền COD cần nộp (pending = shipper đang giữ, cần nộp)
         BigDecimal totalCodAmount = codTransactionRepository.sumCodByShipperAndStatus(
-                shipperId, CodStatus.collected);
+                shipperId, CodStatus.pending);
         if (totalCodAmount == null) {
             totalCodAmount = BigDecimal.ZERO;
         }
@@ -388,10 +389,10 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
             serviceRequestRepository.save(request);
             log.info("Request {} chuyển sang PICKED", request.getRequestId());
         } else if (taskStatus == TaskStatus.failed) {
-            // Pickup thất bại → Đơn hàng chuyển sang "failed"
-            request.setStatus(RequestStatus.failed);
-            serviceRequestRepository.save(request);
-            log.info("Request {} chuyển sang FAILED (pickup thất bại)", request.getRequestId());
+            // Pickup thất bại → GIỮ NGUYÊN status pending để có thể phân công lại
+            // KHÔNG đổi status sang failed, vì đơn hàng vẫn chờ được lấy
+            log.info("Request {} - Pickup thất bại, giữ nguyên status {} để phân công lại",
+                    request.getRequestId(), request.getStatus());
         }
     }
 
@@ -463,10 +464,10 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
             // Tạo COD Transaction nếu có tiền thu hộ
             createCodTransactionIfNeeded(request, shipper);
         } else if (taskStatus == TaskStatus.failed) {
-            // Delivery thất bại → Đơn hàng chuyển sang "failed"
-            request.setStatus(RequestStatus.failed);
-            serviceRequestRepository.save(request);
-            log.info("Request {} chuyển sang FAILED (delivery thất bại)", request.getRequestId());
+            // Delivery thất bại → GIỮ NGUYÊN status in_transit để có thể phân công lại
+            // KHÔNG đổi status sang failed, vì đơn hàng vẫn ở Hub và cần được giao lại
+            log.info("Request {} - Delivery thất bại, giữ nguyên status {} để phân công lại",
+                    request.getRequestId(), request.getStatus());
         }
     }
 
@@ -476,6 +477,14 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
      * Status = pending (shipper đang giữ tiền, chờ nộp)
      */
     private void createCodTransactionIfNeeded(ServiceRequest request, Shipper shipper) {
+        // CHECK 1: Nếu đơn đã paid (người gửi đã thanh toán), shipper không cần thu
+        // tiền
+        if (request.getPaymentStatus() == ServiceRequest.PaymentStatus.paid) {
+            log.info("Request {} đã được thanh toán (paymentStatus=paid), shipper không cần thu tiền",
+                    request.getRequestId());
+            return;
+        }
+
         // Tính tổng tiền shipper cần thu = receiverPayAmount (COD + Cước nếu người nhận
         // trả)
         BigDecimal totalCollect = request.getReceiverPayAmount();
@@ -495,15 +504,19 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         }
 
         // Kiểm tra xem đã có COD Transaction cho đơn này chưa
-        var existingCod = codTransactionRepository
-                .findAll()
-                .stream()
-                .filter(c -> c.getRequest() != null &&
-                        c.getRequest().getRequestId().equals(request.getRequestId()))
-                .findFirst();
+        var existingCod = codTransactionRepository.findByRequestId(request.getRequestId());
 
         if (existingCod.isPresent()) {
-            log.info("Request {} đã có COD Transaction, bỏ qua", request.getRequestId());
+            CodTransaction existing = existingCod.get();
+            // Nếu COD đã tồn tại nhưng chưa có shipper (từ drop-off), cập nhật shipper
+            if (existing.getShipper() == null) {
+                existing.setShipper(shipper);
+                codTransactionRepository.save(existing);
+                log.info("Request {} đã có COD Transaction, cập nhật shipper_id = {}",
+                        request.getRequestId(), shipper.getShipperId());
+            } else {
+                log.info("Request {} đã có COD Transaction với shipper, bỏ qua", request.getRequestId());
+            }
             return;
         }
 
@@ -513,11 +526,13 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 .shipper(shipper)
                 .amount(totalCollect) // COD + Cước
                 .status(CodStatus.pending) // Chờ shipper nộp
+                .collectedAt(null)
+                .settledAt(null)
                 .build();
 
-        codTransactionRepository.save(codTx);
-        log.info("Đã tạo COD Transaction cho request {}: {}đ (COD+Cước), status=pending (chờ shipper nộp)",
-                request.getRequestId(), totalCollect);
+        CodTransaction saved = codTransactionRepository.save(codTx);
+        log.info("Đã tạo COD Transaction cho request {}: {}đ (COD+Cước), status={}",
+                request.getRequestId(), totalCollect, saved.getStatus());
     }
 
     // PARCEL ACTION HISTORY
@@ -1020,7 +1035,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         }
 
         // 2. Lấy COD đã xác nhận (settled)
-        List<vn.web.logistic.entity.CodTransaction> settledList = codTransactionRepository
+        List<CodTransaction> settledList = codTransactionRepository
                 .findSettledByShipperId(shipper.getShipperId());
 
         for (var cod : settledList) {
@@ -1036,6 +1051,31 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         }
 
         return result;
+    }
+
+    @Override
+    public Page<CodHistoryDTO> getCodHistoryPaged(String shipperEmail, Pageable pageable) {
+        List<CodHistoryDTO> allHistory = getCodHistory(shipperEmail);
+
+        // Sort theo thời gian giảm dần (mới nhất lên đầu)
+        allHistory.sort((a, b) -> {
+            if (a.getSubmittedAt() == null)
+                return 1;
+            if (b.getSubmittedAt() == null)
+                return -1;
+            return b.getSubmittedAt().compareTo(a.getSubmittedAt());
+        });
+
+        // Phân trang thủ công
+        int totalElements = allHistory.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), totalElements);
+
+        List<CodHistoryDTO> pageContent = start < totalElements
+                ? allHistory.subList(start, end)
+                : java.util.List.of();
+
+        return new PageImpl<>(pageContent, pageable, totalElements);
     }
 
     // EARNINGS IMPLEMENTATION

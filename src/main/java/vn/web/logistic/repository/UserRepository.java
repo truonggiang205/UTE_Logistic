@@ -22,4 +22,29 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean existsByEmail(String email);
 
     boolean existsByPhone(String phone);
+
+    boolean existsByRoles_RoleId(Long roleId);
+
+        @org.springframework.data.jpa.repository.Query(
+            "SELECT DISTINCT u FROM User u " +
+            "JOIN u.roles r " +
+            "LEFT JOIN FETCH u.staff s " +
+            "WHERE UPPER(r.roleName) = UPPER(:roleName) " +
+            "AND r.status = 'active' " +
+            "AND u.status = 'active' " +
+            "AND u.email IS NOT NULL AND u.email <> ''")
+        java.util.List<User> findActiveUsersByRoleName(@org.springframework.data.repository.query.Param("roleName") String roleName);
+
+        @org.springframework.data.jpa.repository.Query(
+            "SELECT DISTINCT u FROM User u " +
+            "JOIN u.roles r " +
+            "JOIN u.staff s " +
+            "WHERE UPPER(r.roleName) = UPPER(:roleName) " +
+            "AND r.status = 'active' " +
+            "AND u.status = 'active' " +
+            "AND s.hub.hubId = :hubId " +
+            "AND u.email IS NOT NULL AND u.email <> ''")
+        java.util.List<User> findActiveUsersByRoleNameAndHubId(
+            @org.springframework.data.repository.query.Param("roleName") String roleName,
+            @org.springframework.data.repository.query.Param("hubId") Long hubId);
 }

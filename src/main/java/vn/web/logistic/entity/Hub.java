@@ -50,11 +50,3 @@ public class Hub {
     @Column(length = 100)
     private String email;
 }
-
-enum HubLevel {
-    central, regional, local
-}
-
-enum HubStatus {
-    active, inactive
-}

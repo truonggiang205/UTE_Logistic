@@ -27,6 +27,8 @@ public interface ParcelActionRepository extends JpaRepository<ParcelAction, Long
     // Đếm số hành động của một đơn hàng
     long countByRequestRequestId(Long requestId);
 
+    boolean existsByActionType_ActionTypeId(Long actionTypeId);
+
     // Xóa tất cả hành động của một đơn hàng
     void deleteByRequest_RequestId(Long requestId);
 
