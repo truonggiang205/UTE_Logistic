@@ -280,7 +280,7 @@ public class CustomerController {
         session.setAttribute("pendingEmail", newEmail);
 
         try {
-            customerDashboardService.sendEmailOtp(newEmail);
+            customerDashboardService.sendEmailOtp(newEmail, otp);
             return ResponseEntity.ok("Mã xác thực đã được gửi đến " + newEmail);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());

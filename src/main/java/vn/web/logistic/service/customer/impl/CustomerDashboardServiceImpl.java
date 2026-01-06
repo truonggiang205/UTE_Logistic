@@ -420,8 +420,7 @@ public class CustomerDashboardServiceImpl implements CustomerDashboardService {
     }
 
     @Override
-    public void sendEmailOtp(String newEmail) {
-        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+    public void sendEmailOtp(String newEmail, String otp) {
         try {
             emailService.sendOtpEmail(newEmail, otp);
         } catch (Exception e) {

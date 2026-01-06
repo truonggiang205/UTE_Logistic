@@ -150,7 +150,7 @@ public interface CustomerDashboardService {
         /**
          * Gửi OTP xác thực email mới
          */
-        void sendEmailOtp(String newEmail);
+        void sendEmailOtp(String newEmail, String otp);
 
         /**
          * Kiểm tra email đã tồn tại
