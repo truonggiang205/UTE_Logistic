@@ -271,6 +271,31 @@ public class StaffAccountServiceImpl implements StaffAccountService {
         }
 
         user = userRepository.save(user);
+
+        // === CẬP NHẬT HUB CHO STAFF/SHIPPER ===
+        Hub newHub = null;
+        if (request.getHubId() != null) {
+            newHub = hubRepository.findById(request.getHubId()).orElse(null);
+        }
+
+        // Cập nhật Hub cho Staff entity (nếu có)
+        Staff staff = staffRepository.findByUserUserId(id).orElse(null);
+        if (staff != null) {
+            staff.setHub(newHub);
+            staffRepository.save(staff);
+            log.info("Updated Hub for Staff (userId: {}) -> hubId: {}", id,
+                    newHub != null ? newHub.getHubId() : "null");
+        }
+
+        // Cập nhật Hub cho Shipper entity (nếu có)
+        Shipper shipper = shipperRepository.findByUserUserId(id).orElse(null);
+        if (shipper != null) {
+            shipper.setHub(newHub);
+            shipperRepository.save(shipper);
+            log.info("Updated Hub for Shipper (userId: {}) -> hubId: {}", id,
+                    newHub != null ? newHub.getHubId() : "null");
+        }
+
         log.info("Updated Staff Account ID: {} -> {}", id, user.getUsername());
 
         return getById(id);
