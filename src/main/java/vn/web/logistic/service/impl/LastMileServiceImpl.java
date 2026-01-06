@@ -698,40 +698,26 @@ public class LastMileServiceImpl implements LastMileService {
                                 .build();
                 parcelActionRepository.save(action);
 
-                // 7. Tạo hoặc cập nhật CodTransaction nếu có COD
+                // 7. Cập nhật CodTransaction nếu có (KHÔNG tạo mới - COD đã được tạo khi tạo
+                // đơn)
                 CodTransaction codTx = null;
-                BigDecimal codCollected = request.getCodCollected();
-                if (codCollected == null) {
-                        codCollected = serviceRequest.getReceiverPayAmount();
-                }
-                if (codCollected != null && codCollected.compareTo(BigDecimal.ZERO) > 0) {
-                        // Kiểm tra xem đã có COD Transaction cho đơn này chưa (từ drop-off)
-                        var existingCod = codTransactionRepository.findByRequestId(serviceRequest.getRequestId());
 
-                        if (existingCod.isPresent()) {
-                                // Nếu đã tồn tại, cập nhật shipper và đảm bảo status = pending
-                                codTx = existingCod.get();
-                                if (codTx.getShipper() == null) {
-                                        codTx.setShipper(task.getShipper());
-                                }
-                                codTx.setStatus(CodStatus.pending); // Đảm bảo status là pending
-                                codTransactionRepository.save(codTx);
-                                log.info("Request {} đã có COD Transaction, cập nhật shipper_id = {}",
-                                                serviceRequest.getRequestId(), task.getShipper().getShipperId());
-                        } else {
-                                // Tạo mới COD Transaction
-                                codTx = CodTransaction.builder()
-                                                .request(serviceRequest)
-                                                .shipper(task.getShipper())
-                                                .amount(codCollected)
-                                                .collectedAt(null) // Chưa thu, sẽ set khi shipper nộp tiền
-                                                .status(CodStatus.pending) // Shipper đang giữ tiền, chờ nộp
-                                                .paymentMethod("CASH")
-                                                .build();
-                                codTransactionRepository.save(codTx);
-                                log.info("Tạo mới COD Transaction cho request {}: {}đ, status=pending",
-                                                serviceRequest.getRequestId(), codCollected);
-                        }
+                // Tìm COD Transaction theo request_id
+                var existingCod = codTransactionRepository.findByRequestId(serviceRequest.getRequestId());
+
+                if (existingCod.isPresent()) {
+                        codTx = existingCod.get();
+                        // Cập nhật shipper_id và thời gian thu collectedAt
+                        codTx.setShipper(task.getShipper());
+                        codTx.setCollectedAt(now);
+                        codTx.setStatus(CodStatus.pending); // Shipper đang giữ tiền, chờ nộp
+                        codTransactionRepository.save(codTx);
+                        log.info("Request {} - Cập nhật COD Transaction: shipper_id = {}, collectedAt = {}",
+                                        serviceRequest.getRequestId(), task.getShipper().getShipperId(), now);
+                } else {
+                        // KHÔNG tạo mới - chỉ log warning nếu không tìm thấy
+                        log.warn("Request {} - Không tìm thấy COD Transaction để cập nhật. Có thể đơn không có COD.",
+                                        serviceRequest.getRequestId());
                 }
 
                 // 8. Reset shipper status về active nếu không còn task active nào
@@ -916,7 +902,8 @@ public class LastMileServiceImpl implements LastMileService {
                                 .build();
                 parcelActionRepository.save(action);
 
-                // 8. Tạo hoặc cập nhật CodTransaction với status = settled (đã quyết toán ngay tại quầy)
+                // 8. Tạo hoặc cập nhật CodTransaction với status = settled (đã quyết toán ngay
+                // tại quầy)
                 CodTransaction codTx = null;
                 //
                 BigDecimal codCollected = request.getCodCollected();
@@ -928,9 +915,9 @@ public class LastMileServiceImpl implements LastMileService {
                 }
                 if (codCollected != null && codCollected.compareTo(BigDecimal.ZERO) > 0) {
                         // Kiểm tra xem đã có COD Transaction cho request này chưa
-                        Optional<CodTransaction> existingCod = codTransactionRepository.findByRequestId(serviceRequest.getRequestId());
+                        Optional<CodTransaction> existingCod = codTransactionRepository
+                                        .findByRequestId(serviceRequest.getRequestId());
 
-                                        
                         if (existingCod.isPresent()) {
                                 // Nếu đã tồn tại, cập nhật status = settled (thu tiền ngay tại quầy)
                                 codTx = existingCod.get();
@@ -955,7 +942,6 @@ public class LastMileServiceImpl implements LastMileService {
                                 log.info("Tạo mới COD Transaction cho request {}: {}đ, status=settled (nhận tại quầy)",
                                                 serviceRequest.getRequestId(), codCollected);
                         }
-                        
 
                         serviceRequest.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
                         serviceRequestRepository.save(serviceRequest);
@@ -1019,9 +1005,11 @@ public class LastMileServiceImpl implements LastMileService {
                 task.setResultNote(request.getNote());
                 shipperTaskRepository.save(task);
 
-                // 5. Cập nhật đơn hàng thành picked
+                // 5. Lấy thông tin đơn hàng (KHÔNG cập nhật status - sẽ được Manager cập nhật
+                // khi bàn giao)
                 ServiceRequest serviceRequest = task.getRequest();
-                serviceRequest.setStatus(RequestStatus.picked);
+                // serviceRequest.setStatus(RequestStatus.picked); // Đã bỏ - chờ Manager xác
+                // nhận bàn giao
 
                 // Cập nhật current_hub = hub của shipper (nơi hàng sẽ được đưa về)
                 Shipper shipper = task.getShipper();

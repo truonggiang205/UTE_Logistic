@@ -1,9 +1,26 @@
 package vn.web.logistic.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "VNPAY_TRANSACTIONS")
@@ -16,7 +33,7 @@ import java.time.LocalDateTime;
 public class VnpayTransaction {
 
     public enum VnpayPaymentStatus {
-        pending, paid, failed
+        pending, success, failed
     }
 
     @Id
@@ -50,7 +67,7 @@ public class VnpayTransaction {
     private String vnpOrderInfo;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('pending','paid','failed') DEFAULT 'pending'")
+    @Column(columnDefinition = "ENUM('pending','success','failed') DEFAULT 'pending'")
     @Builder.Default
     private VnpayPaymentStatus paymentStatus = VnpayPaymentStatus.pending;
 
@@ -59,4 +76,10 @@ public class VnpayTransaction {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    public String getFormattedCreatedAt() {
+        if (this.createdAt == null)
+            return "---";
+        return this.createdAt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
 }

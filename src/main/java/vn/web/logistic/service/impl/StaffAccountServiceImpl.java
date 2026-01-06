@@ -1,5 +1,6 @@
 package vn.web.logistic.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,10 +17,16 @@ import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.dto.request.admin.StaffAccountRequest;
 import vn.web.logistic.dto.response.admin.PageResponse;
 import vn.web.logistic.dto.response.admin.StaffAccountResponse;
+import vn.web.logistic.entity.Hub;
 import vn.web.logistic.entity.Role;
+import vn.web.logistic.entity.Shipper;
+import vn.web.logistic.entity.Staff;
 import vn.web.logistic.entity.User;
 import vn.web.logistic.entity.User.UserStatus;
+import vn.web.logistic.repository.HubRepository;
 import vn.web.logistic.repository.RoleRepository;
+import vn.web.logistic.repository.ShipperRepository;
+import vn.web.logistic.repository.StaffRepository;
 import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.StaffAccountService;
 
@@ -30,6 +37,9 @@ public class StaffAccountServiceImpl implements StaffAccountService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final StaffRepository staffRepository;
+    private final ShipperRepository shipperRepository;
+    private final HubRepository hubRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -122,6 +132,12 @@ public class StaffAccountServiceImpl implements StaffAccountService {
             }
         }
 
+        // Lấy Hub nếu có
+        Hub hub = null;
+        if (request.getHubId() != null) {
+            hub = hubRepository.findById(request.getHubId()).orElse(null);
+        }
+
         User user = User.builder()
                 .username(request.getUsername().trim())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -134,9 +150,65 @@ public class StaffAccountServiceImpl implements StaffAccountService {
                 .build();
 
         user = userRepository.save(user);
-        log.info("Created new Staff Account: {} (ID: {})", user.getUsername(), user.getUserId());
+        log.info("Created new User Account: {} (ID: {})", user.getUsername(), user.getUserId());
+
+        // == Tạo Staff/Shipper entity dựa trên role ==
+        Set<String> roleNames = roles.stream().map(Role::getRoleName).collect(Collectors.toSet());
+
+        // Nếu có role STAFF hoặc ADMIN → Tạo Staff entity
+        if (roleNames.contains("STAFF") || roleNames.contains("ADMIN")) {
+            createStaffEntity(user, hub);
+        }
+
+        // Nếu có role SHIPPER → Tạo Shipper entity
+        if (roleNames.contains("SHIPPER")) {
+            createShipperEntity(user, hub);
+        }
 
         return getById(user.getUserId());
+    }
+
+    /**
+     * Tạo Staff entity cho user
+     */
+    private void createStaffEntity(User user, Hub hub) {
+        if (staffRepository.existsByUserUserId(user.getUserId())) {
+            log.info("Staff entity đã tồn tại cho user: {}", user.getUsername());
+            return;
+        }
+
+        Staff staff = Staff.builder()
+                .user(user)
+                .hub(hub)
+                .staffPosition("Manager")
+                .status(Staff.StaffStatus.active)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        staffRepository.save(staff);
+        log.info("Created Staff entity for user: {} with Hub: {}",
+                user.getUsername(), hub != null ? hub.getHubName() : "Chưa gán");
+    }
+
+    /**
+     * Tạo Shipper entity cho user
+     */
+    private void createShipperEntity(User user, Hub hub) {
+        if (shipperRepository.existsByUserUserId(user.getUserId())) {
+            log.info("Shipper entity đã tồn tại cho user: {}", user.getUsername());
+            return;
+        }
+
+        Shipper shipper = Shipper.builder()
+                .user(user)
+                .hub(hub)
+                .status(Shipper.ShipperStatus.active)
+                .rating(java.math.BigDecimal.valueOf(5.0))
+                .build();
+
+        shipperRepository.save(shipper);
+        log.info("Created Shipper entity for user: {} with Hub: {}",
+                user.getUsername(), hub != null ? hub.getHubName() : "Chưa gán");
     }
 
     @Override

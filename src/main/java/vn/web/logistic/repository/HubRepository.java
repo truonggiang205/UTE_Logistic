@@ -11,33 +11,38 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import vn.web.logistic.entity.Hub;
+import vn.web.logistic.entity.Hub.HubLevel;
+import vn.web.logistic.entity.Hub.HubStatus;
 
 @Repository
 public interface HubRepository extends JpaRepository<Hub, Long> {
 
-    // [MẶC ĐỊNH] findById(Long id): Lấy thông tin kho hiện tại.
+        // [MẶC ĐỊNH] findById(Long id): Lấy thông tin kho hiện tại.
 
-    // Chỉ lấy các Hub đang hoạt động và sắp xếp theo tên
-    @Query("SELECT h FROM Hub h WHERE h.status = 'active' ORDER BY h.hubName ASC")
-    List<Hub> findAllActiveHubs();
+        // Chỉ lấy các Hub đang hoạt động và sắp xếp theo tên
+        @Query("SELECT h FROM Hub h WHERE h.status = 'active' ORDER BY h.hubName ASC")
+        List<Hub> findAllActiveHubs();
 
-    // Tìm Hub theo tên (kiểm tra trùng)
-    Optional<Hub> findByHubNameIgnoreCase(String hubName);
+        // Tìm Hub theo tên (kiểm tra trùng)
+        Optional<Hub> findByHubNameIgnoreCase(String hubName);
 
-    // Tìm kiếm với filter và phân trang
-    @Query("SELECT h FROM Hub h WHERE " +
-            "(:status IS NULL OR h.status = :status) AND " +
-            "(:hubLevel IS NULL OR h.hubLevel = :hubLevel) AND " +
-            "(:keyword IS NULL OR :keyword = '' OR " +
-            " LOWER(h.hubName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            " LOWER(h.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            " LOWER(h.province) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Hub> findWithFilters(
-            @Param("status") Hub.HubStatus status,
-            @Param("hubLevel") Hub.HubLevel hubLevel,
-            @Param("keyword") String keyword,
-            Pageable pageable);
+        // Tìm kiếm với filter và phân trang
+        @Query("SELECT h FROM Hub h WHERE " +
+                        "(:status IS NULL OR h.status = :status) AND " +
+                        "(:hubLevel IS NULL OR h.hubLevel = :hubLevel) AND " +
+                        "(:keyword IS NULL OR :keyword = '' OR " +
+                        " LOWER(h.hubName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        " LOWER(h.address) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        " LOWER(h.province) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Hub> findWithFilters(
+                        @Param("status") Hub.HubStatus status,
+                        @Param("hubLevel") Hub.HubLevel hubLevel,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
 
-    // Đếm tổng số Hub theo status
-    long countByStatus(Hub.HubStatus status);
+        // Đếm tổng số Hub theo status
+        long countByStatus(Hub.HubStatus status);
+
+        // Lấy toàn bộ danh sách bưu cục/kho
+        List<Hub> findByProvinceAndHubLevelAndStatus(String province, HubLevel level, HubStatus status);
 }

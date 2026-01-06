@@ -49,8 +49,8 @@ public class Staff {
     private StaffStatus status = StaffStatus.active;
 
     private LocalDateTime joinedAt;
-}
 
-enum StaffStatus {
-    active, inactive
+    public enum StaffStatus {
+        active, inactive
+    }
 }

@@ -1,135 +1,104 @@
 package vn.web.logistic.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-@Component
-public class VnpayConfig {
-    @Value("${vnpay.pay-url}")
-    private String vnpPayUrl;
-    @Value("${vnpay.return-url}")
-    private String vnpReturnUrl;
-    @Value("${vnpay.tmn-code}")
-    private String vnpTmnCode;
-    @Value("${vnpay.secret-key}")
-    private String secretKey;
-    @Value("${vnpay.version:2.1.0}")
-    private String vnpVersion;
-    @Value("${vnpay.command:pay}")
-    private String vnpCommand;
-    @Value("${vnpay.order-type:other}")
-    private String vnpOrderType;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
-    public String getVnpPayUrl() {
-        return vnpPayUrl;
-    }
+import jakarta.servlet.http.HttpServletRequest;
 
-    public String getVnpReturnUrl() {
-        return vnpReturnUrl;
-    }
+public class VNPAYConfig {
 
-    public String getVnpTmnCode() {
-        return vnpTmnCode;
-    }
+    // ================= CONFIG =================
+    public static final String vnp_TmnCode = "VELS5U0P";
+    public static final String vnp_HashSecret = "U27A71PZD9L43SB5EJI5ODZRKHLNS4BH";
 
-    public String getVnpVersion() {
-        return vnpVersion;
-    }
+    public static final String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
-    public String getVnpCommand() {
-        return vnpCommand;
-    }
+    public static String vnp_ReturnUrl = "http://localhost:9090/customer/api/payment/vnpay-return";
 
-    public String getVnpOrderType() {
-        return vnpOrderType;
-    }
+    // Return URL cho Manager (Inbound drop-off)
+    public static String vnp_ManagerReturnUrl = "http://localhost:9090/api/manager/inbound/vnpay-return";
 
-    public String getSecretKey() {
-        return secretKey;
-    }
+    // public static final String vnp_IpnUrl =
+    // "https://localhost:9090/customer/api/payment/vnpay-ipn";
 
-    /**
-     * Tạo hash từ các fields - THEO ĐÚNG CODE MẪU VNPAY
-     * Logic: FieldName=FieldValue (đã encode) nối với nhau bằng dấu & (không dư ở
-     * cuối)
-     * Dùng cho việc tạo URL thanh toán - fields chưa được encode
-     */
-    public String hashAllFields(Map<String, String> fields) {
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
-        Collections.sort(fieldNames);
-        StringBuilder hashData = new StringBuilder();
-        Iterator<String> itr = fieldNames.iterator();
-        while (itr.hasNext()) {
-            String fieldName = itr.next();
-            String fieldValue = fields.get(fieldName);
-            if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                try {
-                    // Build hash data - PHẢI ENCODE giá trị theo đúng code mẫu VNPAY
-                    hashData.append(fieldName);
-                    hashData.append('=');
-                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                } catch (Exception e) {
-                    throw new IllegalStateException("Không thể encode dữ liệu VNPAY cho field: " + fieldName, e);
-                }
-                if (itr.hasNext()) {
-                    hashData.append('&');
-                }
-            }
-        }
-        return hmacSHA512(secretKey, hashData.toString());
-    }
-
-    /**
-     * Verify hash từ VNPAY callback - dùng cho IPN/Return URL
-     * VNPAY trả về các giá trị ĐÃ ĐƯỢC DECODE bởi framework (Spring tự decode query
-     * params)
-     * Nên ta cần ENCODE LẠI khi verify để khớp với cách VNPAY tạo hash
-     */
-    public boolean verifySecureHash(Map<String, String> params, String receivedHash) {
-        // Loại bỏ vnp_SecureHash và vnp_SecureHashType khỏi params trước khi hash
-        Map<String, String> fieldsToHash = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            String key = entry.getKey();
-            if (!key.equals("vnp_SecureHash") && !key.equals("vnp_SecureHashType")) {
-                fieldsToHash.put(key, entry.getValue());
-            }
-        }
-
-        // Tính hash - sử dụng cùng logic với hashAllFields
-        String calculatedHash = hashAllFields(fieldsToHash);
-
-        // So sánh case-insensitive
-        return receivedHash != null && receivedHash.equalsIgnoreCase(calculatedHash);
-    }
-
-    /**
-     * HMAC-SHA512 hash function theo chuẩn VNPAY
-     */
+    // ================= HMAC SHA512 =================
     public static String hmacSHA512(final String key, final String data) {
         try {
-            final Mac hmac512 = Mac.getInstance("HmacSHA512");
-            final SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
-            hmac512.init(secretKeySpec);
+            Mac hmac512 = Mac.getInstance("HmacSHA512");
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+            hmac512.init(secretKey);
+
             byte[] result = hmac512.doFinal(data.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder(2 * result.length);
-            for (byte b : result)
+            for (byte b : result) {
                 sb.append(String.format("%02x", b & 0xff));
+            }
             return sb.toString();
-        } catch (Exception ex) {
+        } catch (Exception e) {
             return "";
         }
     }
 
-    public static String getRandomNumber(int len) {
-        Random rnd = new Random();
-        StringBuilder sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++)
-            sb.append("0123456789".charAt(rnd.nextInt(10)));
-        return sb.toString();
+    // ================= HASH ALL FIELDS (CHỈ GHÉP CHUỖI) =================
+    public static String hashAllFields(Map<String, String> fields) {
+        List<String> fieldNames = new ArrayList<>(fields.keySet());
+        Collections.sort(fieldNames);
+
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> itr = fieldNames.iterator();
+        while (itr.hasNext()) {
+            String fieldName = itr.next();
+            String fieldValue = fields.get(fieldName);
+
+            if (fieldValue != null && fieldValue.length() > 0) {
+                sb.append(fieldName)
+                        .append("=")
+                        .append(fieldValue);
+            }
+            if (itr.hasNext()) {
+                sb.append("&");
+            }
+        }
+        return sb.toString(); // ❗ KHÔNG HASH Ở ĐÂY
+    }
+
+    // ================= BUILD QUERY STRING =================
+    public static String buildQueryString(Map<String, String> params) {
+        List<String> fieldNames = new ArrayList<>(params.keySet());
+        Collections.sort(fieldNames);
+
+        StringBuilder query = new StringBuilder();
+        for (String fieldName : fieldNames) {
+            String fieldValue = params.get(fieldName);
+            if (fieldValue != null && fieldValue.length() > 0) {
+                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII))
+                        .append("=")
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII))
+                        .append("&");
+            }
+        }
+        if (query.length() > 0)
+            query.deleteCharAt(query.length() - 1);
+        return query.toString();
+    }
+
+    // ================= CLIENT IP =================
+    public static String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if ("0:0:0:0:0:0:0:1".equals(ip)) {
+            ip = "127.0.0.1";
+        }
+        return ip;
     }
 }

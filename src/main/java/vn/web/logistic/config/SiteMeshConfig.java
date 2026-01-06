@@ -72,6 +72,10 @@ public class SiteMeshConfig {
                 // -------------------------------------------------------------
                 builder.addDecoratorPath("/customer", "customer-layout.jsp");
                 builder.addDecoratorPath("/customer/**", "customer-layout.jsp");
+
+                // Trang home public - dùng main layout
+                builder.addDecoratorPath("/", "main-layout.jsp");
+                builder.addDecoratorPath("/home", "main-layout.jsp");
             }
         });
 

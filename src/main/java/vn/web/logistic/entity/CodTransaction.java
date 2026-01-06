@@ -2,6 +2,7 @@ package vn.web.logistic.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -79,4 +80,12 @@ public class CodTransaction {
 
     @Column(name = "paymentMethod", length = 50)
     private String paymentMethod;
+
+    public String getFormattedCollectedAt() {
+        return collectedAt != null ? collectedAt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "---";
+    }
+
+    public String getFormattedSettledAt() {
+        return settledAt != null ? settledAt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "---";
+    }
 }

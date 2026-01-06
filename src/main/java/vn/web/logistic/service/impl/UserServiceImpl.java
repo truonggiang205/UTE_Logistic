@@ -1,10 +1,11 @@
 package vn.web.logistic.service.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.entity.User;
 import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.UserService;
@@ -26,12 +27,13 @@ public class UserServiceImpl implements UserService {
             return null;
         }
 
-        String email = authentication.getName();
-        if (email == null || "anonymousUser".equals(email)) {
+        String identifier = authentication.getName(); // Đây là username (không phải email)
+        if (identifier == null || "anonymousUser".equals(identifier)) {
             return null;
         }
 
-        return userRepository.findByEmail(email).orElse(null);
+        // Dùng findByIdentifier vì authentication.getName() trả về username
+        return userRepository.findByIdentifier(identifier).orElse(null);
     }
 
     @Override

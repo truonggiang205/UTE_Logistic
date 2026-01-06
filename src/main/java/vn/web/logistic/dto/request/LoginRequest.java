@@ -1,18 +1,12 @@
 package vn.web.logistic.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class LoginRequest {
-
-    @NotBlank(message = "Email không được để trống")
-    private String email;
-
-    @NotBlank(message = "Password không được để trống")
+    private String identifier; // Chứa Số điện thoại hoặc Username
     private String password;
 }

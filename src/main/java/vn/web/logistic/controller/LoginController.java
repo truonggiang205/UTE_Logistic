@@ -44,11 +44,11 @@ public class LoginController {
             if (role.equals("ROLE_ADMIN")) {
                 return "redirect:/admin/dashboard";
             } else if (role.equals("ROLE_STAFF")) {
-                return "redirect:/staff/dashboard";
+                return "redirect:/manager/dashboard";
             } else if (role.equals("ROLE_SHIPPER")) {
                 return "redirect:/shipper/dashboard";
             } else if (role.equals("ROLE_CUSTOMER")) {
-                return "redirect:/customer/dashboard";
+                return "redirect:/customer/overview";
             }
         }
 

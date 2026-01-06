@@ -120,4 +120,11 @@ public class ServiceRequest {
 
     private LocalDateTime createdAt;
 
+    // Helper method để format ngày tạo cho hiển thị trong JSP
+    public String getFormattedCreatedAt() {
+        if (createdAt == null)
+            return "";
+        return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
 }

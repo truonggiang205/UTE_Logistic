@@ -21,4 +21,6 @@ public interface EmailService {
      * @return số lượng email đã gửi thành công
      */
     void sendBulkNotificationEmails(List<User> recipients, Notification notification);
+
+    void sendOtpEmail(String to, String otp);
 }

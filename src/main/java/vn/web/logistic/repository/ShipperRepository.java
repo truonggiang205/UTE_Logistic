@@ -16,43 +16,49 @@ import vn.web.logistic.entity.Shipper.ShipperStatus;
 @Repository
 public interface ShipperRepository extends JpaRepository<Shipper, Long> {
 
-    // Tìm shipper theo user_id
-    Optional<Shipper> findByUserUserId(Long userId);
+        // Tìm shipper theo user_id
+        Optional<Shipper> findByUserUserId(Long userId);
+
+        // Kiểm tra shipper đã tồn tại theo user_id
+        boolean existsByUserUserId(Long userId);
 
         // Tìm shipper theo email
         Optional<Shipper> findByUserEmail(String email);
 
-    // Tìm shipper theo hub_id
-    List<Shipper> findByHubHubId(Long hubId);
+        // Tìm shipper theo username (dùng khi principal.getName() trả về username)
+        Optional<Shipper> findByUserUsername(String username);
 
-    // Tìm shipper chưa được gán Hub
-    List<Shipper> findByHubIsNull();
+        // Tìm shipper theo hub_id
+        List<Shipper> findByHubHubId(Long hubId);
 
-    // Đếm tổng shipper trong Hub
-    long countByHubHubId(Long hubId);
+        // Tìm shipper chưa được gán Hub
+        List<Shipper> findByHubIsNull();
 
-    // Đếm shipper theo Hub và status
-    @Query("SELECT COUNT(s) FROM Shipper s WHERE s.hub.hubId = :hubId AND s.status = :status")
-    long countByHubIdAndStatus(@Param("hubId") Long hubId, @Param("status") ShipperStatus status);
+        // Đếm tổng shipper trong Hub
+        long countByHubHubId(Long hubId);
 
-    // Đếm shipper active hoặc busy (cho Dashboard)
-    @Query("SELECT COUNT(s) FROM Shipper s WHERE s.hub.hubId = :hubId AND s.status IN :statuses")
-    long countActiveShippersByHubId(@Param("hubId") Long hubId, @Param("statuses") List<ShipperStatus> statuses);
+        // Đếm shipper theo Hub và status
+        @Query("SELECT COUNT(s) FROM Shipper s WHERE s.hub.hubId = :hubId AND s.status = :status")
+        long countByHubIdAndStatus(@Param("hubId") Long hubId, @Param("status") ShipperStatus status);
 
-    // Lấy tất cả shipper theo Hub
-    @Query("SELECT s FROM Shipper s JOIN FETCH s.user u WHERE s.hub.hubId = :hubId")
-    Page<Shipper> findByHubIdWithUserPaged(@Param("hubId") Long hubId, Pageable pageable);
+        // Đếm shipper active hoặc busy (cho Dashboard)
+        @Query("SELECT COUNT(s) FROM Shipper s WHERE s.hub.hubId = :hubId AND s.status IN :statuses")
+        long countActiveShippersByHubId(@Param("hubId") Long hubId, @Param("statuses") List<ShipperStatus> statuses);
 
-    // Lấy shipper theo Hub và status
-    @Query("SELECT s FROM Shipper s JOIN FETCH s.user u WHERE s.hub.hubId = :hubId AND s.status = :status")
-    Page<Shipper> findByHubIdAndStatusPaged(@Param("hubId") Long hubId, @Param("status") ShipperStatus status,
-            Pageable pageable);
+        // Lấy tất cả shipper theo Hub
+        @Query("SELECT s FROM Shipper s JOIN FETCH s.user u WHERE s.hub.hubId = :hubId")
+        Page<Shipper> findByHubIdWithUserPaged(@Param("hubId") Long hubId, Pageable pageable);
 
-    // Tìm kiếm shipper theo keyword (tên/SĐT/email)
-    @Query("SELECT s FROM Shipper s JOIN FETCH s.user u WHERE s.hub.hubId = :hubId AND " +
-            "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Shipper> searchByHubIdAndKeywordPaged(@Param("hubId") Long hubId, @Param("keyword") String keyword,
-            Pageable pageable);
+        // Lấy shipper theo Hub và status
+        @Query("SELECT s FROM Shipper s JOIN FETCH s.user u WHERE s.hub.hubId = :hubId AND s.status = :status")
+        Page<Shipper> findByHubIdAndStatusPaged(@Param("hubId") Long hubId, @Param("status") ShipperStatus status,
+                        Pageable pageable);
+
+        // Tìm kiếm shipper theo keyword (tên/SĐT/email)
+        @Query("SELECT s FROM Shipper s JOIN FETCH s.user u WHERE s.hub.hubId = :hubId AND " +
+                        "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(u.phone) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+        Page<Shipper> searchByHubIdAndKeywordPaged(@Param("hubId") Long hubId, @Param("keyword") String keyword,
+                        Pageable pageable);
 }

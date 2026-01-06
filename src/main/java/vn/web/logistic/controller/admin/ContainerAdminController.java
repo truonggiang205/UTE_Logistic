@@ -1,21 +1,23 @@
 package vn.web.logistic.controller.admin;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import vn.web.logistic.dto.response.admin.ApiResponse;
 import vn.web.logistic.dto.response.admin.ContainerResponse;
 import vn.web.logistic.dto.response.admin.PageResponse;
-import vn.web.logistic.entity.User;
-import vn.web.logistic.repository.UserRepository;
 import vn.web.logistic.service.ContainerAdminService;
+import vn.web.logistic.service.SecurityContextService;
 
 @Slf4j
 @RestController
@@ -24,7 +26,7 @@ import vn.web.logistic.service.ContainerAdminService;
 public class ContainerAdminController {
 
     private final ContainerAdminService containerAdminService;
-    private final UserRepository userRepository;
+    private final SecurityContextService securityContextService;
 
     /**
      * GET /api/admin/containers - Tìm kiếm bao hàng (Search by code)
@@ -62,42 +64,15 @@ public class ContainerAdminController {
      * Log: Ghi lại log Admin đã thực hiện hành động này
      */
     @PostMapping("/{id}/force-unpack")
-    public ResponseEntity<ApiResponse<ContainerResponse>> forceUnpackContainer(
-            @PathVariable Long id) {
-
-        // Get admin user ID from Spring Security
-        Long adminUserId = getCurrentUserId();
+    public ResponseEntity<ApiResponse<ContainerResponse>> forceUnpackContainer(@PathVariable Long id) {
+        // Lấy admin user ID từ SecurityContextService
+        Long adminUserId = securityContextService.getCurrentUserId();
+        if (adminUserId == null) {
+            log.warn("Không tìm thấy user trong SecurityContext, sử dụng ID mặc định = 1");
+            adminUserId = 1L;
+        }
 
         ContainerResponse response = containerAdminService.forceUnpack(id, adminUserId);
         return ResponseEntity.ok(ApiResponse.success("Xả bao cưỡng chế thành công", response));
-    }
-
-    // ===================================================================
-    // HELPER METHODS - Spring Security Authentication
-    // ===================================================================
-
-    /**
-     * Lấy User hiện tại từ Spring Security
-     */
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-
-        String email = authentication.getName();
-        return userRepository.findByEmail(email).orElse(null);
-    }
-
-    /**
-     * Lấy UserId hiện tại từ Spring Security
-     */
-    private Long getCurrentUserId() {
-        User user = getCurrentUser();
-        if (user != null) {
-            return user.getUserId();
-        }
-        log.warn("Không tìm thấy user trong SecurityContext, sử dụng ID mặc định = 1");
-        return 1L;
     }
 }

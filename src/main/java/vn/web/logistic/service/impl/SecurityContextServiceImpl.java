@@ -28,8 +28,10 @@ public class SecurityContextServiceImpl implements SecurityContextService {
 
         Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails) {
-            String email = ((UserDetails) principal).getUsername();
-            return userRepository.findByEmail(email).orElse(null);
+            // getUsername() trả về username (không phải email)
+            String identifier = ((UserDetails) principal).getUsername();
+            // Dùng findByIdentifier để tìm theo username, email hoặc phone
+            return userRepository.findByIdentifier(identifier).orElse(null);
         }
 
         return null;

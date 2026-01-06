@@ -67,15 +67,38 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     private final FileUploadService fileUploadService;
 
     @Override
-    public ShipperDashboardDTO getDashboardData(String email) {
-        Shipper shipper = shipperRepository.findByUserEmail(email).orElse(null);
+    public ShipperDashboardDTO getDashboardData(String identifier) {
+        Shipper shipper = findShipperByIdentifier(identifier);
 
         if (shipper == null) {
-            log.warn("Không tìm thấy shipper với email: {}", email);
+            log.warn("Không tìm thấy shipper với identifier: {}", identifier);
             return getEmptyDashboard();
         }
 
         return getDashboardDataByShipperId(shipper.getShipperId());
+    }
+
+    /**
+     * Helper method: Tìm Shipper theo identifier (username hoặc email)
+     * Vì principal.getName() có thể trả về username hoặc email tùy config
+     */
+    private Shipper findShipperByIdentifier(String identifier) {
+        return findShipperOptional(identifier).orElse(null);
+    }
+
+    /**
+     * Helper method: Tìm Shipper và trả về Optional
+     */
+    private java.util.Optional<Shipper> findShipperOptional(String identifier) {
+        // Thử tìm theo username trước
+        java.util.Optional<Shipper> shipper = shipperRepository.findByUserUsername(identifier);
+
+        // Nếu không tìm được, thử theo email
+        if (shipper.isEmpty()) {
+            shipper = shipperRepository.findByUserEmail(identifier);
+        }
+
+        return shipper;
     }
 
     @Override
@@ -333,7 +356,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         log.info("Bắt đầu cập nhật pickup task {} với status {} cho shipper {}", taskId, status, shipperEmail);
 
         // 1. Tìm shipper theo email
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail)
+        Shipper shipper = findShipperOptional(shipperEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin shipper"));
 
         // 2. Tìm task
@@ -380,14 +403,17 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     }
 
     // Cập nhật trạng thái ServiceRequest sau khi pickup
+    // LƯU Ý: KHÔNG tự động đổi status sang 'picked' ở đây
+    // Status sẽ được cập nhật khi Manager xác nhận bàn giao qua
+    // processShipperInbound
     private void updateServiceRequestStatusAfterPickup(ShipperTask task, TaskStatus taskStatus) {
         var request = task.getRequest();
 
         if (taskStatus == TaskStatus.completed) {
-            // Pickup hoàn thành → Đơn hàng chuyển sang "picked" (đã lấy hàng)
-            request.setStatus(RequestStatus.picked);
-            serviceRequestRepository.save(request);
-            log.info("Request {} chuyển sang PICKED", request.getRequestId());
+            // Pickup hoàn thành → GIỮ NGUYÊN status pending
+            // Manager sẽ cập nhật sang 'picked' khi shipper bàn giao về bưu cục
+            log.info("Request {} - Pickup thành công, giữ status {} chờ Manager xác nhận bàn giao",
+                    request.getRequestId(), request.getStatus());
         } else if (taskStatus == TaskStatus.failed) {
             // Pickup thất bại → GIỮ NGUYÊN status pending để có thể phân công lại
             // KHÔNG đổi status sang failed, vì đơn hàng vẫn chờ được lấy
@@ -404,7 +430,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         log.info("Bắt đầu cập nhật delivery task {} với status {} cho shipper {}", taskId, status, shipperEmail);
 
         // 1. Tìm shipper theo email
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail)
+        Shipper shipper = findShipperOptional(shipperEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin shipper"));
 
         // 2. Tìm task
@@ -461,8 +487,8 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
             serviceRequestRepository.save(request);
             log.info("Request {} chuyển sang DELIVERED", request.getRequestId());
 
-            // Tạo COD Transaction nếu có tiền thu hộ
-            createCodTransactionIfNeeded(request, shipper);
+            // Cập nhật COD Transaction (không tạo mới)
+            updateCodTransactionOnDelivery(request, shipper);
         } else if (taskStatus == TaskStatus.failed) {
             // Delivery thất bại → GIỮ NGUYÊN status in_transit để có thể phân công lại
             // KHÔNG đổi status sang failed, vì đơn hàng vẫn ở Hub và cần được giao lại
@@ -472,11 +498,11 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     }
 
     /**
-     * Tạo COD Transaction khi giao hàng thành công
-     * Shipper cần thu và nộp: receiverPayAmount = COD + Cước vận chuyển
-     * Status = pending (shipper đang giữ tiền, chờ nộp)
+     * Cập nhật COD Transaction khi giao hàng thành công
+     * KHÔNG tạo mới - COD đã được tạo khi tạo đơn
+     * Chỉ cập nhật shipper_id và collectedAt
      */
-    private void createCodTransactionIfNeeded(ServiceRequest request, Shipper shipper) {
+    private void updateCodTransactionOnDelivery(ServiceRequest request, Shipper shipper) {
         // CHECK 1: Nếu đơn đã paid (người gửi đã thanh toán), shipper không cần thu
         // tiền
         if (request.getPaymentStatus() == ServiceRequest.PaymentStatus.paid) {
@@ -485,54 +511,23 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
             return;
         }
 
-        // Tính tổng tiền shipper cần thu = receiverPayAmount (COD + Cước nếu người nhận
-        // trả)
-        BigDecimal totalCollect = request.getReceiverPayAmount();
-
-        // Nếu receiverPayAmount null, tính = codAmount + totalPrice
-        if (totalCollect == null || totalCollect.compareTo(BigDecimal.ZERO) <= 0) {
-            BigDecimal cod = request.getCodAmount() != null ? request.getCodAmount() : BigDecimal.ZERO;
-            BigDecimal shipping = request.getTotalPrice() != null ? request.getTotalPrice() : BigDecimal.ZERO;
-            totalCollect = cod.add(shipping);
-        }
-
-        // Bỏ qua nếu không có tiền cần thu
-        if (totalCollect == null || totalCollect.compareTo(BigDecimal.ZERO) <= 0) {
-            log.info("Request {} không có tiền cần thu (COD=0, Cước=0), bỏ qua COD Transaction",
-                    request.getRequestId());
-            return;
-        }
-
-        // Kiểm tra xem đã có COD Transaction cho đơn này chưa
+        // Tìm COD Transaction theo request_id
         var existingCod = codTransactionRepository.findByRequestId(request.getRequestId());
 
         if (existingCod.isPresent()) {
-            CodTransaction existing = existingCod.get();
-            // Nếu COD đã tồn tại nhưng chưa có shipper (từ drop-off), cập nhật shipper
-            if (existing.getShipper() == null) {
-                existing.setShipper(shipper);
-                codTransactionRepository.save(existing);
-                log.info("Request {} đã có COD Transaction, cập nhật shipper_id = {}",
-                        request.getRequestId(), shipper.getShipperId());
-            } else {
-                log.info("Request {} đã có COD Transaction với shipper, bỏ qua", request.getRequestId());
-            }
-            return;
+            CodTransaction codTx = existingCod.get();
+            // Cập nhật shipper_id và thời gian thu collectedAt
+            codTx.setShipper(shipper);
+            codTx.setCollectedAt(LocalDateTime.now());
+            codTx.setStatus(CodStatus.pending); // Shipper đang giữ tiền, chờ nộp
+            codTransactionRepository.save(codTx);
+            log.info("Request {} - Cập nhật COD Transaction: shipper_id = {}, collectedAt = {}",
+                    request.getRequestId(), shipper.getShipperId(), codTx.getCollectedAt());
+        } else {
+            // KHÔNG tạo mới - chỉ log warning nếu không tìm thấy
+            log.warn("Request {} - Không tìm thấy COD Transaction để cập nhật. Có thể đơn không có COD.",
+                    request.getRequestId());
         }
-
-        // Tạo COD Transaction mới với status = pending (shipper đang giữ tiền, chờ nộp)
-        CodTransaction codTx = CodTransaction.builder()
-                .request(request)
-                .shipper(shipper)
-                .amount(totalCollect) // COD + Cước
-                .status(CodStatus.pending) // Chờ shipper nộp
-                .collectedAt(null)
-                .settledAt(null)
-                .build();
-
-        CodTransaction saved = codTransactionRepository.save(codTx);
-        log.info("Đã tạo COD Transaction cho request {}: {}đ (COD+Cước), status={}",
-                request.getRequestId(), totalCollect, saved.getStatus());
     }
 
     // PARCEL ACTION HISTORY
@@ -601,7 +596,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 shipperEmail, taskType, status);
 
         // 1. Tìm shipper
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             log.warn("Không tìm thấy shipper với email: {}", shipperEmail);
             return List.of();
@@ -713,7 +708,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         log.info("Lấy các đơn đang xử lý (in_progress) của shipper: {}", shipperEmail);
 
         // 1. Tìm shipper
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             log.warn("Không tìm thấy shipper với email: {}", shipperEmail);
             return List.of();
@@ -742,7 +737,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
                 shipperEmail, fromDate, toDate, status);
 
         // 1. Tìm shipper
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             log.warn("Không tìm thấy shipper với email: {}", shipperEmail);
             return org.springframework.data.domain.Page.empty();
@@ -788,7 +783,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         log.info("Lấy chi tiết đơn hàng taskId={} cho shipper: {}", taskId, shipperEmail);
 
         // 1. Tìm shipper
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             log.warn("Không tìm thấy shipper với email: {}", shipperEmail);
             return null;
@@ -924,7 +919,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     public List<TodayOrderDTO> getUnpaidCodOrders(String shipperEmail) {
         log.info("Lấy danh sách COD chưa nộp của shipper: {}", shipperEmail);
 
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             return List.of();
         }
@@ -957,7 +952,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
 
     @Override
     public BigDecimal getTotalUnpaidCod(String shipperEmail) {
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             return BigDecimal.ZERO;
         }
@@ -972,7 +967,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     public void submitCod(String shipperEmail, List<Long> codTxIds, String paymentMethod, String note) {
         log.info("Shipper {} nộp COD: {} transactions, method: {}", shipperEmail, codTxIds.size(), paymentMethod);
 
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             throw new RuntimeException("Không tìm thấy shipper");
         }
@@ -1010,7 +1005,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
 
     @Override
     public List<CodHistoryDTO> getCodHistory(String shipperEmail) {
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             return List.of();
         }
@@ -1084,7 +1079,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     public ShipperEarningsDTO getEarningsData(String shipperEmail) {
         log.info("Lấy dữ liệu thu nhập của shipper: {}", shipperEmail);
 
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             return ShipperEarningsDTO.builder()
                     .todayEarnings(BigDecimal.ZERO)
@@ -1258,7 +1253,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
     public ShipperProfileDTO getProfile(String shipperEmail) {
         log.info("Lấy thông tin cá nhân của shipper: {}", shipperEmail);
 
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail).orElse(null);
+        Shipper shipper = findShipperOptional(shipperEmail).orElse(null);
         if (shipper == null) {
             return null;
         }
@@ -1326,7 +1321,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         log.info("Đổi mật khẩu cho shipper: {}", shipperEmail);
 
         // 1. Tìm shipper theo email
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail)
+        Shipper shipper = findShipperOptional(shipperEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin shipper"));
 
         User user = shipper.getUser();
@@ -1364,7 +1359,7 @@ public class ShipperDashboardServiceImpl implements ShipperDashboardService {
         log.info("Cập nhật ảnh đại diện cho shipper: {}", shipperEmail);
 
         // 1. Tìm shipper
-        Shipper shipper = shipperRepository.findByUserEmail(shipperEmail)
+        Shipper shipper = findShipperOptional(shipperEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin shipper"));
 
         User user = shipper.getUser();

@@ -1,0 +1,321 @@
+/* Màu sắc chủ đạo NGHV (Xanh GHTK) */
+:root {
+    --nghv-green: #00B14F;
+    --nghv-bg: #f4f7f6;
+    --text-main: #222;
+}
+
+.auth-ghtk-container {
+    display: flex;
+    min-height: calc(100vh - 80px);
+    /* Khớp với chiều cao Header */
+    margin-top: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- CỘT TRÁI: BANNER --- */
+.auth-banner {
+    flex: 1;
+    background-color: var(--nghv-green);
+    background-image: linear-gradient(135deg, var(--nghv-green) 0%, #009944 100%);
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.auth-banner h1 {
+    font-size: 38px;
+    font-weight: 800;
+    margin-bottom: 50px;
+    line-height: 1.3;
+    text-transform: uppercase;
+}
+
+.banner-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.info-card {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-card i {
+    font-size: 28px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.info-card p {
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* --- CỘT PHẢI: FORM --- */
+.auth-form-container {
+    flex: 1;
+    background: white;
+    padding: 60px 10%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.auth-form-box {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.auth-form-box h2 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.auth-switch {
+    margin-bottom: 35px;
+    color: #666;
+    font-size: 15px;
+}
+
+.auth-switch a {
+    color: var(--nghv-green);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.ghtk-input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+.ghtk-input:focus {
+    border-color: var(--nghv-green);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 177, 79, 0.1);
+}
+
+/* Địa chỉ chia 3 cột */
+.address-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+}
+
+.btn-ghtk-auth {
+    width: 100%;
+    padding: 16px;
+    background: var(--nghv-green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.btn-ghtk-auth:hover {
+    background: #009e45;
+    box-shadow: 0 4px 12px rgba(0, 177, 79, 0.2);
+}
+
+.policy-check {
+    font-size: 13px;
+    color: #777;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 1. Modal Overlay - Thêm hiệu ứng làm mờ nền hiện đại */
+.ghtk-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(5px);
+    /* Làm mờ nền sau lưng */
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+/* 2. Modal Box - Bo góc rộng hơn, đổ bóng sâu tạo chiều sâu */
+.ghtk-modal-content {
+    background: #ffffff;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 20px;
+    /* Bo góc mềm mại hơn */
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 3. Header - Tinh chỉnh màu sắc và khoảng cách */
+.modal-header-green {
+    background: linear-gradient(135deg, #00B14F 0%, #008f40 100%);
+    /* Gradient nhẹ cho sang trọng */
+    color: white;
+    padding: 18px 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: rotate(90deg);
+}
+
+/* 4. Body - Tăng khoảng cách để giao diện "thở" được */
+.modal-body {
+    padding: 40px 30px;
+    text-align: center;
+}
+
+.modal-body p {
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+/* 5. Input OTP - Chỉnh lại font và hiệu ứng focus */
+#otpCode {
+    width: 80%;
+    padding: 15px;
+    font-size: 32px;
+    /* Chữ to rõ ràng */
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 12px;
+    /* Khoảng cách giữa các con số */
+    border: 2px solid #eee;
+    background: #f9f9f9;
+    border-radius: 12px;
+    margin: 10px 0 25px 0;
+    transition: all 0.3s ease;
+    color: #333;
+}
+
+#otpCode:focus {
+    outline: none;
+    border-color: #00B14F;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(0, 177, 79, 0.1);
+}
+
+/* 6. Button - Hiệu ứng bấm và màu sắc rực rỡ */
+.btn-verify-otp {
+    width: 100%;
+    padding: 14px;
+    background: #00B14F;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 177, 79, 0.3);
+}
+
+.btn-verify-otp:hover {
+    background: #009643;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 177, 79, 0.4);
+}
+
+.btn-verify-otp:active {
+    transform: translateY(0);
+}
+
+/* 7. Timer & Resend link */
+.timer-text {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #888;
+}
+
+#timer {
+    color: #00B14F;
+    font-weight: bold;
+}
+
+/* 8. Animation xuất hiện */
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.timer-text {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+    min-height: 20px;
+    /* Giữ vị trí không bị nhảy khi đổi nội dung */
+}
+
+.timer-text a {
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.timer-text a:hover {
+    text-decoration: underline;
+}
+
+/* Hiệu ứng khi nút bị vô hiệu hóa */
+.btn-verify-otp:disabled {
+    background: #ccc !important;
+    box-shadow: none !important;
+    transform: none !important;
+}

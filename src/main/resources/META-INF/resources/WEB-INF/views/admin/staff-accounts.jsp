@@ -189,10 +189,20 @@ uri="http://java.sun.com/jsp/jstl/core" %>
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label class="small font-weight-bold">Vai trò</label>
-            <div id="roleCheckboxes" class="d-flex flex-wrap">
-              <!-- Roles sẽ được load động -->
+          <div class="row">
+            <div class="col-md-6 form-group">
+              <label class="small font-weight-bold">Hub/Bưu cục</label>
+              <select class="form-control" id="hubId">
+                <option value="">-- Chọn Hub (nếu có) --</option>
+                <!-- Hubs sẽ được load động -->
+              </select>
+              <small class="text-muted">Bắt buộc cho Staff và Shipper</small>
+            </div>
+            <div class="col-md-6 form-group">
+              <label class="small font-weight-bold">Vai trò</label>
+              <div id="roleCheckboxes" class="d-flex flex-wrap">
+                <!-- Roles sẽ được load động -->
+              </div>
             </div>
           </div>
         </div>
@@ -306,14 +316,17 @@ uri="http://java.sun.com/jsp/jstl/core" %>
 
 <script>
   var API_BASE = window.location.origin + "/api/admin/staff-accounts";
+  var HUB_API = window.location.origin + "/api/admin/hubs";
   var currentPage = 0;
   var pageSize = 10;
   var debounceTimer;
   var allRoles = [];
+  var allHubs = [];
 
   // Load data on page ready
   document.addEventListener("DOMContentLoaded", function () {
     loadRoles();
+    loadHubs();
     loadStaffAccounts();
   });
 
@@ -330,6 +343,22 @@ uri="http://java.sun.com/jsp/jstl/core" %>
       })
       .catch(function (err) {
         console.error("Load roles failed:", err);
+      });
+  }
+
+  function loadHubs() {
+    fetch(HUB_API + "?status=active&size=100")
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (response) {
+        if (response.success && response.data && response.data.content) {
+          allHubs = response.data.content;
+          renderHubOptions();
+        }
+      })
+      .catch(function (err) {
+        console.error("Load hubs failed:", err);
       });
   }
 
@@ -356,6 +385,23 @@ uri="http://java.sun.com/jsp/jstl/core" %>
       }
     }
     container.innerHTML = html;
+  }
+
+  function renderHubOptions() {
+    var select = document.getElementById("hubId");
+    var html = '<option value="">-- Chọn Hub (nếu có) --</option>';
+    for (var i = 0; i < allHubs.length; i++) {
+      var hub = allHubs[i];
+      html +=
+        '<option value="' +
+        hub.hubId +
+        '">' +
+        escapeHtml(hub.hubName) +
+        " - " +
+        escapeHtml(hub.province || "") +
+        "</option>";
+    }
+    select.innerHTML = html;
   }
 
   function loadStaffAccounts() {
@@ -577,6 +623,8 @@ uri="http://java.sun.com/jsp/jstl/core" %>
     for (var i = 0; i < checkboxes.length; i++) {
       checkboxes[i].checked = false;
     }
+    // Reset Hub dropdown
+    document.getElementById("hubId").value = "";
   }
 
   function openEditModal(id) {
@@ -614,6 +662,9 @@ uri="http://java.sun.com/jsp/jstl/core" %>
                 ? u.roles.includes(roleName)
                 : u.roles.has(roleName));
           }
+
+          // Set Hub dropdown
+          document.getElementById("hubId").value = u.hubId || "";
 
           $("#staffModal").modal("show");
         }
@@ -715,6 +766,7 @@ uri="http://java.sun.com/jsp/jstl/core" %>
       phone: document.getElementById("phone").value.trim() || null,
       status: document.getElementById("status").value,
       roleNames: selectedRoles,
+      hubId: document.getElementById("hubId").value || null,
     };
 
     // Validate password khi tạo mới

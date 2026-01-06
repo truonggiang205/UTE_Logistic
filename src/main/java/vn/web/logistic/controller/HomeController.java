@@ -14,7 +14,7 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "redirect:/login";
+        return "home";
     }
 
     @GetMapping("/login")
@@ -48,7 +48,7 @@ public class HomeController {
         } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_SHIPPER"))) {
             return "redirect:/shipper/dashboard";
         } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_CUSTOMER"))) {
-            return "redirect:/customer/dashboard";
+            return "redirect:/customer/overview";
         }
 
         return "redirect:/";

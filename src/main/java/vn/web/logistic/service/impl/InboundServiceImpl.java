@@ -2,14 +2,27 @@ package vn.web.logistic.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import vn.web.logistic.config.VNPAYConfig;
 import vn.web.logistic.entity.ActionType;
 import vn.web.logistic.entity.CodTransaction;
 import vn.web.logistic.entity.Customer;
@@ -23,6 +36,8 @@ import vn.web.logistic.entity.ServiceType;
 import vn.web.logistic.entity.TrackingCode;
 import vn.web.logistic.entity.TrackingCode.TrackingStatus;
 import vn.web.logistic.entity.User;
+import vn.web.logistic.entity.VnpayTransaction;
+import vn.web.logistic.entity.VnpayTransaction.VnpayPaymentStatus;
 import vn.web.logistic.repository.ActionTypeRepository;
 import vn.web.logistic.repository.CodTransactionRepository;
 import vn.web.logistic.repository.CustomerAddressRepository;
@@ -35,10 +50,12 @@ import vn.web.logistic.repository.ServiceRequestRepository;
 import vn.web.logistic.repository.ServiceTypeRepository;
 import vn.web.logistic.repository.TrackingCodeRepository;
 import vn.web.logistic.repository.UserRepository;
+import vn.web.logistic.repository.VnpayTransactionRepository;
 import vn.web.logistic.service.InboundService;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InboundServiceImpl implements InboundService {
 
         // --- TIÊM CÁC REPOSITORY CẦN THIẾT ---
@@ -54,6 +71,7 @@ public class InboundServiceImpl implements InboundService {
         private final HubRepository hubRepo;
         private final RouteRepository routeRepo;
         private final ParcelRouteRepository parcelRouteRepo;
+        private final VnpayTransactionRepository vnpayTransactionRepo;
 
         /**
          * TẠO ĐƠN HÀNG TẠI QUẦY (DROP-OFF)
@@ -305,14 +323,18 @@ public class InboundServiceImpl implements InboundService {
          * SHIPPER BÀN GIAO HÀNG VÀO BƯU CỤC (SHIPPER INBOUND)
          * Dùng khi Shipper đi lấy hàng từ nhà khách mang về bưu cục.
          * 
-         * GUARD CLAUSE (ĐÃ SỬA - Logic 1):
-         * - Cho phép nhập nếu đơn đang ở trạng thái: PENDING hoặc PICKING
+         * GUARD CLAUSE:
+         * - Cho phép nhập nếu đơn đang ở trạng thái: PENDING
          * - Nếu đã PICKED hoặc IN_TRANSIT thì báo lỗi (đã xử lý rồi)
+         * 
+         * SAU KHI BÀN GIAO:
+         * - Tạo ParcelRoute với tuyến đường được chọn
+         * - Ghi lịch sử ParcelAction
          */
         @Override
         @Transactional
         public ServiceRequest processShipperInbound(String trackingCode, Long currentHubId, Long managerId,
-                        Long actionTypeId) {
+                        Long actionTypeId, Long routeId) {
                 ServiceRequest sr = requestRepo.findByTrackingCode(trackingCode)
                                 .orElseThrow(() -> new RuntimeException("Mã vận đơn không tồn tại: " + trackingCode));
 
@@ -341,8 +363,7 @@ public class InboundServiceImpl implements InboundService {
                                                         "Không thể bàn giao.");
                 }
 
-                // CHỈ CHO PHÉP: pending hoặc picking (nếu có thêm enum picking trong tương lai)
-                // Hiện tại chỉ có pending là hợp lệ theo enum hiện tại
+                // CHỈ CHO PHÉP: pending
                 if (currentStatus != ServiceRequest.RequestStatus.pending) {
                         throw new RuntimeException(
                                         "SAI QUY TRÌNH! Đơn hàng phải ở trạng thái 'Chờ lấy hàng' (pending) mới được bàn giao. "
@@ -359,24 +380,50 @@ public class InboundServiceImpl implements InboundService {
                 sr.setStatus(ServiceRequest.RequestStatus.picked);
                 sr.setCurrentHub(currentHub);
 
+                ServiceRequest savedOrder = requestRepo.save(sr);
+
+                // === TẠO PARCEL_ROUTE NẾU CÓ ROUTEID ===
+                if (routeId != null) {
+                        Route selectedRoute = routeRepo.findByIdWithHubs(routeId)
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Tuyến đường không tồn tại: " + routeId));
+
+                        ParcelRoute pr = ParcelRoute.builder()
+                                        .request(savedOrder)
+                                        .route(selectedRoute)
+                                        .routeOrder(1)
+                                        .status(ParcelRoute.ParcelRouteStatus.planned)
+                                        .build();
+                        parcelRouteRepo.save(pr);
+                }
+
                 // Lấy ActionType từ ID do Manager chọn trên giao diện
                 ActionType at = actionTypeRepo.findById(actionTypeId)
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Loại hành động không tồn tại: " + actionTypeId));
 
+                // Lấy thông tin Route để ghi note chi tiết hơn
+                String routeNote = "";
+                if (routeId != null) {
+                        Route route = routeRepo.findById(routeId).orElse(null);
+                        if (route != null) {
+                                routeNote = ". Lộ trình: " + route.getDescription();
+                        }
+                }
+
                 // Ghi lịch sử hành trình
                 ParcelAction action = ParcelAction.builder()
-                                .request(sr)
+                                .request(savedOrder)
                                 .actionType(at)
                                 .actor(manager)
                                 .fromHub(null) // Shipper lấy từ nhà khách, không có fromHub
                                 .toHub(currentHub)
                                 .actionTime(LocalDateTime.now())
-                                .note("Shipper đã bàn giao hàng cho bưu cục " + currentHub.getHubName())
+                                .note("Shipper đã bàn giao hàng cho bưu cục " + currentHub.getHubName() + routeNote)
                                 .build();
                 actionRepo.save(action);
 
-                return requestRepo.save(sr);
+                return savedOrder;
         }
 
         // ==================== HELPER METHODS ====================
@@ -503,5 +550,316 @@ public class InboundServiceImpl implements InboundService {
         @Override
         public List<ActionType> getInboundActionTypes() {
                 return actionTypeRepo.findAll();
+        }
+
+        // ==================== SHIPPER INBOUND SUPPORT METHODS ====================
+
+        @Override
+        public ServiceRequest getOrderByTrackingCode(String trackingCode) {
+                return requestRepo.findByTrackingCode(trackingCode)
+                                .orElseThrow(() -> new RuntimeException("Mã vận đơn không tồn tại: " + trackingCode));
+        }
+
+        @Override
+        public List<ServiceRequest> getPendingOrdersByHub(Long hubId) {
+                return requestRepo.findByHubIdAndStatus(hubId, ServiceRequest.RequestStatus.pending);
+        }
+
+        // ==================== DTO CONVERSION METHODS (MVC Pattern)
+        // ====================
+
+        @Override
+        public vn.web.logistic.dto.response.inbound.ServiceRequestDTO convertToDTO(ServiceRequest sr) {
+                var dto = vn.web.logistic.dto.response.inbound.ServiceRequestDTO.builder()
+                                .requestId(sr.getRequestId())
+                                .status(sr.getStatus() != null ? sr.getStatus().name() : null)
+                                .note(sr.getNote())
+                                .createdAt(sr.getCreatedAt())
+                                .build();
+
+                // Pickup Address
+                if (sr.getPickupAddress() != null) {
+                        dto.setPickupAddress(buildAddressDTO(sr.getPickupAddress()));
+                }
+
+                // Delivery Address
+                if (sr.getDeliveryAddress() != null) {
+                        dto.setDeliveryAddress(buildAddressDTO(sr.getDeliveryAddress()));
+                }
+
+                // Current Hub
+                if (sr.getCurrentHub() != null) {
+                        dto.setCurrentHub(vn.web.logistic.dto.response.inbound.ServiceRequestDTO.HubDTO.builder()
+                                        .hubId(sr.getCurrentHub().getHubId())
+                                        .hubName(sr.getCurrentHub().getHubName())
+                                        .build());
+                }
+
+                return dto;
+        }
+
+        @Override
+        public vn.web.logistic.dto.response.inbound.ServiceRequestDetailDTO convertToDetailDTO(ServiceRequest sr) {
+                var dto = vn.web.logistic.dto.response.inbound.ServiceRequestDetailDTO.builder()
+                                .requestId(sr.getRequestId())
+                                .status(sr.getStatus() != null ? sr.getStatus().name() : null)
+                                .note(sr.getNote())
+                                .createdAt(sr.getCreatedAt())
+                                .itemName(sr.getItemName())
+                                .weight(sr.getWeight())
+                                .codAmount(sr.getCodAmount())
+                                .shippingFee(sr.getShippingFee())
+                                .totalPrice(sr.getTotalPrice())
+                                .receiverPayAmount(sr.getReceiverPayAmount())
+                                .paymentStatus(sr.getPaymentStatus() != null ? sr.getPaymentStatus().name() : null)
+                                .build();
+
+                // Tracking code
+                trackingRepo.findByRequest_RequestId(sr.getRequestId())
+                                .stream().findFirst()
+                                .ifPresent(tc -> dto.setTrackingCode(tc.getCode()));
+
+                // Pickup Address
+                if (sr.getPickupAddress() != null) {
+                        dto.setPickupAddress(buildAddressDTO(sr.getPickupAddress()));
+                }
+
+                // Delivery Address
+                if (sr.getDeliveryAddress() != null) {
+                        dto.setDeliveryAddress(buildAddressDTO(sr.getDeliveryAddress()));
+                }
+
+                // Current Hub
+                if (sr.getCurrentHub() != null) {
+                        dto.setCurrentHub(vn.web.logistic.dto.response.inbound.ServiceRequestDTO.HubDTO.builder()
+                                        .hubId(sr.getCurrentHub().getHubId())
+                                        .hubName(sr.getCurrentHub().getHubName())
+                                        .build());
+                }
+
+                // Customer (người gửi)
+                if (sr.getCustomer() != null) {
+                        dto.setCustomer(vn.web.logistic.dto.response.inbound.ServiceRequestDetailDTO.CustomerDTO
+                                        .builder()
+                                        .customerId(sr.getCustomer().getCustomerId())
+                                        .fullName(sr.getCustomer().getFullName())
+                                        .phone(sr.getCustomer().getPhone())
+                                        .businessName(sr.getCustomer().getBusinessName())
+                                        .build());
+                }
+
+                // Service Type
+                if (sr.getServiceType() != null) {
+                        dto.setServiceType(vn.web.logistic.dto.response.inbound.ServiceRequestDetailDTO.ServiceTypeDTO
+                                        .builder()
+                                        .serviceTypeId(sr.getServiceType().getServiceTypeId())
+                                        .serviceName(sr.getServiceType().getServiceName())
+                                        .build());
+                }
+
+                return dto;
+        }
+
+        @Override
+        public vn.web.logistic.dto.response.inbound.ServiceRequestSummaryDTO convertToSummaryDTO(ServiceRequest sr) {
+                var dtoBuilder = vn.web.logistic.dto.response.inbound.ServiceRequestSummaryDTO.builder()
+                                .requestId(sr.getRequestId())
+                                .status(sr.getStatus() != null ? sr.getStatus().name() : null)
+                                .createdAt(sr.getCreatedAt())
+                                .itemName(sr.getItemName())
+                                .codAmount(sr.getCodAmount());
+
+                // Tracking code
+                trackingRepo.findByRequest_RequestId(sr.getRequestId())
+                                .stream().findFirst()
+                                .ifPresent(tc -> dtoBuilder.trackingCode(tc.getCode()));
+
+                // Pickup Address summary
+                if (sr.getPickupAddress() != null) {
+                        dtoBuilder.senderName(sr.getPickupAddress().getContactName());
+                        dtoBuilder.senderPhone(sr.getPickupAddress().getContactPhone());
+                        dtoBuilder.pickupProvince(sr.getPickupAddress().getProvince());
+                }
+
+                // Delivery Address summary
+                if (sr.getDeliveryAddress() != null) {
+                        dtoBuilder.receiverName(sr.getDeliveryAddress().getContactName());
+                        dtoBuilder.receiverPhone(sr.getDeliveryAddress().getContactPhone());
+                        dtoBuilder.deliveryProvince(sr.getDeliveryAddress().getProvince());
+                }
+
+                return dtoBuilder.build();
+        }
+
+        // Helper method để build AddressDTO
+        private vn.web.logistic.dto.response.inbound.ServiceRequestDTO.AddressDTO buildAddressDTO(
+                        CustomerAddress addr) {
+                return vn.web.logistic.dto.response.inbound.ServiceRequestDTO.AddressDTO.builder()
+                                .contactName(addr.getContactName())
+                                .contactPhone(addr.getContactPhone())
+                                .addressDetail(addr.getAddressDetail())
+                                .ward(addr.getWard())
+                                .district(addr.getDistrict())
+                                .province(addr.getProvince())
+                                .build();
+        }
+
+        // ==================== VNPAY PAYMENT INTEGRATION ====================
+
+        @Override
+        @Transactional
+        public String createVnpayDropOffUrl(ServiceRequest orderRequest, String senderPhone, String receiverPhone,
+                        Long managerId, Long routeId, HttpServletRequest request) throws Exception {
+                log.info("=== TẠO VNPAY URL CHO ĐƠN DROP-OFF ===");
+
+                // 1. Đặt paymentStatus = unpaid (chờ thanh toán)
+                orderRequest.setPaymentStatus(ServiceRequest.PaymentStatus.unpaid);
+
+                // 2. Tạo đơn hàng trước (tương tự createDropOffOrder nhưng chưa paid)
+                ServiceRequest savedOrder = createDropOffOrder(orderRequest, senderPhone, receiverPhone, managerId,
+                                routeId);
+
+                // 3. Tạo VnpayTransaction với status = pending
+                VnpayTransaction vnpayTxn = VnpayTransaction.builder()
+                                .request(savedOrder)
+                                .amount(savedOrder.getTotalPrice())
+                                .paymentStatus(VnpayPaymentStatus.pending)
+                                .createdAt(LocalDateTime.now())
+                                .build();
+                vnpayTransactionRepo.save(vnpayTxn);
+                log.info("Đã tạo VnpayTransaction pending cho request {}", savedOrder.getRequestId());
+
+                // 4. Tạo VNPAY payment URL
+                Map<String, String> vnp_Params = new HashMap<>();
+                vnp_Params.put("vnp_Version", "2.1.0");
+                vnp_Params.put("vnp_Command", "pay");
+                vnp_Params.put("vnp_TmnCode", VNPAYConfig.vnp_TmnCode);
+
+                // Số tiền x100 (VNPay yêu cầu đơn vị: đồng * 100)
+                long vnp_Amount = savedOrder.getTotalPrice()
+                                .multiply(new BigDecimal(100))
+                                .longValue();
+                vnp_Params.put("vnp_Amount", String.valueOf(vnp_Amount));
+                vnp_Params.put("vnp_CurrCode", "VND");
+
+                // Mã đơn hàng
+                String txnRef = String.valueOf(savedOrder.getRequestId());
+                vnp_Params.put("vnp_TxnRef", txnRef);
+                vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang tai quay: " + txnRef);
+                vnp_Params.put("vnp_OrderType", "other");
+                vnp_Params.put("vnp_Locale", "vn");
+
+                // Return URL cho manager inbound (sử dụng config riêng)
+                vnp_Params.put("vnp_ReturnUrl", VNPAYConfig.vnp_ManagerReturnUrl);
+                vnp_Params.put("vnp_IpAddr", VNPAYConfig.getClientIp(request));
+
+                // Thời gian tạo và hết hạn
+                Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+                vnp_Params.put("vnp_CreateDate", formatter.format(cld.getTime()));
+                cld.add(Calendar.MINUTE, 15);
+                vnp_Params.put("vnp_ExpireDate", formatter.format(cld.getTime()));
+
+                // Build query string và hash
+                List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
+                Collections.sort(fieldNames);
+                StringBuilder hashData = new StringBuilder();
+                StringBuilder query = new StringBuilder();
+                Iterator<String> itr = fieldNames.iterator();
+                while (itr.hasNext()) {
+                        String fieldName = itr.next();
+                        String fieldValue = vnp_Params.get(fieldName);
+                        if (fieldValue != null && fieldValue.length() > 0) {
+                                String encodedValue = URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII);
+                                hashData.append(fieldName).append("=").append(encodedValue);
+                                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII))
+                                                .append("=").append(encodedValue);
+                                if (itr.hasNext()) {
+                                        hashData.append("&");
+                                        query.append("&");
+                                }
+                        }
+                }
+
+                String secureHash = VNPAYConfig.hmacSHA512(VNPAYConfig.vnp_HashSecret, hashData.toString());
+                String paymentUrl = VNPAYConfig.vnp_PayUrl + "?" + query + "&vnp_SecureHash=" + secureHash;
+
+                log.info("VNPay URL đã tạo cho đơn tại quầy: {}", savedOrder.getRequestId());
+                return paymentUrl;
+        }
+
+        @Override
+        @Transactional
+        public String processVnpayReturn(HttpServletRequest request) throws Exception {
+                log.info("=== XỬ LÝ VNPAY RETURN CHO ĐƠN DROP-OFF ===");
+
+                // Lấy các tham số từ VNPay
+                String vnp_ResponseCode = request.getParameter("vnp_ResponseCode");
+                String vnp_TxnRef = request.getParameter("vnp_TxnRef");
+                String vnp_TransactionNo = request.getParameter("vnp_TransactionNo");
+                String vnp_SecureHash = request.getParameter("vnp_SecureHash");
+
+                // Verify hash
+                Map<String, String> fields = new HashMap<>();
+                request.getParameterMap().forEach((key, values) -> {
+                        if (key.startsWith("vnp_") && !key.equals("vnp_SecureHash")
+                                        && !key.equals("vnp_SecureHashType")) {
+                                fields.put(key, values[0]);
+                        }
+                });
+
+                List<String> fieldNames = new ArrayList<>(fields.keySet());
+                Collections.sort(fieldNames);
+                StringBuilder hashData = new StringBuilder();
+                for (String fieldName : fieldNames) {
+                        String fieldValue = fields.get(fieldName);
+                        if (fieldValue != null && fieldValue.length() > 0) {
+                                if (hashData.length() > 0) {
+                                        hashData.append("&");
+                                }
+                                hashData.append(fieldName).append("=")
+                                                .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                        }
+                }
+
+                String calculatedHash = VNPAYConfig.hmacSHA512(VNPAYConfig.vnp_HashSecret, hashData.toString());
+
+                if (!calculatedHash.equalsIgnoreCase(vnp_SecureHash)) {
+                        log.error("VNPay return: Invalid signature!");
+                        return "/manager/dashboard?vnpay=error&message=invalid_signature";
+                }
+
+                // Tìm đơn hàng
+                Long requestId = Long.parseLong(vnp_TxnRef);
+                ServiceRequest order = requestRepo.findById(requestId).orElse(null);
+                if (order == null) {
+                        log.error("VNPay return: Order not found: {}", requestId);
+                        return "/manager/dashboard?vnpay=error&message=order_not_found";
+                }
+
+                // Cập nhật VnpayTransaction
+                List<VnpayTransaction> vnpayTxnList = vnpayTransactionRepo.findByRequest_RequestId(requestId);
+                if (!vnpayTxnList.isEmpty()) {
+                        VnpayTransaction txn = vnpayTxnList.get(0);
+                        txn.setVnpTransactionNo(vnp_TransactionNo);
+                        txn.setPaymentStatus("00".equals(vnp_ResponseCode)
+                                        ? VnpayPaymentStatus.success
+                                        : VnpayPaymentStatus.failed);
+                        txn.setPaidAt(LocalDateTime.now());
+                        vnpayTransactionRepo.save(txn);
+                }
+
+                // Cập nhật trạng thái đơn hàng
+                if ("00".equals(vnp_ResponseCode)) {
+                        order.setPaymentStatus(ServiceRequest.PaymentStatus.paid);
+                        requestRepo.save(order);
+                        log.info("VNPay thanh toán thành công cho đơn tại quầy: {}", requestId);
+                        return "/manager/inbound/drop-off?vnpay=success&orderId=" + requestId;
+                } else {
+                        log.warn("VNPay thanh toán thất bại cho đơn tại quầy: {}, code: {}", requestId,
+                                        vnp_ResponseCode);
+                        return "/manager/inbound/drop-off?vnpay=failed&orderId=" + requestId + "&code="
+                                        + vnp_ResponseCode;
+                }
         }
 }
