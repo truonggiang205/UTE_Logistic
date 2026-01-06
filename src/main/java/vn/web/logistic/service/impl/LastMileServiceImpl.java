@@ -590,11 +590,12 @@ public class LastMileServiceImpl implements LastMileService {
                                         .orElseThrow(() -> new IllegalArgumentException(
                                                         "Không tìm thấy đơn hàng với ID: " + requestId));
 
-                        // Validate trạng thái đơn hàng (phải là picked hoặc in_transit)
-                        if (serviceRequest.getStatus() != RequestStatus.picked &&
-                                        serviceRequest.getStatus() != RequestStatus.in_transit) {
+                        // Validate trạng thái đơn hàng (phải là in_transit - đã về kho đích)
+                        if (serviceRequest.getStatus() != RequestStatus.in_transit) {
                                 throw new IllegalStateException(
                                                 "Đơn hàng " + requestId + " không ở trạng thái phù hợp để giao. " +
+                                                                "Chỉ phân công giao hàng khi đơn đã về kho (in_transit). "
+                                                                +
                                                                 "Trạng thái hiện tại: " + serviceRequest.getStatus());
                         }
 

@@ -158,55 +158,144 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public String forgotPasswordSubmit(@RequestParam("email") String email, Model model,
-            HttpServletRequest request) {
+            HttpServletRequest request, HttpSession session, RedirectAttributes ra) {
         request.setAttribute("hideFooter", true);
 
-        // Tránh user enumeration: luôn trả thông báo chung.
-        String rawToken = passwordResetService.createResetToken(email);
+        // Gửi OTP qua email
+        String otp = otpService.generateEmailOtp(email);
 
-        model.addAttribute("message", "Nếu email tồn tại, hệ thống đã tạo link đặt lại mật khẩu.");
+        if (otp != null) {
+            // Lưu email vào session để sử dụng ở bước tiếp theo
+            session.setAttribute("resetEmail", email);
 
-        // Dev/demo: hiển thị link trực tiếp để test nhanh (không cần cấu hình email)
-        if (rawToken != null) {
-            String ctx = request.getContextPath();
-            String link = ctx + "/auth/reset-password?token=" + rawToken;
-            model.addAttribute("resetLink", link);
+            // Dev mode: hiển thị OTP trong flash message
+            ra.addFlashAttribute("email", email);
+            ra.addFlashAttribute("devOtp", otp); // Chỉ dev mode
+
+            return "redirect:/auth/verify-reset-otp";
+        } else {
+            // Không tìm thấy email - vẫn hiển thị thông báo chung để tránh user enumeration
+            model.addAttribute("message", "Nếu email tồn tại trong hệ thống, chúng tôi đã gửi mã OTP.");
+            return "auth/forgot-password";
+        }
+    }
+
+    // ==================== XÁC MINH OTP RESET PASSWORD ====================
+
+    @GetMapping("/verify-reset-otp")
+    public String verifyResetOtpPage(HttpServletRequest request, HttpSession session, Model model) {
+        request.setAttribute("hideFooter", true);
+
+        String email = (String) session.getAttribute("resetEmail");
+        if (email == null) {
+            return "redirect:/auth/forgot-password";
         }
 
-        return "auth/forgot-password";
+        model.addAttribute("email", email);
+        return "auth/verify-reset-otp";
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public String verifyResetOtpSubmit(@RequestParam("otp") String otp,
+            HttpServletRequest request, HttpSession session, Model model, RedirectAttributes ra) {
+        request.setAttribute("hideFooter", true);
+
+        String email = (String) session.getAttribute("resetEmail");
+        if (email == null) {
+            return "redirect:/auth/forgot-password";
+        }
+
+        if (otpService.validateEmailOtp(email, otp)) {
+            // OTP đúng - đánh dấu đã xác minh
+            session.setAttribute("otpVerified", true);
+            otpService.clearEmailOtp(email);
+            return "redirect:/auth/reset-password";
+        } else {
+            model.addAttribute("email", email);
+            model.addAttribute("error", "Mã OTP không chính xác hoặc đã hết hạn!");
+            return "auth/verify-reset-otp";
+        }
+    }
+
+    @PostMapping("/resend-reset-otp")
+    @ResponseBody
+    public ResponseEntity<String> resendResetOtp(HttpSession session) {
+        String email = (String) session.getAttribute("resetEmail");
+        if (email == null) {
+            return ResponseEntity.badRequest().body("Session hết hạn, vui lòng thử lại!");
+        }
+
+        String otp = otpService.generateEmailOtp(email);
+        if (otp != null) {
+            return ResponseEntity.ok("OTP đã được gửi lại!");
+        }
+        return ResponseEntity.badRequest().body("Không thể gửi OTP, vui lòng thử lại!");
     }
 
     // ==================== ĐẶT LẠI MẬT KHẨU (RESET PASSWORD) ====================
 
     @GetMapping("/reset-password")
-    public String resetPasswordPage(@RequestParam("token") String token, Model model,
-            HttpServletRequest request) {
+    public String resetPasswordPage(HttpServletRequest request, HttpSession session, Model model) {
         request.setAttribute("hideFooter", true);
 
-        if (!passwordResetService.isTokenValid(token)) {
-            model.addAttribute("error", "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
-            return "auth/forgot-password";
+        // Kiểm tra đã verify OTP chưa
+        String email = (String) session.getAttribute("resetEmail");
+        Boolean otpVerified = (Boolean) session.getAttribute("otpVerified");
+
+        if (email == null || otpVerified == null || !otpVerified) {
+            model.addAttribute("error", "Vui lòng xác minh OTP trước khi đặt lại mật khẩu.");
+            return "redirect:/auth/forgot-password";
         }
 
-        model.addAttribute("token", token);
+        model.addAttribute("email", email);
         return "auth/reset-password";
     }
 
     @PostMapping("/reset-password")
     public String resetPasswordSubmit(
-            @RequestParam("token") String token,
             @RequestParam("newPassword") String newPassword,
             @RequestParam("confirmPassword") String confirmPassword,
-            Model model, HttpServletRequest request, RedirectAttributes ra) {
+            Model model, HttpServletRequest request, HttpSession session, RedirectAttributes ra) {
 
         request.setAttribute("hideFooter", true);
 
+        // Kiểm tra session
+        String email = (String) session.getAttribute("resetEmail");
+        Boolean otpVerified = (Boolean) session.getAttribute("otpVerified");
+
+        if (email == null || otpVerified == null || !otpVerified) {
+            return "redirect:/auth/forgot-password";
+        }
+
+        // Validate passwords
+        if (newPassword == null || newPassword.isBlank()) {
+            model.addAttribute("email", email);
+            model.addAttribute("error", "Mật khẩu mới không được để trống.");
+            return "auth/reset-password";
+        }
+        if (newPassword.length() < 6) {
+            model.addAttribute("email", email);
+            model.addAttribute("error", "Mật khẩu tối thiểu 6 ký tự.");
+            return "auth/reset-password";
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            model.addAttribute("email", email);
+            model.addAttribute("error", "Mật khẩu xác nhận không khớp.");
+            return "auth/reset-password";
+        }
+
         try {
-            passwordResetService.resetPassword(token, newPassword, confirmPassword);
+            // Đặt lại mật khẩu trực tiếp bằng email
+            passwordResetService.resetPasswordByEmail(email, newPassword);
+
+            // Xóa session data
+            session.removeAttribute("resetEmail");
+            session.removeAttribute("otpVerified");
+
             ra.addFlashAttribute("success", "Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
             return "redirect:/auth/login";
         } catch (Exception e) {
-            model.addAttribute("token", token);
+            model.addAttribute("email", email);
             model.addAttribute("error", e.getMessage());
             return "auth/reset-password";
         }

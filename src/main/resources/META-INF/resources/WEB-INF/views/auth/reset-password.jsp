@@ -33,20 +33,24 @@ pageEncoding="UTF-8"%> <%@ taglib prefix="c" uri="jakarta.tags.core"%>
       <div class="auth-form-box">
         <h2>Đặt lại mật khẩu</h2>
         <div class="auth-switch">
-          <p>Tạo mật khẩu mới để đăng nhập vào tài khoản của bạn</p>
+          <p>
+            Tạo mật khẩu mới cho tài khoản:
+            <strong style="color: #00b14f">${email}</strong>
+          </p>
         </div>
 
         <c:if test="${not empty error}">
           <div
             class="alert alert-danger"
             style="
-              color: red;
+              background: #ffebee;
+              color: #c62828;
+              padding: 12px 15px;
+              border-radius: 8px;
               margin-bottom: 15px;
-              padding: 10px;
-              background: #ffe6e6;
-              border-radius: 5px;
+              border-left: 4px solid #c62828;
             ">
-            <i class="fa-solid fa-circle-xmark"></i> ${error}
+            <i class="fa-solid fa-circle-exclamation"></i> ${error}
           </div>
         </c:if>
 
@@ -54,8 +58,6 @@ pageEncoding="UTF-8"%> <%@ taglib prefix="c" uri="jakarta.tags.core"%>
           action="<c:url value='/auth/reset-password'/>"
           method="POST"
           id="resetForm">
-          <input type="hidden" name="token" value="${token}" />
-
           <div class="form-group">
             <input
               type="password"

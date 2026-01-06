@@ -39,11 +39,33 @@ pageEncoding="UTF-8"%> <%@ taglib prefix="c" uri="jakarta.tags.core"%>
           </p>
         </div>
 
+        <c:if test="${param.error != null}">
+          <div
+            class="alert alert-danger"
+            style="
+              background: #ffebee;
+              color: #c62828;
+              padding: 12px 15px;
+              border-radius: 8px;
+              margin-bottom: 15px;
+              border-left: 4px solid #c62828;
+            ">
+            <i class="fa-solid fa-circle-exclamation"></i> Tài khoản hoặc mật
+            khẩu không chính xác!
+          </div>
+        </c:if>
         <c:if test="${not empty error}">
           <div
             class="alert alert-danger"
-            style="color: red; margin-bottom: 15px">
-            ${error}
+            style="
+              background: #ffebee;
+              color: #c62828;
+              padding: 12px 15px;
+              border-radius: 8px;
+              margin-bottom: 15px;
+              border-left: 4px solid #c62828;
+            ">
+            <i class="fa-solid fa-circle-exclamation"></i> ${error}
           </div>
         </c:if>
         <c:if test="${not empty success}">

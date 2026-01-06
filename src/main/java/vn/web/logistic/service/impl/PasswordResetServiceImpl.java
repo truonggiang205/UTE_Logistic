@@ -123,4 +123,23 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new IllegalStateException("Không thể tạo hash token", e);
         }
     }
+
+    @Override
+    public void resetPasswordByEmail(String email, String newPassword) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email không hợp lệ.");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new IllegalArgumentException("Mật khẩu mới không được để trống.");
+        }
+        if (newPassword.length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu tối thiểu 6 ký tự.");
+        }
+
+        var user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Tài khoản không tồn tại."));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

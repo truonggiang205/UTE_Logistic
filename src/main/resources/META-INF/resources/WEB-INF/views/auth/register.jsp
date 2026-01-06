@@ -11,11 +11,7 @@ pageEncoding="UTF-8"%> <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 
 <body>
   <div class="auth-ghtk-container">
-    <div
-      class="auth-banner"
-      style="
-        background-image: url('<c:url value='/images/auth-banner-reg-bg.png'/>');
-      ">
+    <div class="auth-banner">
       <h1>TOP supplier kiểm soát hàng tốt nhất</h1>
       <div class="banner-info-grid">
         <div class="info-card">
