@@ -40,13 +40,6 @@ README này mô tả cách chạy dự án, cấu trúc thư mục, phân hệ c
 
 ![Minh hoạ 2](src/main/resources/static/img/undraw_profile.svg)
 
-### Cách thêm ảnh chụp màn hình (khuyến nghị)
-
-- Tạo/chạy app ở `http://localhost:9090`.
-- Chụp các màn hình chính (login, dashboard từng vai trò, tạo đơn, phân công last-mile, ...).
-- Lưu ảnh vào `docs/screenshots/` (xem hướng dẫn và gợi ý tên file trong `docs/screenshots/README.md`).
-
-Khi đã có ảnh, bạn có thể nhúng trực tiếp vào README theo mẫu:
 
 ```md
 ![Login](docs/screenshots/login.png)
