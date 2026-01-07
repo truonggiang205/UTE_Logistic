@@ -34,8 +34,6 @@ README này mô tả cách chạy dự án, cấu trúc thư mục, phân hệ c
 
 ## Ảnh demo giao diện
 
-Repo hiện có sẵn một số ảnh asset để minh hoạ trong README (logo + các ảnh SVG). Ảnh chụp màn hình (screenshot) của web chưa được commit trong repo; bạn có thể thêm ảnh của bạn vào thư mục `docs/screenshots/` để README hiển thị đầy đủ hơn.
-
 ### Assets có sẵn trong repo
 
 ![Minh hoạ 1](src/main/resources/static/img/undraw_posting_photo.svg)
